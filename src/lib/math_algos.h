@@ -3600,7 +3600,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 	using t_real = typename t_cplx::value_type;
 	t_cplx c(t_real(1)/std::sqrt(t_real(2)), 0);
 
-	static const t_mat mat = create<t_mat>({{c, c}, { c,  -c}});
+	static const t_mat mat = create<t_mat>({{c, c}, {c, -c}});
 	return mat;
 }
 
@@ -3705,7 +3705,7 @@ requires is_mat<t_mat> && is_complex<t_cplx>
 
 
 /**
- * controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
+ * 2-qbit controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
  * @see (FUH 2021), p. 9
  * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
  */
@@ -3733,6 +3733,32 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 	});
 
 	return flipped ? mat_flipped : mat;
+}
+
+
+/**
+ * 3-qbit Toffoli gate
+ * @see https://en.wikipedia.org/wiki/Toffoli_gate
+ */
+template<class t_mat>
+const t_mat& toffoli()
+requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
+{
+	using t_cplx = typename t_mat::value_type;
+	constexpr t_cplx c(1, 0);
+
+	static const t_mat mat = create<t_mat>({
+		{ c, 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, c, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, c, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, c, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, c, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, c, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, c },
+		{ 0, 0, 0, 0, 0, 0, c, 0 },
+	});
+
+	return mat;
 }
 
 
