@@ -87,54 +87,6 @@ static bool check_grover(std::size_t n, std::size_t num_steps, std::size_t idx_t
 }
 
 
-template<class t_mat, class t_vec>
-requires is_mat<t_mat> && is_vec<t_vec>
-static bool check_measurements(const t_vec& up, const t_vec& down, const t_vec& twobitstate)
-{
-	using t_val = typename t_vec::value_type;
-	const t_mat I = unit<t_mat>(2);
-
-	// measurement operators
-	t_mat up_proj = projector<t_mat, t_vec>(up, false);
-	t_mat down_proj = projector<t_mat, t_vec>(down, false);
-	t_mat up_proj_bit1 = outer<t_mat>(up_proj, I);
-	t_mat down_proj_bit1 = outer<t_mat>(down_proj, I);
-	t_mat up_proj_bit2 = outer<t_mat>(I, up_proj);
-	t_mat down_proj_bit2 = outer<t_mat>(I, down_proj);
-
-	/*std::cout << "|down><down| x I = " << down_proj_bit1 << std::endl;
-	std::cout << "|up><up| x I = " << up_proj_bit1 << std::endl;
-	std::cout << "I x |down><down| = " << down_proj_bit2 << std::endl;
-	std::cout << "I x |up><up| = " << up_proj_bit2 << std::endl;*/
-
-	// numbering: 0=|down down>, 1=|down up>, 2=|up down>, 3=|up up>
-	std::cout << "2-bit state: " << twobitstate << std::endl;
-
-	t_val bit1_down1 = sum(down_proj_bit1*twobitstate);
-	t_val bit1_down2 = twobitstate[0] + twobitstate[1];
-	t_val bit1_up1 = sum(up_proj_bit1*twobitstate);
-	t_val bit1_up2 = twobitstate[2] + twobitstate[3];
-
-	t_val bit2_down1 = sum(down_proj_bit2*twobitstate);
-	t_val bit2_down2 = twobitstate[0] + twobitstate[2];
-	t_val bit2_up1 = sum(up_proj_bit2*twobitstate);
-	t_val bit2_up2 = twobitstate[1] + twobitstate[3];
-
-	bool bit1downok = m::equals<t_val>(bit1_down1, bit1_down2);
-	bool bit1upok = m::equals<t_val>(bit1_up1, bit1_up2);
-	bool bit2downok = m::equals<t_val>(bit2_down1, bit2_down2);
-	bool bit2upok = m::equals<t_val>(bit2_up1, bit2_up2);
-
-	std::cout << "bit1_down: " << bit1_down1 << " == " << bit1_down2 << ": " << bit1downok << std::endl;
-	std::cout << "bit1_up: " << bit1_up1 << " == " << bit1_up2 << ": " << bit1upok << std::endl;
-
-	std::cout << "bit2_down: " << bit2_down1 << " == " << bit2_down2 << ": " << bit2downok << std::endl;
-	std::cout << "bit2_up: " << bit2_up1 << " == " << bit2_up2 << ": "  << bit2upok << std::endl;
-
-	return bit1downok && bit1upok && bit2downok && bit2upok;
-}
-
-
 int main()
 {
 	using t_real = double;

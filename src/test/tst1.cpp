@@ -57,22 +57,6 @@ static bool check_hadamard(std::size_t n)
 }
 
 
-template<class t_vec> requires is_vec<t_vec>
-void write_state(std::ostream& ostr, const t_vec& state)
-{
-	using t_cplx = typename t_vec::value_type;
-	using t_real = typename t_cplx::value_type;
-
-	for(std::size_t i=0; i<state.size(); ++i)
-	{
-		t_real n = std::norm(state[i]);
-		ostr << std::left << std::setw(16) << n << " ";
-	}
-
-	ostr << std::endl;
-}
-
-
 template<class t_mat, class t_vec>
 requires is_mat<t_mat> && is_vec<t_vec>
 static bool check_measurements(const t_vec& up, const t_vec& down, const t_vec& twobitstate)
