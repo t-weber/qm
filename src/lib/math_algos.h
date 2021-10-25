@@ -3737,6 +3737,53 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 
 
 /**
+ * 2-qbit controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
+ * flips target bit if control bit is set
+ * @see (FUH 2021), p. 9
+ * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
+ */
+template<class t_mat>
+const t_mat cnot_nqbits(std::size_t num_qbits = 2, std::size_t control_bit = 0, std::size_t target_bit = 1)
+requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
+{
+	//using t_cplx = typename t_mat::value_type;
+	//constexpr t_cplx c(1, 0);
+
+	// numbering of qbits from left-hand side
+	control_bit = num_qbits - control_bit - 1;
+	target_bit = num_qbits - target_bit - 1;
+
+	const std::size_t N = (1 << num_qbits);
+	t_mat mat = zero<t_mat>(N, N);
+
+	const std::size_t control_bit_mask = (1 <<  control_bit);
+	const std::size_t target_bit_mask = (1 << target_bit);
+
+	// iterate all qbits
+	for(std::size_t bits=0; bits<N; ++bits)
+	{
+		std::size_t new_bits = bits;
+
+		bool control_bit_set = (bits & control_bit_mask) != 0;
+		if(control_bit_set)
+		{
+			// filter out target bit
+			new_bits = (bits & ~target_bit_mask);
+
+			// flip target bit (set it if it was not set before)
+			bool target_bit_set = (bits & target_bit_mask) != 0;
+			if(!target_bit_set)
+				new_bits |= (1<<target_bit);
+		}
+
+		mat(bits, new_bits) = 1;
+	}
+
+	return mat;
+}
+
+
+/**
  * 3-qbit Toffoli gate
  * @see https://en.wikipedia.org/wiki/Toffoli_gate
  */
@@ -3757,6 +3804,56 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 		{ 0, 0, 0, 0, 0, 0, 0, c },
 		{ 0, 0, 0, 0, 0, 0, c, 0 },
 	});
+
+	return mat;
+}
+
+
+/**
+ * 3-qbit Toffoli gate
+ * flips target bit if both control bits are set
+ * @see https://en.wikipedia.org/wiki/Toffoli_gate
+ */
+template<class t_mat>
+const t_mat toffoli_nqbits(std::size_t num_qbits = 3,
+	std::size_t control_bit_1 = 0, std::size_t control_bit_2 = 1, std::size_t target_bit = 2)
+requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
+{
+	//using t_cplx = typename t_mat::value_type;
+	//constexpr t_cplx c(1, 0);
+
+	// numbering of qbits from left-hand side
+	control_bit_1 = num_qbits - control_bit_1 - 1;
+	control_bit_2 = num_qbits - control_bit_2 - 1;
+	target_bit = num_qbits - target_bit - 1;
+
+	const std::size_t N = (1 << num_qbits);
+	t_mat mat = zero<t_mat>(N, N);
+
+	const std::size_t control_bit_1_mask = (1 <<  control_bit_1);
+	const std::size_t control_bit_2_mask = (1 <<  control_bit_2);
+	const std::size_t target_bit_mask = (1 << target_bit);
+
+	// iterate all qbits
+	for(std::size_t bits=0; bits<N; ++bits)
+	{
+		std::size_t new_bits = bits;
+
+		bool control_bit_1_set = (bits & control_bit_1_mask) != 0;
+		bool control_bit_2_set = (bits & control_bit_2_mask) != 0;
+		if(control_bit_1_set && control_bit_2_set)
+		{
+			// filter out target bit
+			new_bits = (bits & ~target_bit_mask);
+
+			// flip target bit (set it if it was not set before)
+			bool target_bit_set = (bits & target_bit_mask) != 0;
+			if(!target_bit_set)
+				new_bits |= (1<<target_bit);
+		}
+
+		mat(bits, new_bits) = 1;
+	}
 
 	return mat;
 }

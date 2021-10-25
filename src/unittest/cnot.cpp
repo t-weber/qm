@@ -92,7 +92,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cnot, t_real, decltype(std::tuple<float, double, l
 	t_real eps = 1e-6;
 	const t_mat<t_real> I = m::unit<t_mat<t_real>>(2);
 	const t_mat<t_real>& H = m::hadamard<t_mat<t_real>>();
-	const t_mat<t_real>& T = m::toffoli<t_mat<t_real>>();
 	t_vec<t_real> down = m::create<t_vec<t_real>>({ 1, 0 });
 	t_vec<t_real> up = m::create<t_vec<t_real>>({ 0, 1 });
 	t_vec<t_real> upup = m::outer_flat<t_vec<t_real>, t_mat<t_real>>(up, up);
@@ -105,20 +104,36 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cnot, t_real, decltype(std::tuple<float, double, l
 	t_mat<t_real> Z = m::su2_matrix<t_mat<t_real>>(2);
 	t_mat<t_real> C1 = m::cnot<t_mat<t_real>>(false);
 	t_mat<t_real> C2 = m::cnot<t_mat<t_real>>(true);
+	t_mat<t_real> C1b = m::cnot_nqbits<t_mat<t_real>>(2, 0, 1);
+	t_mat<t_real> C2b = m::cnot_nqbits<t_mat<t_real>>(2, 1, 0);
 	t_mat<t_real> I4 = m::unit<t_mat<t_real>>(4);
 
 	std::cout << "CNOT           = " << C1 << std::endl;
 	std::cout << "CNOT (flipped) = " << C2 << std::endl;
 
+	BOOST_TEST((m::equals<t_mat<t_real>>(C1, C1b, eps)));
+	BOOST_TEST((m::equals<t_mat<t_real>>(C2, C2b, eps)));
+
 	// CNOT in a 3-qbit circuit
 	//std::cout << m::outer<t_mat<t_real>>(C1, I) << std::endl;
 	//std::cout << m::outer<t_mat<t_real>>(I, C1) << std::endl;
 
+
+	const t_mat<t_real>& T = m::toffoli<t_mat<t_real>>();
 	t_mat<t_real> toffoli_flipped_1_3 = three_qbit_total_op<t_mat<t_real>>(H, I, H, T, H, I, H);
 	t_mat<t_real> toffoli_flipped_2_3 = three_qbit_total_op<t_mat<t_real>>(I, H, H, T, I, H, H);
+	t_mat<t_real> Tb = m::toffoli_nqbits<t_mat<t_real>>(3, 0, 1, 2);
+	t_mat<t_real> toffoli_flipped_1_3b = m::toffoli_nqbits<t_mat<t_real>>(3, 2, 1, 0);
+	t_mat<t_real> toffoli_flipped_2_3b = m::toffoli_nqbits<t_mat<t_real>>(3, 0, 2, 1);
+
 	std::cout << "Toffoli                       = " << T << std::endl;
 	std::cout << "Toffoli (flipped bit 1 and 3) = " << toffoli_flipped_1_3 << std::endl;
 	std::cout << "Toffoli (flipped bit 2 and 3) = " << toffoli_flipped_2_3 << std::endl;
+
+	BOOST_TEST((m::equals<t_mat<t_real>>(T, Tb, eps)));
+	BOOST_TEST((m::equals<t_mat<t_real>>(toffoli_flipped_1_3, toffoli_flipped_1_3b, eps)));
+	BOOST_TEST((m::equals<t_mat<t_real>>(toffoli_flipped_2_3, toffoli_flipped_2_3b, eps)));
+
 
 	t_mat<t_real> circ1_op = two_qbit_total_op<t_mat<t_real>>(Y, X, C1, I4, I4, X, Y);
 	std::cout << "\ncircuit total operator: " << circ1_op << std::endl;
