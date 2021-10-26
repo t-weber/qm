@@ -3705,7 +3705,7 @@ requires is_mat<t_mat> && is_complex<t_cplx>
 
 
 /**
- * 2-qbit controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
+ * 2-qubit controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
  * @see (FUH 2021), p. 9
  * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
  */
@@ -3737,7 +3737,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 
 
 /**
- * 2-qbit controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
+ * 2-qubit controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
  * flips target bit if control bit is set
  * @see (FUH 2021), p. 9
  * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
@@ -3749,7 +3749,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 	//using t_cplx = typename t_mat::value_type;
 	//constexpr t_cplx c(1, 0);
 
-	// numbering of qbits from left-hand side
+	// numbering of qubits from left-hand side
 	control_bit = num_qbits - control_bit - 1;
 	target_bit = num_qbits - target_bit - 1;
 
@@ -3759,7 +3759,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 	const std::size_t control_bit_mask = (1 <<  control_bit);
 	const std::size_t target_bit_mask = (1 << target_bit);
 
-	// iterate all qbits
+	// iterate all qubits
 	for(std::size_t bits=0; bits<N; ++bits)
 	{
 		std::size_t new_bits = bits;
@@ -3784,7 +3784,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 
 
 /**
- * 3-qbit Toffoli gate
+ * 3-qubit Toffoli gate
  * @see https://en.wikipedia.org/wiki/Toffoli_gate
  */
 template<class t_mat>
@@ -3810,7 +3810,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 
 
 /**
- * 3-qbit Toffoli gate
+ * 3-qubit Toffoli gate
  * flips target bit if both control bits are set
  * @see https://en.wikipedia.org/wiki/Toffoli_gate
  */
@@ -3822,7 +3822,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 	//using t_cplx = typename t_mat::value_type;
 	//constexpr t_cplx c(1, 0);
 
-	// numbering of qbits from left-hand side
+	// numbering of qubits from left-hand side
 	control_bit_1 = num_qbits - control_bit_1 - 1;
 	control_bit_2 = num_qbits - control_bit_2 - 1;
 	target_bit = num_qbits - target_bit - 1;
@@ -3834,7 +3834,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 	const std::size_t control_bit_2_mask = (1 <<  control_bit_2);
 	const std::size_t target_bit_mask = (1 << target_bit);
 
-	// iterate all qbits
+	// iterate all qubits
 	for(std::size_t bits=0; bits<N; ++bits)
 	{
 		std::size_t new_bits = bits;
