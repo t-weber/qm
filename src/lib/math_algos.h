@@ -872,6 +872,28 @@ requires is_basic_vec<t_vec> && is_mat<t_mat>
 
 
 /**
+ * outer products of a collection of vectors
+ */
+template<class t_vec, class t_mat, template<class...> class t_cont = std::initializer_list>
+t_vec outer_flat(const t_cont<t_vec>& vecs)
+requires is_basic_vec<t_vec> && is_mat<t_mat>
+{
+	if(vecs.size() == 0)
+		return t_vec{};
+	else if(vecs.size() == 1)
+		return *vecs.begin();
+
+	auto iter = vecs.begin();
+	t_vec outer = outer_flat<t_vec, t_mat>(*iter, *std::next(iter, 1));
+
+	for(iter=std::next(iter, 2); iter!=vecs.end(); std::advance(iter, 1))
+		outer = outer_flat<t_vec, t_mat>(outer, *iter);
+
+	return outer;
+}
+
+
+/**
  * outer/tensor product
  */
 template<class t_mat>
