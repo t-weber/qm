@@ -23,62 +23,11 @@ namespace ty = boost::typeindex;
 
 #include "lib/math_algos.h"
 #include "lib/math_conts.h"
+#include "lib/qm_algos.h"
 
 template<class t_real> using t_cplx = std::complex<t_real>;
 template<class t_real> using t_vec = m::vec<t_cplx<t_real>, std::vector>;
 template<class t_real> using t_mat = m::mat<t_cplx<t_real>, std::vector>;
-
-
-/**
- * get total operator of the circuit:
- *
- * qubit 1: ---one_pre_1---|                              |---one_post_1---
- *                         |---two_pre---two---two_post---|
- * qubit 2: ---one_pre_2---|                              |---one_post_2---
- *
- * with one-qubit operators "one*" and two-qubit operator "two"
- */
-template<class t_mat> requires m::is_mat<t_mat>
-static t_mat two_qbit_total_op(
-	const t_mat& one_pre_1, const t_mat& one_pre_2,
-	const t_mat& two_pre, const t_mat& two, const t_mat& two_post,
-	const t_mat& one_post_1, const t_mat& one_post_2)
-{
-	using namespace m_ops;
-
-	t_mat pre = m::outer<t_mat>(one_pre_1, one_pre_2);
-	t_mat post = m::outer<t_mat>(one_post_1, one_post_2);
-
-	return (post * two_post) * two * (two_pre * pre);
-}
-
-
-/**
- * get total operator of the circuit:
- *
- * qubit 1: ---one_pre_1---|           |---one_post_1---
- *                         |           |
- * qubit 2: ---one_pre_2---|---three---|---one_post_2---
- *                         |           |
- * qubit 3: ---one_pre_3---|           |---one_post_3---
- *
- * with one-qubit operators "one*" and two-qubit operator "two"
- */
-template<class t_mat> requires m::is_mat<t_mat>
-static t_mat three_qbit_total_op(
-	const t_mat& one_pre_1, const t_mat& one_pre_2, const t_mat& one_pre_3,
-	const t_mat& three,
-	const t_mat& one_post_1, const t_mat& one_post_2, const t_mat& one_post_3)
-{
-	using namespace m_ops;
-
-	t_mat pre = m::outer<t_mat>(one_pre_1, one_pre_2);
-	pre = m::outer<t_mat>(pre, one_pre_3);
-	t_mat post = m::outer<t_mat>(one_post_1, one_post_2);
-	post = m::outer<t_mat>(post, one_post_3);
-
-	return post * three * pre;
-}
 
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(cnot, t_real, decltype(std::tuple<float, double, long double>{}))
@@ -126,19 +75,19 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cnot, t_real, decltype(std::tuple<float, double, l
 	BOOST_TEST((m::equals<t_mat<t_real>>(C4, C4b, eps)));
 
 
-	t_mat<t_real> circ1_op = two_qbit_total_op<t_mat<t_real>>(Y, X, C1, I4, I4, X, Y);
+	t_mat<t_real> circ1_op = m::two_qbit_total_op<t_mat<t_real>>(Y, X, C1, I4, I4, X, Y);
 	std::cout << "\ncircuit total operator: " << circ1_op << std::endl;
 
 
 	// see: https://en.wikipedia.org/wiki/Controlled_NOT_gate
-	t_mat<t_real> cnot_flipped_op = two_qbit_total_op<t_mat<t_real>>(H, H, I4, C1, I4, H, H);
+	t_mat<t_real> cnot_flipped_op = m::two_qbit_total_op<t_mat<t_real>>(H, H, I4, C1, I4, H, H);
 	BOOST_TEST((m::equals<t_mat<t_real>>(cnot_flipped_op, C2, eps)));
 
 
 	t_mat<t_real> U1 = m::cunitary<t_mat<t_real>>(Y, 0);
 	t_mat<t_real> U2 = m::cunitary<t_mat<t_real>>(Y, 1);
 	t_mat<t_real> U3 = m::cunitary<t_mat<t_real>>(X, 1);
-	t_mat<t_real> cunitary_flipped_op = two_qbit_total_op<t_mat<t_real>>(H, H, I4, U1, I4, H, H);
+	t_mat<t_real> cunitary_flipped_op = m::two_qbit_total_op<t_mat<t_real>>(H, H, I4, U1, I4, H, H);
 	std::cout << "\n" << cunitary_flipped_op << "\n" << U2 << std::endl;
 	BOOST_TEST((m::equals<t_mat<t_real>>(cunitary_flipped_op, U2, eps)));
 	BOOST_TEST((m::equals<t_mat<t_real>>(U3, C2, eps)));
@@ -146,7 +95,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cnot, t_real, decltype(std::tuple<float, double, l
 
 	// swap state
 	// see: (Bronstein08): I. N. Bronstein et al., ISBN: 978-3-8171-2017-8 (2008), Ch. 22 (Zusatzkapitel.pdf), p. 28
-	t_mat<t_real> swap_op = two_qbit_total_op<t_mat<t_real>>(I, I, C1, C2, C1, I, I);
+	t_mat<t_real> swap_op = m::two_qbit_total_op<t_mat<t_real>>(I, I, C1, C2, C1, I, I);
 	std::cout << "\nSWAP |up down> = " << swap_op * updown << std::endl;
 	std::cout << "SWAP |down up> = " << swap_op * downup << std::endl;
 	BOOST_TEST((m::equals<t_vec<t_real>>(swap_op * updown, downup, eps)));
@@ -170,8 +119,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(toffoli, t_real, decltype(std::tuple<float, double
 	const t_mat<t_real>& H = m::hadamard<t_mat<t_real>>();
 
 	const t_mat<t_real>& T = m::toffoli<t_mat<t_real>>();
-	t_mat<t_real> toffoli_flipped_1_3 = three_qbit_total_op<t_mat<t_real>>(H, I, H, T, H, I, H);
-	t_mat<t_real> toffoli_flipped_2_3 = three_qbit_total_op<t_mat<t_real>>(I, H, H, T, I, H, H);
+	t_mat<t_real> toffoli_flipped_1_3 = m::three_qbit_total_op<t_mat<t_real>>(H, I, H, T, H, I, H);
+	t_mat<t_real> toffoli_flipped_2_3 = m::three_qbit_total_op<t_mat<t_real>>(I, H, H, T, I, H, H);
 	t_mat<t_real> Tb = m::toffoli_nqbits<t_mat<t_real>>(3, 0, 1, 2);
 	t_mat<t_real> toffoli_flipped_1_3b = m::toffoli_nqbits<t_mat<t_real>>(3, 2, 1, 0);
 	t_mat<t_real> toffoli_flipped_2_3b = m::toffoli_nqbits<t_mat<t_real>>(3, 0, 2, 1);

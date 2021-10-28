@@ -25,6 +25,7 @@ namespace ty = boost::typeindex;
 
 #include "lib/math_algos.h"
 #include "lib/math_conts.h"
+#include "lib/qm_algos.h"
 
 template<class t_real> using t_cplx = std::complex<t_real>;
 template<class t_real> using t_vec = m::vec<t_cplx<t_real>, std::vector>;

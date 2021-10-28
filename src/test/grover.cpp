@@ -13,6 +13,7 @@
 
 #include "lib/math_algos.h"
 #include "lib/math_conts.h"
+#include "lib/qm_algos.h"
 
 using namespace m;
 using namespace m_ops;
