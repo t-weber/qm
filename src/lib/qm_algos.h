@@ -21,6 +21,7 @@
 #define __QM_ALGOS_H__
 
 #include "math_algos.h"
+#include "math_conts.h"
 
 
 // math
