@@ -28,25 +28,12 @@
 #include <fstream>
 #include <iostream>
 
-#if __has_include(<filesystem>)
-	#include <filesystem>
-	namespace fs = std::filesystem;
-#elif __has_include(<experimental/filesystem>)
-	#include <experimental/filesystem>
-	namespace fs = std::experimental::filesystem;
-#else
-	#include <boost/filesystem.hpp>
-	namespace fs = boost::filesystem;
-#endif
-
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 namespace ptree = boost::property_tree;
 
 
 #define GUI_THEME_UNSET   "Unset"
-#define RECENT_FILES_CAP  16
-
 
 // ----------------------------------------------------------------------------
 
@@ -83,10 +70,10 @@ QmWnd::QmWnd(QWidget* pParent)
 		m_gui_native = settings.value("wnd_native").toBool();
 
 	if(settings.contains("file_recent"))
-		m_recentFiles = settings.value("file_recent").toStringList();
+		m_recent.SetRecentFiles(settings.value("file_recent").toStringList());
 
 	if(settings.contains("file_recent_dir"))
-		m_recentDir = settings.value("file_recent_dir").toString();
+		m_recent.SetRecentDir(settings.value("file_recent_dir").toString());
 	// ------------------------------------------------------------------------
 
 
@@ -107,7 +94,7 @@ QmWnd::QmWnd(QWidget* pParent)
 	QAction *actionLoad = new QAction{iconLoad, "Load...", this};
 	connect(actionLoad, &QAction::triggered, this, &QmWnd::FileLoad);
 
-	m_menuRecent = std::make_shared<QMenu>("Load Recent Files", this);
+	m_recent.SetRecentMenu(std::make_shared<QMenu>("Load Recent Files", this));
 
 	QIcon iconSave = QIcon::fromTheme("document-save");
 	QAction *actionSave = new QAction{iconSave, "Save", this};
@@ -121,7 +108,7 @@ QmWnd::QmWnd(QWidget* pParent)
 	connect(actionExportSvg, &QAction::triggered, [this]()
 	{
 		auto filedlg = std::make_shared<QFileDialog>(
-			this, "Export SVG image", m_recentDir,
+			this, "Export SVG image", m_recent.GetRecentDir(),
 			"SVG Files (*.svg)");
 		filedlg->setAcceptMode(QFileDialog::AcceptSave);
 		filedlg->setDefaultSuffix("svg");
@@ -156,7 +143,7 @@ QmWnd::QmWnd(QWidget* pParent)
 	menuFile->addAction(actionNew);
 	menuFile->addSeparator();
 	menuFile->addAction(actionLoad);
-	menuFile->addMenu(m_menuRecent.get());
+	menuFile->addMenu(m_recent.GetRecentMenu().get());
 	menuFile->addSeparator();
 	menuFile->addAction(actionSave);
 	menuFile->addAction(actionSaveAs);
@@ -254,7 +241,8 @@ QmWnd::QmWnd(QWidget* pParent)
 		});*/
 
 
-	CreateRecentFileMenu();
+	m_recent.CreateRecentFileMenu(
+		[this](const QString& filename)->bool { return this->LoadFile(filename); });
 	SetStatusMessage("Ready.");
 }
 
@@ -267,14 +255,14 @@ void QmWnd::SetStatusMessage(const QString& msg)
 
 void QmWnd::FileNew()
 {
-	m_openFile = "";
+	m_recent.SetOpenFile("");
 }
 
 
 void QmWnd::FileLoad()
 {
 	auto filedlg = std::make_shared<QFileDialog>(
-		this, "Load Data", m_recentDir,
+		this, "Load Data", m_recent.GetRecentDir(),
 		"XML Files (*.xml);;All Files (* *.*)");
 	filedlg->setAcceptMode(QFileDialog::AcceptOpen);
 	filedlg->setDefaultSuffix("xml");
@@ -287,11 +275,12 @@ void QmWnd::FileLoad()
 		{
 			if(LoadFile(files[0]))
 			{
-				m_openFile = files[0];
-				AddRecentFile(m_openFile);
+				m_recent.SetOpenFile(files[0]);
+				m_recent.AddRecentFile(m_recent.GetOpenFile(),
+					[this](const QString& filename)->bool { return this->LoadFile(filename); });
 
 				fs::path file{files[0].toStdString()};
-				m_recentDir = file.parent_path().string().c_str();
+				m_recent.SetRecentDir(file.parent_path().string().c_str());
 			}
 			else
 			{
@@ -305,13 +294,13 @@ void QmWnd::FileLoad()
 void QmWnd::FileSave()
 {
 	// no open file, use "save as..." instead
-	if(m_openFile == "")
+	if(m_recent.GetOpenFile() == "")
 	{
 		FileSaveAs();
 		return;
 	}
 
-	if(!SaveFile(m_openFile))
+	if(!SaveFile(m_recent.GetOpenFile()))
 		QMessageBox::critical(this, "Error", "File could not be saved.");
 }
 
@@ -319,7 +308,7 @@ void QmWnd::FileSave()
 void QmWnd::FileSaveAs()
 {
 	auto filedlg = std::make_shared<QFileDialog>(
-		this, "Save Data", m_recentDir,
+		this, "Save Data", m_recent.GetRecentDir(),
 		"XML Files (*.xml)");
 	filedlg->setAcceptMode(QFileDialog::AcceptSave);
 	filedlg->setDefaultSuffix("xml");
@@ -332,11 +321,12 @@ void QmWnd::FileSaveAs()
 		{
 			if(SaveFile(files[0]))
 			{
-				m_openFile = files[0];
-				AddRecentFile(m_openFile);
+				m_recent.SetOpenFile(files[0]);
+				m_recent.AddRecentFile(m_recent.GetOpenFile(),
+					[this](const QString& filename)->bool { return this->LoadFile(filename); });
 
 				fs::path file{files[0].toStdString()};
-				m_recentDir = file.parent_path().string().c_str();
+				m_recent.SetRecentDir(file.parent_path().string().c_str());
 			}
 			else
 			{
@@ -378,48 +368,6 @@ bool QmWnd::LoadFile(const QString& filename)
 }
 
 
-void QmWnd::AddRecentFile(const QString& filename)
-{
-	m_recentFiles.push_front(filename);
-	m_recentFiles.removeDuplicates();
-
-	if(m_recentFiles.size() > RECENT_FILES_CAP)
-		m_recentFiles.erase(m_recentFiles.begin()+RECENT_FILES_CAP, m_recentFiles.end());
-
-	CreateRecentFileMenu();
-}
-
-
-void QmWnd::CreateRecentFileMenu()
-{
-	m_menuRecent->clear();
-
-	for(auto iter = m_recentFiles.begin(); iter != m_recentFiles.end();)
-	{
-		const QString& filename = *iter;
-
-		fs::path file{filename.toStdString()};
-		if(!fs::exists(file))
-		{
-			iter = m_recentFiles.erase(iter);
-			continue;
-		}
-
-		QAction *actionFile = new QAction{file.filename().string().c_str(), this};
-		actionFile->setToolTip(filename);
-
-		connect(actionFile, &QAction::triggered, [this, filename]()
-		{
-			this->LoadFile(filename);
-		});
-
-		m_menuRecent->addAction(actionFile);
-
-		++iter;
-	}
-}
-
-
 void QmWnd::closeEvent(QCloseEvent *e)
 {
 	// ------------------------------------------------------------------------
@@ -431,8 +379,8 @@ void QmWnd::closeEvent(QCloseEvent *e)
 	settings.setValue("wnd_state", state);
 	settings.setValue("wnd_theme", m_gui_theme);
 	settings.setValue("wnd_native", m_gui_native);
-	settings.setValue("file_recent", m_recentFiles);
-	settings.setValue("file_recent_dir", m_recentDir);
+	settings.setValue("file_recent", m_recent.GetRecentFiles());
+	settings.setValue("file_recent_dir", m_recent.GetRecentDir());
 	// ------------------------------------------------------------------------
 
 	QMainWindow::closeEvent(e);

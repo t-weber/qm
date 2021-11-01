@@ -8,8 +8,6 @@
 #ifndef __QM_GUI_H__
 #define __QM_GUI_H__
 
-#include <QtCore/QStringList>
-#include <QtCore/QDir>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QLabel>
@@ -20,6 +18,7 @@
 #include <memory>
 #include <vector>
 
+#include "recent.h"
 #include "lib/qm_algos.h"
 using t_real = double;
 
@@ -57,10 +56,7 @@ private:
 	QString m_gui_theme{};
 	bool m_gui_native{false};
 
-	QString m_openFile{};
-	QString m_recentDir{QDir::homePath()};
-	QStringList m_recentFiles{};
-	std::shared_ptr<QMenu> m_menuRecent{};
+	RecentFiles m_recent{this, 16};
 
 	//std::shared_ptr<QGraphicsScene> m_scene;
 	//std::shared_ptr<QGraphicsView> m_view;
