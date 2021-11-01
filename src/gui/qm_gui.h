@@ -41,12 +41,6 @@ public:
 	bool SaveFile(const QString& filename) const;
 	bool LoadFile(const QString& filename);
 
-	void AddRecentFile(const QString& filename);
-
-
-protected:
-	void CreateRecentFileMenu();
-
 
 private:
 	virtual void closeEvent(QCloseEvent *) override;
