@@ -25,6 +25,7 @@
 
 #include <locale>
 #include <memory>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 
@@ -44,11 +45,43 @@ QmScene::QmScene(QWidget* parent)
 {
 	// test
 	//addItem(new CNot());
+	//addItem(new Toffoli());
 }
 
 
 QmScene::~QmScene()
 {
+}
+
+
+void QmScene::mousePressEvent(QGraphicsSceneMouseEvent *evt)
+{
+	QGraphicsScene::mousePressEvent(evt);
+}
+
+
+void QmScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *evt)
+{
+	QGraphicsScene::mouseReleaseEvent(evt);
+}
+
+
+void QmScene::mouseMoveEvent(QGraphicsSceneMouseEvent *evt)
+{
+	QPointF posScene = evt->scenePos();
+
+	if(QGraphicsItem* item = mouseGrabberItem(); item)
+	{
+		qreal raster_x = std::round(posScene.x() / g_raster_size);
+		qreal raster_y = std::round(posScene.y() / g_raster_size);
+
+		item->setX(raster_x * g_raster_size);
+		item->setY(raster_y * g_raster_size);
+	}
+	else
+	{
+		QGraphicsScene::mouseMoveEvent(evt);
+	}
 }
 // ----------------------------------------------------------------------------
 
@@ -87,7 +120,6 @@ void QmView::resizeEvent(QResizeEvent *evt)
 }
 
 
-
 void QmView::mousePressEvent(QMouseEvent *evt)
 {
 	QPoint posVP = evt->pos();
@@ -117,6 +149,7 @@ void QmView::mouseMoveEvent(QMouseEvent *evt)
 
 	QPoint posVP = evt->pos();
 	QPointF posScene = mapToScene(posVP);
+
 	emit SignalMouseCoordinates(posScene.x(), posScene.y());
 }
 // ----------------------------------------------------------------------------

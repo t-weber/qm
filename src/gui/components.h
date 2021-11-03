@@ -12,6 +12,7 @@
 #include <QtGui/QPainter>
 
 #include "types.h"
+#include "settings.h"
 
 
 /**
@@ -47,7 +48,34 @@ private:
 	std::size_t m_control_bit_pos = 0;
 	std::size_t m_target_bit_pos = 1;
 
-	t_real m_raster_size = 35.;
+	t_real m_control_bit_radius = 10.;
+	t_real m_target_bit_radius = 25.;
+};
+
+
+
+/**
+ * Toffoli gate
+ * @see https://en.wikipedia.org/wiki/Toffoli_gate
+ */
+class Toffoli : public QGraphicsItem, public QuantumGate
+{
+public:
+	Toffoli();
+	virtual ~Toffoli();
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+	virtual t_mat GetOperator() const override;
+
+
+private:
+	std::size_t m_num_qbits = 3;
+	std::size_t m_control_bit_1_pos = 0;
+	std::size_t m_control_bit_2_pos = 1;
+	std::size_t m_target_bit_pos = 2;
+
 	t_real m_control_bit_radius = 10.;
 	t_real m_target_bit_radius = 25.;
 };

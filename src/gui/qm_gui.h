@@ -14,6 +14,7 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsSceneMouseEvent>
 
 #include <memory>
 #include <vector>
@@ -22,6 +23,7 @@
 #include "components.h"
 
 #include "types.h"
+#include "settings.h"
 #include "lib/qm_algos.h"
 
 
@@ -33,6 +35,12 @@ public:
 
 	QmScene(QmScene&) = delete;
 	const QmScene& operator=(const QmScene&) const = delete;
+
+
+protected:
+	virtual void mousePressEvent(QGraphicsSceneMouseEvent *evt) override;
+	virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *evt) override;
+	virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *evt) override;
 
 
 private:
