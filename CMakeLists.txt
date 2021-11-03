@@ -32,7 +32,8 @@ include_directories(
 
 
 add_executable(qm
-	src/gui/qm_gui.cpp src/gui/qm_gui.h
+	src/gui/qm_gui.cpp src/gui/qm_gui.h src/gui/recent.h
+	src/gui/components.cpp src/gui/components.h
 	src/lib/math_algos.h src/lib/math_conts.h src/lib/math_concepts.h
 	src/lib/qm_algos.h
 )

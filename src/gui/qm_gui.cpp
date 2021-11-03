@@ -2,7 +2,7 @@
  * qm gui
  * @author Tobias Weber (orcid: 0000-0002-7230-1932)
  * @date Oct-2021
- * @license: see 'LICENSE' file
+ * @license see 'LICENSE' file
  */
 
 #include "qm_gui.h"
@@ -35,12 +35,101 @@ namespace ptree = boost::property_tree;
 
 #define GUI_THEME_UNSET   "Unset"
 
+
+// ----------------------------------------------------------------------------
+// graphics scene
+// ----------------------------------------------------------------------------
+QmScene::QmScene(QWidget* parent)
+	: QGraphicsScene(parent), m_parent{parent}
+{
+	// test
+	//addItem(new CNot());
+}
+
+
+QmScene::~QmScene()
+{
+}
 // ----------------------------------------------------------------------------
 
+
+
+// ----------------------------------------------------------------------------
+// graphics view
+// ----------------------------------------------------------------------------
+QmView::QmView(QmScene *scene, QWidget *parent)
+	: QGraphicsView(scene, parent), m_scene{scene}
+{
+	setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+	setInteractive(true);
+	setMouseTracking(true);
+
+	setBackgroundBrush(QBrush{QColor::fromRgbF(0.95, 0.95, 0.95, 1.)});
+}
+
+
+QmView::~QmView()
+{
+}
+
+
+void QmView::resizeEvent(QResizeEvent *evt)
+{
+	QPointF pt1{mapToScene(QPoint{0,0})};
+	QPointF pt2{mapToScene(QPoint{evt->size().width(), evt->size().height()})};
+
+	// TODO: include bounds given by all components
+
+	setSceneRect(QRectF{pt1, pt2});
+	QGraphicsView::resizeEvent(evt);
+}
+
+
+
+void QmView::mousePressEvent(QMouseEvent *evt)
+{
+	QPoint posVP = evt->pos();
+	//QPointF posScene = mapToScene(posVP);
+
+	QList<QGraphicsItem*> items = this->items(posVP);
+
+	// TODO
+
+	QGraphicsView::mousePressEvent(evt);
+}
+
+
+void QmView::mouseReleaseEvent(QMouseEvent *evt)
+{
+	// TODO
+
+	QGraphicsView::mouseReleaseEvent(evt);
+}
+
+
+void QmView::mouseMoveEvent(QMouseEvent *evt)
+{
+	QGraphicsView::mouseMoveEvent(evt);
+
+	// TODO
+
+	QPoint posVP = evt->pos();
+	QPointF posScene = mapToScene(posVP);
+	emit SignalMouseCoordinates(posScene.x(), posScene.y());
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// main window
+// ----------------------------------------------------------------------------
 QmWnd::QmWnd(QWidget* pParent)
 	: QMainWindow{pParent},
-		//m_scene{new QGraphicsScene{this}},
-		//m_view{new QGraphicsView{m_scene.get(), this}},
+		m_scene{new QmScene{this}},
+		m_view{new QmView{m_scene.get(), this}},
 		m_statusLabel{std::make_shared<QLabel>(this)}
 {
 	// ------------------------------------------------------------------------
@@ -78,7 +167,7 @@ QmWnd::QmWnd(QWidget* pParent)
 
 
 	setWindowTitle("QM");
-	//setCentralWidget(m_view.get());
+	setCentralWidget(m_view.get());
 
 	QStatusBar *statusBar = new QStatusBar{this};
 	statusBar->addPermanentWidget(m_statusLabel.get(), 1);
@@ -234,11 +323,11 @@ QmWnd::QmWnd(QWidget* pParent)
 
 
 	// connections
-	/*connect(m_view.get(), &QmView::SignalMouseCoordinates,
+	connect(m_view.get(), &QmView::SignalMouseCoordinates,
 		[this](double x, double y) -> void
 		{
 			SetStatusMessage(QString("x=%1, y=%2.").arg(x, 5).arg(y, 5));
-		});*/
+		});
 
 
 	m_recent.CreateRecentFileMenu(

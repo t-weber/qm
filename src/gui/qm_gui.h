@@ -2,7 +2,7 @@
  * qm gui
  * @author Tobias Weber (orcid: 0000-0002-7230-1932)
  * @date Oct-2021
- * @license: see 'LICENSE' file
+ * @license see 'LICENSE' file
  */
 
 #ifndef __QM_GUI_H__
@@ -19,8 +19,54 @@
 #include <vector>
 
 #include "recent.h"
+#include "components.h"
+
+#include "types.h"
 #include "lib/qm_algos.h"
-using t_real = double;
+
+
+class QmScene : public QGraphicsScene
+{
+public:
+	QmScene(QWidget* parent);
+	virtual ~QmScene();
+
+	QmScene(QmScene&) = delete;
+	const QmScene& operator=(const QmScene&) const = delete;
+
+
+private:
+	QWidget *m_parent = nullptr;
+};
+
+
+
+class QmView : public QGraphicsView
+{ Q_OBJECT
+public:
+	QmView(QmScene *scene = nullptr, QWidget *parent = nullptr);
+	virtual ~QmView();
+
+	QmView(QmView&) = delete;
+	const QmView& operator=(const QmView&) const = delete;
+
+
+protected:
+	virtual void mousePressEvent(QMouseEvent *evt) override;
+	virtual void mouseReleaseEvent(QMouseEvent *evt) override;
+	virtual void mouseMoveEvent(QMouseEvent *evt) override;
+
+	virtual void resizeEvent(QResizeEvent *evt) override;
+
+
+private:
+	QmScene *m_scene = nullptr;
+	bool m_dragging = false;
+
+
+signals:
+	void SignalMouseCoordinates(double x, double y);
+};
 
 
 class QmWnd : public QMainWindow
@@ -52,8 +98,8 @@ private:
 
 	RecentFiles m_recent{this, 16};
 
-	//std::shared_ptr<QGraphicsScene> m_scene;
-	//std::shared_ptr<QGraphicsView> m_view;
+	std::shared_ptr<QmScene> m_scene;
+	std::shared_ptr<QmView> m_view;
 	std::shared_ptr<QLabel> m_statusLabel;
 };
 

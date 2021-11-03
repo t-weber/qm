@@ -144,7 +144,7 @@ requires is_mat<t_mat> && is_complex<t_cplx>
 
 
 /**
- * 2-qubit controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
+ * 2-qubit controlled NOT gate ( == controlled unitary gate with U = Pauli-X)
  * @see (FUH 2021), p. 9
  * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
  */
@@ -176,13 +176,14 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 
 
 /**
- * 2-qubit controlled NOT gate ( = controlled unitary gate with U = Pauli-X)
+ * 2-qubit controlled NOT gate ( == controlled unitary gate with U = Pauli-X)
  * flips target bit if control bit is set
  * @see (FUH 2021), p. 9
  * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
  */
 template<class t_mat>
-const t_mat cnot_nqbits(std::size_t num_qbits = 2, std::size_t control_bit = 0, std::size_t target_bit = 1)
+const t_mat cnot_nqbits(std::size_t num_qbits = 2,
+	std::size_t control_bit = 0, std::size_t target_bit = 1)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
 	//using t_cplx = typename t_mat::value_type;
