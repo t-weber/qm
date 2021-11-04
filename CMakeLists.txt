@@ -32,7 +32,9 @@ include_directories(
 
 
 add_executable(qm
+	src/gui/main.cpp
 	src/gui/qm_gui.cpp src/gui/qm_gui.h
+	src/gui/workspace.cpp src/gui/workspace.h
 	src/gui/components.cpp src/gui/components.h
 	src/gui/settings.cpp src/gui/settings.h
 	src/gui/recent.h src/gui/types.h

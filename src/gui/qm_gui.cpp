@@ -23,9 +23,6 @@
 	#include <QtWidgets/QActionGroup>
 #endif
 
-#include <locale>
-#include <memory>
-#include <cmath>
 #include <fstream>
 #include <iostream>
 
@@ -35,125 +32,6 @@ namespace ptree = boost::property_tree;
 
 
 #define GUI_THEME_UNSET   "Unset"
-
-
-// ----------------------------------------------------------------------------
-// graphics scene
-// ----------------------------------------------------------------------------
-QmScene::QmScene(QWidget* parent)
-	: QGraphicsScene(parent), m_parent{parent}
-{
-	// test
-	//addItem(new CNot());
-	//addItem(new Toffoli());
-}
-
-
-QmScene::~QmScene()
-{
-}
-
-
-void QmScene::mousePressEvent(QGraphicsSceneMouseEvent *evt)
-{
-	QGraphicsScene::mousePressEvent(evt);
-}
-
-
-void QmScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *evt)
-{
-	QGraphicsScene::mouseReleaseEvent(evt);
-}
-
-
-void QmScene::mouseMoveEvent(QGraphicsSceneMouseEvent *evt)
-{
-	QPointF posScene = evt->scenePos();
-
-	if(QGraphicsItem* item = mouseGrabberItem(); item)
-	{
-		qreal raster_x = std::round(posScene.x() / g_raster_size);
-		qreal raster_y = std::round(posScene.y() / g_raster_size);
-
-		item->setX(raster_x * g_raster_size);
-		item->setY(raster_y * g_raster_size);
-	}
-	else
-	{
-		QGraphicsScene::mouseMoveEvent(evt);
-	}
-}
-// ----------------------------------------------------------------------------
-
-
-
-// ----------------------------------------------------------------------------
-// graphics view
-// ----------------------------------------------------------------------------
-QmView::QmView(QmScene *scene, QWidget *parent)
-	: QGraphicsView(scene, parent), m_scene{scene}
-{
-	setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-
-	setInteractive(true);
-	setMouseTracking(true);
-
-	setBackgroundBrush(QBrush{QColor::fromRgbF(0.95, 0.95, 0.95, 1.)});
-}
-
-
-QmView::~QmView()
-{
-}
-
-
-void QmView::resizeEvent(QResizeEvent *evt)
-{
-	QPointF pt1{mapToScene(QPoint{0,0})};
-	QPointF pt2{mapToScene(QPoint{evt->size().width(), evt->size().height()})};
-
-	// TODO: include bounds given by all components
-
-	setSceneRect(QRectF{pt1, pt2});
-	QGraphicsView::resizeEvent(evt);
-}
-
-
-void QmView::mousePressEvent(QMouseEvent *evt)
-{
-	QPoint posVP = evt->pos();
-	//QPointF posScene = mapToScene(posVP);
-
-	QList<QGraphicsItem*> items = this->items(posVP);
-
-	// TODO
-
-	QGraphicsView::mousePressEvent(evt);
-}
-
-
-void QmView::mouseReleaseEvent(QMouseEvent *evt)
-{
-	// TODO
-
-	QGraphicsView::mouseReleaseEvent(evt);
-}
-
-
-void QmView::mouseMoveEvent(QMouseEvent *evt)
-{
-	QGraphicsView::mouseMoveEvent(evt);
-
-	// TODO
-
-	QPoint posVP = evt->pos();
-	QPointF posScene = mapToScene(posVP);
-
-	emit SignalMouseCoordinates(posScene.x(), posScene.y());
-}
-// ----------------------------------------------------------------------------
-
 
 
 // ----------------------------------------------------------------------------
@@ -511,42 +389,5 @@ void QmWnd::closeEvent(QCloseEvent *e)
 
 QmWnd::~QmWnd()
 {
-}
-// ----------------------------------------------------------------------------
-
-
-
-// ----------------------------------------------------------------------------
-
-static inline void set_locales()
-{
-	std::ios_base::sync_with_stdio(false);
-
-	::setlocale(LC_ALL, "C");
-	std::locale::global(std::locale("C"));
-	QLocale::setDefault(QLocale::C);
-}
-
-
-int main(int argc, char** argv)
-{
-	try
-	{
-		auto app = std::make_unique<QApplication>(argc, argv);
-		app->setOrganizationName("tw");
-		app->setApplicationName("qm");
-		set_locales();
-
-		auto qm = std::make_unique<QmWnd>();
-		qm->show();
-
-		return app->exec();
-	}
-	catch(const std::exception& ex)
-	{
-		std::cerr << ex.what() << std::endl;
-	}
-
-	return -1;
 }
 // ----------------------------------------------------------------------------
