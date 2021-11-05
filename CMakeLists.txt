@@ -36,6 +36,7 @@ add_executable(qm
 	src/gui/qm_gui.cpp src/gui/qm_gui.h
 	src/gui/workspace.cpp src/gui/workspace.h
 	src/gui/components.cpp src/gui/components.h
+	src/gui/component_properties.cpp src/gui/component_properties.h
 	src/gui/settings.cpp src/gui/settings.h
 	src/gui/resources.cpp src/gui/resources.h
 	src/gui/recent.h src/gui/types.h src/gui/helpers.h

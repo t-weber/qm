@@ -9,6 +9,8 @@
 
 #include "components.h"
 #include "helpers.h"
+#include "settings.h"
+
 #include "lib/qm_algos.h"
 
 

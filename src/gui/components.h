@@ -14,7 +14,6 @@
 #include <memory>
 
 #include "types.h"
-#include "settings.h"
 
 
 /**

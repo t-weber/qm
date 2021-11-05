@@ -80,6 +80,11 @@ QmWnd::QmWnd(QWidget* pParent)
 	setWindowTitle("QM");
 	setCentralWidget(m_view.get());
 
+	m_properties = std::make_shared<DockWidgetWrapper<ComponentProperties>>(this);
+	m_properties->setWindowTitle("Properties");
+	m_properties->setObjectName("ComponentProperties");
+	addDockWidget(Qt::RightDockWidgetArea, m_properties.get());
+
 	QStatusBar *statusBar = new QStatusBar{this};
 	statusBar->addPermanentWidget(m_statusLabel.get(), 1);
 	setStatusBar(statusBar);

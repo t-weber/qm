@@ -15,8 +15,10 @@
 #include <memory>
 #include <vector>
 
-#include "recent.h"
+#include "components.h"
+#include "component_properties.h"
 #include "workspace.h"
+#include "recent.h"
 #include "types.h"
 #include "settings.h"
 
@@ -50,9 +52,11 @@ private:
 
 	RecentFiles m_recent{this, 16};
 
-	std::shared_ptr<QmScene> m_scene;
-	std::shared_ptr<QmView> m_view;
-	std::shared_ptr<QLabel> m_statusLabel;
+	std::shared_ptr<QmScene> m_scene{};
+	std::shared_ptr<QmView> m_view{};
+	std::shared_ptr<QLabel> m_statusLabel{};
+
+	std::shared_ptr<DockWidgetWrapper<ComponentProperties>> m_properties{};
 };
 
 

@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "components.h"
-
 #include "types.h"
 #include "settings.h"
 #include "lib/qm_algos.h"
