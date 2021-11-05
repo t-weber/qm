@@ -8,8 +8,6 @@
 #ifndef __QM_COMPONENT_PROPERTIES_H__
 #define __QM_COMPONENT_PROPERTIES_H__
 
-//#define DOCKWIDGETWRAPPER_USE_DYN_WIDGET
-
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDockWidget>
 
@@ -41,26 +39,18 @@ class DockWidgetWrapper : public QDockWidget
 public:
 	DockWidgetWrapper(QWidget *parent=nullptr)
 		: QDockWidget(parent)
-	{}
+	{
+		this->setWidget(GetWidget());
+	}
 
 	virtual ~DockWidgetWrapper() = default;
 
-#ifndef DOCKWIDGETWRAPPER_USE_DYN_WIDGET
 	const t_widget* GetWidget() const { return &m_widget; }
 	t_widget* GetWidget() { return &m_widget; }
-#else
-	using t_widgetptr = std::shared_ptr<t_widget>;
-	t_widgetptr GetWidget() const { return m_widget; }
-	void SetWidget(t_widgetptr widget) { m_widget = widget; }
-#endif
 
 
 private:
-#ifndef DOCKWIDGETWRAPPER_USE_DYN_WIDGET
 	t_widget m_widget{this};
-#else
-	t_widgetptr m_widget = std::make_shared<t_widget>(this);
-#endif
 };
 
 #endif
