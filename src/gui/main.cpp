@@ -6,11 +6,13 @@
  */
 
 #include "qm_gui.h"
+#include "resources.h"
 
 #include <QtCore/QLocale>
 #include <QtWidgets/QApplication>
 
 #include <locale>
+#include <string>
 #include <iostream>
 
 
@@ -28,11 +30,19 @@ int main(int argc, char** argv)
 {
 	try
 	{
+		// application
 		auto app = std::make_unique<QApplication>(argc, argv);
 		app->setOrganizationName("tw");
 		app->setApplicationName("qm");
 		set_locales();
 
+		// resources
+		Resources res;
+		fs::path appdir = app->applicationDirPath().toStdString();
+		res.AddPath(appdir);
+		res.AddPath(appdir / "res");
+
+		// main window
 		auto qm = std::make_unique<QmWnd>();
 		qm->show();
 
