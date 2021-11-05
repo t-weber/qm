@@ -12,8 +12,32 @@
 #include <QtGui/QPainter>
 
 #include <memory>
+#include <string>
+#include <variant>
+#include <vector>
 
 #include "types.h"
+
+
+/**
+ * struct for the exchange of component configuration options
+ */
+struct ComponentConfig
+{
+	// key and value
+	std::string key{};
+	std::variant<
+		t_int, t_uint, std::size_t,
+		t_real, std::string> value{};
+
+	// optional minimum and maximum values
+	std::optional<std::variant<
+		t_int, t_uint, std::size_t,
+		t_real, std::string>> min_value{};
+	std::optional<std::variant<
+		t_int, t_uint, std::size_t,
+		t_real, std::string>> max_value{};
+};
 
 
 /**
@@ -25,6 +49,9 @@ public:
 	virtual ~QuantumGate() = default;
 
 	virtual t_mat GetOperator() const = 0;
+
+	virtual std::vector<ComponentConfig> GetConfig() const = 0;
+	virtual void SetConfig(const std::vector<ComponentConfig>&) = 0;
 };
 
 
@@ -48,10 +75,23 @@ public:
 	CNotGate();
 	virtual ~CNotGate();
 
+	// getter
+	void SetNumQBits(std::size_t bits) { m_num_qbits = bits; }
+	void SetControlBitPos(std::size_t pos) { m_control_bit_pos = pos; }
+	void SetTargetBitPos(std::size_t pos) { m_target_bit_pos = pos; }
+
+	// setter
+	std::size_t GetNumQBits() const { return m_num_qbits; }
+	std::size_t GetControlBitPos() const { return m_control_bit_pos; }
+	std::size_t GetTargetBitPos() const { return m_target_bit_pos; }
+
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 	virtual t_mat GetOperator() const override;
+
+	virtual std::vector<ComponentConfig> GetConfig() const override;
+	virtual void SetConfig(const std::vector<ComponentConfig>&) override;
 
 
 private:
@@ -75,10 +115,25 @@ public:
 	ToffoliGate();
 	virtual ~ToffoliGate();
 
+	// getter
+	void SetNumQBits(std::size_t bits) { m_num_qbits = bits; }
+	void SetControlBit1Pos(std::size_t pos) { m_control_bit_1_pos = pos; }
+	void SetControlBit2Pos(std::size_t pos) { m_control_bit_2_pos = pos; }
+	void SetTargetBitPos(std::size_t pos) { m_target_bit_pos = pos; }
+
+	// setter
+	std::size_t GetNumQBits() const { return m_num_qbits; }
+	std::size_t GetControlBit1Pos() const { return m_control_bit_1_pos; }
+	std::size_t GetControlBit2Pos() const { return m_control_bit_2_pos; }
+	std::size_t GetTargetBitPos() const { return m_target_bit_pos; }
+
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 	virtual t_mat GetOperator() const override;
+
+	virtual std::vector<ComponentConfig> GetConfig() const override;
+	virtual void SetConfig(const std::vector<ComponentConfig>&) override;
 
 
 private:
