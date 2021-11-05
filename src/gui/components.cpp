@@ -8,25 +8,26 @@
 #include <QtGui/QRadialGradient>
 
 #include "components.h"
+#include "helpers.h"
 #include "lib/qm_algos.h"
 
 
 // ----------------------------------------------------------------------------
 // CNOT gate
 // ----------------------------------------------------------------------------
-CNot::CNot()
+CNotGate::CNotGate()
 {
 	setPos(QPointF{0,0});
 	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
 }
 
 
-CNot::~CNot()
+CNotGate::~CNotGate()
 {
 }
 
 
-QRectF CNot::boundingRect() const
+QRectF CNotGate::boundingRect() const
 {
 	t_real w = std::max(m_control_bit_radius, m_target_bit_radius);
 
@@ -51,12 +52,15 @@ QRectF CNot::boundingRect() const
 }
 
 
-void CNot::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
+void CNotGate::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
 	std::array<QColor, 2> colours =
 	{
-		QColor::fromRgbF(0., 0., 0.),
-		QColor::fromRgbF(0.2, 0.2, 0.2),
+		colour_fg,
+		lerp(colour_fg, colour_bg, 0.2),
 	};
 
 	QRadialGradient grad{};
@@ -67,9 +71,9 @@ void CNot::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 		grad.setColorAt(col/double(colours.size()-1), colours[col]);
 
 
-	QPen penBlack(QColor::fromRgbF(0.,0.,0.));
+	QPen penLine(colour_fg);
 	QPen penGrad(*colours.rbegin());
-	penBlack.setWidthF(1.);
+	penLine.setWidthF(1.);
 	penGrad.setWidthF(1.);
 
 
@@ -87,7 +91,7 @@ void CNot::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 
 	// target bit
 	painter->setBrush(Qt::NoBrush);
-	painter->setPen(penBlack);
+	painter->setPen(penLine);
 
 	trafo_orig = painter->worldTransform();
 	painter->translate(0., m_target_bit_pos*g_raster_size);
@@ -111,7 +115,7 @@ void CNot::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 }
 
 
-t_mat CNot::GetOperator() const
+t_mat CNotGate::GetOperator() const
 {
 	return m::cnot_nqbits<t_mat>(m_num_qbits, m_control_bit_pos, m_target_bit_pos);
 }
@@ -122,19 +126,19 @@ t_mat CNot::GetOperator() const
 // ----------------------------------------------------------------------------
 // Toffoli gate
 // ----------------------------------------------------------------------------
-Toffoli::Toffoli()
+ToffoliGate::ToffoliGate()
 {
 	setPos(QPointF{0,0});
 	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
 }
 
 
-Toffoli::~Toffoli()
+ToffoliGate::~ToffoliGate()
 {
 }
 
 
-QRectF Toffoli::boundingRect() const
+QRectF ToffoliGate::boundingRect() const
 {
 	t_real w = std::max(m_control_bit_radius, m_target_bit_radius);
 
@@ -168,12 +172,15 @@ QRectF Toffoli::boundingRect() const
 }
 
 
-void Toffoli::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
+void ToffoliGate::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
 	std::array<QColor, 2> colours =
 	{
-		QColor::fromRgbF(0., 0., 0.),
-		QColor::fromRgbF(0.2, 0.2, 0.2),
+		colour_fg,
+		lerp(colour_fg, colour_bg, 0.2),
 	};
 
 	QRadialGradient grad{};
@@ -184,9 +191,9 @@ void Toffoli::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*
 		grad.setColorAt(col/double(colours.size()-1), colours[col]);
 
 
-	QPen penBlack(QColor::fromRgbF(0.,0.,0.));
+	QPen penLine(colour_fg);
 	QPen penGrad(*colours.rbegin());
-	penBlack.setWidthF(1.);
+	penLine.setWidthF(1.);
 	penGrad.setWidthF(1.);
 
 
@@ -216,7 +223,7 @@ void Toffoli::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*
 
 	// target bit
 	painter->setBrush(Qt::NoBrush);
-	painter->setPen(penBlack);
+	painter->setPen(penLine);
 
 	trafo_orig = painter->worldTransform();
 	painter->translate(0., m_target_bit_pos*g_raster_size);
@@ -250,7 +257,7 @@ void Toffoli::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*
 }
 
 
-t_mat Toffoli::GetOperator() const
+t_mat ToffoliGate::GetOperator() const
 {
 	return m::toffoli_nqbits<t_mat>(m_num_qbits,
 		m_control_bit_1_pos, m_control_bit_2_pos,

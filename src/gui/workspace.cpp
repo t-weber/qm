@@ -5,11 +5,12 @@
  * @license see 'LICENSE' file
  */
 
-#include "qm_gui.h"
-
 #include <QtGui/QMouseEvent>
-
 #include <cmath>
+
+#include "qm_gui.h"
+#include "helpers.h"
+
 
 // ----------------------------------------------------------------------------
 // graphics scene
@@ -17,9 +18,6 @@
 QmScene::QmScene(QWidget* parent)
 	: QGraphicsScene(parent), m_parent{parent}
 {
-	// test
-	//addItem(new CNot());
-	//addItem(new Toffoli());
 }
 
 
@@ -29,11 +27,25 @@ QmScene::~QmScene()
 
 
 /**
+ * insert a quantum gate into the scene
+ */
+void QmScene::AddGate(const t_gateptr& gate)
+{
+	m_gates.push_back(gate);
+	addItem(gate.get());
+}
+
+
+/**
  * draw background grid
  */
 void QmScene::drawBackground(QPainter* painter, const QRectF& rect)
 {
 	QGraphicsScene::drawBackground(painter, rect);
+
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+	QColor colour_line = lerp(colour_fg, colour_bg, 0.75);
 
 	QPointF topLeft = rect.topLeft();
 	QPointF bottomRight = rect.bottomRight();
@@ -48,7 +60,7 @@ void QmScene::drawBackground(QPainter* painter, const QRectF& rect)
 	t_real end_x = std::round(bottomRight.x() / g_raster_size) *
 		g_raster_size + 0.5*g_raster_size;
 
-	QPen pen(QColor::fromRgbF(0.5, 0.5, 0.5, 0.5));
+	QPen pen(colour_line);
 	pen.setWidthF(0.5);
 	//pen.setDashPattern(QVector<qreal>{{ 
 	//	1./4.*g_raster_size, 1./2*g_raster_size }});

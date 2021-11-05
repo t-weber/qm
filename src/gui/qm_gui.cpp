@@ -85,6 +85,8 @@ QmWnd::QmWnd(QWidget* pParent)
 	setStatusBar(statusBar);
 
 
+	// ------------------------------------------------------------------------
+	// file menu
 	// menu actions
 	QIcon iconNew = QIcon::fromTheme("document-new");
 	QAction *actionNew = new QAction{iconNew, "New", this};
@@ -138,7 +140,6 @@ QmWnd::QmWnd(QWidget* pParent)
 	});
 
 
-	// file menu
 	QMenu *menuFile = new QMenu{"File", this};
 	menuFile->addAction(actionNew);
 	menuFile->addSeparator();
@@ -151,8 +152,10 @@ QmWnd::QmWnd(QWidget* pParent)
 	menuFile->addAction(actionExportSvg);
 	menuFile->addSeparator();
 	menuFile->addAction(actionExit);
+	// ------------------------------------------------------------------------
 
 
+	// ------------------------------------------------------------------------
 	// settings menu
 	auto set_gui_theme = [this](const QString& theme) -> void
 	{
@@ -211,6 +214,29 @@ QmWnd::QmWnd(QWidget* pParent)
 
 	menuSettings->addMenu(menuGuiTheme);
 	menuSettings->addAction(actionGuiNative);
+	// ------------------------------------------------------------------------
+
+
+	// ------------------------------------------------------------------------
+	// components menu
+	QAction *actionAddCnot = new QAction{"Add CNOT Gate", this};
+	connect(actionAddCnot, &QAction::triggered, [this]()
+	{
+		auto gate = std::make_shared<CNotGate>();
+		m_scene->AddGate(gate);
+	});
+
+	QAction *actionAddToffoli = new QAction{"Add Toffoli Gate", this};
+	connect(actionAddToffoli, &QAction::triggered, [this]()
+	{
+		auto gate = std::make_shared<ToffoliGate>();
+		m_scene->AddGate(gate);
+	});
+
+	QMenu *menuComponents = new QMenu{"Components", this};
+	menuComponents->addAction(actionAddCnot);
+	menuComponents->addAction(actionAddToffoli);
+	// ------------------------------------------------------------------------
 
 
 	// keyboard shortcuts
@@ -230,6 +256,7 @@ QmWnd::QmWnd(QWidget* pParent)
 	QMenuBar *menuBar = new QMenuBar{this};
 	menuBar->addMenu(menuFile);
 	menuBar->addMenu(menuSettings);
+	menuBar->addMenu(menuComponents);
 	setMenuBar(menuBar);
 
 

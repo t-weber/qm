@@ -11,6 +11,8 @@
 #include <QtWidgets/QGraphicsItem>
 #include <QtGui/QPainter>
 
+#include <memory>
+
 #include "types.h"
 #include "settings.h"
 
@@ -27,15 +29,25 @@ public:
 };
 
 
+class QuantumGateItem : public QuantumGate, public QGraphicsItem
+{
+public:
+	QuantumGateItem() = default;
+	virtual ~QuantumGateItem() = default;
+};
+
+using t_gateptr = std::shared_ptr<QuantumGateItem>;
+
+
 /**
  * Controlled NOT gate
  * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
  */
-class CNot : public QGraphicsItem, public QuantumGate
+class CNotGate : public QuantumGateItem
 {
 public:
-	CNot();
-	virtual ~CNot();
+	CNotGate();
+	virtual ~CNotGate();
 
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
@@ -58,11 +70,11 @@ private:
  * Toffoli gate
  * @see https://en.wikipedia.org/wiki/Toffoli_gate
  */
-class Toffoli : public QGraphicsItem, public QuantumGate
+class ToffoliGate : public QuantumGateItem
 {
 public:
-	Toffoli();
-	virtual ~Toffoli();
+	ToffoliGate();
+	virtual ~ToffoliGate();
 
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;

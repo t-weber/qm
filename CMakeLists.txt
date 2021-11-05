@@ -37,7 +37,7 @@ add_executable(qm
 	src/gui/workspace.cpp src/gui/workspace.h
 	src/gui/components.cpp src/gui/components.h
 	src/gui/settings.cpp src/gui/settings.h
-	src/gui/recent.h src/gui/types.h
+	src/gui/recent.h src/gui/types.h src/gui/helpers.h
 	src/lib/math_algos.h src/lib/math_conts.h src/lib/math_concepts.h
 	src/lib/qm_algos.h
 )

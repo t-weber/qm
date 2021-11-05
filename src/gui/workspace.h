@@ -32,6 +32,8 @@ public:
 	QmScene(QmScene&) = delete;
 	const QmScene& operator=(const QmScene&) const = delete;
 
+	void AddGate(const t_gateptr& gate);
+
 
 protected:
 	virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
@@ -42,7 +44,8 @@ protected:
 
 
 private:
-	QWidget *m_parent = nullptr;
+	QWidget *m_parent {nullptr};
+	std::vector<t_gateptr> m_gates{};
 };
 
 
