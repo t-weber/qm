@@ -24,11 +24,16 @@
  */
 struct ComponentConfig
 {
-	// key and value
+	// key
 	std::string key{};
+
+	// value
 	std::variant<
 		t_int, t_uint, std::size_t,
 		t_real, std::string> value{};
+
+	// description of the entry
+	std::string description{};
 
 	// optional minimum and maximum values
 	std::optional<std::variant<

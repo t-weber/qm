@@ -10,6 +10,9 @@
 
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDockWidget>
+#include <QtWidgets/QGridLayout>
+
+#include <memory>
 
 #include "types.h"
 #include "components.h"
@@ -26,11 +29,17 @@ public:
 	virtual ~ComponentProperties();
 
 
+protected:
+	void Clear();
+
+
 public slots:
 	void SelectedItem(const QuantumGate* item);
 
 
 private:
+	std::shared_ptr<QGridLayout> m_layout =
+		std::make_shared<QGridLayout>(this);
 };
 
 
