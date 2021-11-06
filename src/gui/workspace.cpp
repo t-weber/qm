@@ -33,10 +33,20 @@ QmScene::~QmScene()
 /**
  * insert a quantum gate into the scene
  */
-void QmScene::AddGate(const t_gateptr& gate)
+void QmScene::AddGate(QuantumGateItem *gate)
 {
 	m_gates.push_back(gate);
-	addItem(gate.get());
+	addItem(gate);
+}
+
+
+/**
+ * clear all components in the scene
+ */
+void QmScene::Clear()
+{
+	clear();
+	m_gates.clear();
 }
 
 
@@ -125,6 +135,26 @@ void QmScene::mouseMoveEvent(QGraphicsSceneMouseEvent *evt)
 QmView::QmView(QmScene *scene, QWidget *parent)
 	: QGraphicsView(scene, parent), m_scene{scene}
 {
+	// context menu
+	m_context = std::make_shared<QMenu>(this);
+	QIcon iconDelete = QIcon::fromTheme("edit-delete");
+	QAction *actionDelete = new QAction(iconDelete, "Delete Component", m_context.get());
+	m_context->addAction(actionDelete);
+
+
+	// connections
+	connect(actionDelete, &QAction::triggered, [this]()
+	{
+		if(m_curItem)
+		{
+			delete m_curItem;
+			m_curItem = nullptr;
+			emit SignalSelectedItem(nullptr);
+		}
+	});
+
+
+	// settings
 	setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
@@ -136,6 +166,16 @@ QmView::QmView(QmScene *scene, QWidget *parent)
 
 QmView::~QmView()
 {
+}
+
+
+/**
+ * clear currently selected component
+ */
+void QmView::Clear()
+{
+	m_curItem = nullptr;
+	emit SignalSelectedItem(nullptr);
 }
 
 
@@ -178,6 +218,8 @@ void QmView::resizeEvent(QResizeEvent* evt)
 
 void QmView::mousePressEvent(QMouseEvent* evt)
 {
+	bool mouse_fully_handled = false;
+
 	QPoint posVP = evt->pos();
 	//QPointF posScene = mapToScene(posVP);
 
@@ -190,9 +232,24 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 		m_curItem = nullptr;
 
 	if(m_curItem != oldItem)
+	{
 		emit SignalSelectedItem(m_curItem);
+		viewport()->update();
+	}
 
-	QGraphicsView::mousePressEvent(evt);
+	// show context menu on right click on a component
+	if(m_curItem && (evt->buttons()&Qt::RightButton))
+	{
+		QPoint posGlobal = mapToGlobal(posVP);
+		posGlobal.rx() += 8;
+		posGlobal.ry() += 8;
+		m_context->popup(posGlobal);
+
+		mouse_fully_handled = true;
+	}
+
+	if(!mouse_fully_handled)
+		QGraphicsView::mousePressEvent(evt);
 }
 
 

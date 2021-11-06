@@ -217,6 +217,8 @@ QmWnd::QmWnd(QWidget* pParent)
 		set_gui_native(checked);
 	});
 
+	menuSettings->addAction(m_properties->toggleViewAction());
+	menuSettings->addSeparator();
 	menuSettings->addMenu(menuGuiTheme);
 	menuSettings->addAction(actionGuiNative);
 	// ------------------------------------------------------------------------
@@ -227,14 +229,14 @@ QmWnd::QmWnd(QWidget* pParent)
 	QAction *actionAddCnot = new QAction{"Add CNOT Gate", this};
 	connect(actionAddCnot, &QAction::triggered, [this]()
 	{
-		auto gate = std::make_shared<CNotGate>();
+		QuantumGateItem *gate = new CNotGate();
 		m_scene->AddGate(gate);
 	});
 
 	QAction *actionAddToffoli = new QAction{"Add Toffoli Gate", this};
 	connect(actionAddToffoli, &QAction::triggered, [this]()
 	{
-		auto gate = std::make_shared<ToffoliGate>();
+		QuantumGateItem *gate = new ToffoliGate();
 		m_scene->AddGate(gate);
 	});
 
@@ -293,12 +295,17 @@ void QmWnd::SetStatusMessage(const QString& msg)
 
 void QmWnd::FileNew()
 {
+	m_view->Clear();
+	m_scene->Clear();
+
 	m_recent.SetOpenFile("");
 }
 
 
 void QmWnd::FileLoad()
 {
+	FileNew();
+
 	auto filedlg = std::make_shared<QFileDialog>(
 		this, "Load Data", m_recent.GetRecentDir(),
 		"XML Files (*.xml);;All Files (* *.*)");

@@ -11,6 +11,7 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QMenu>
 
 #include <memory>
 #include <vector>
@@ -30,7 +31,8 @@ public:
 	QmScene(QmScene&) = delete;
 	const QmScene& operator=(const QmScene&) const = delete;
 
-	void AddGate(const t_gateptr& gate);
+	void AddGate(QuantumGateItem *gate);
+	void Clear();
 
 
 protected:
@@ -43,7 +45,7 @@ protected:
 
 private:
 	QWidget *m_parent {nullptr};
-	std::vector<t_gateptr> m_gates{};
+	std::vector<QuantumGateItem*> m_gates{};
 };
 
 
@@ -56,6 +58,8 @@ public:
 
 	QmView(QmView&) = delete;
 	const QmView& operator=(const QmView&) const = delete;
+
+	void Clear();
 
 
 protected:
@@ -71,6 +75,8 @@ protected:
 private:
 	QmScene *m_scene = nullptr;
 	QuantumGateItem *m_curItem = nullptr;
+
+	std::shared_ptr<QMenu> m_context;
 
 
 public slots:
