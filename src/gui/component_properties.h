@@ -33,13 +33,19 @@ protected:
 	void Clear();
 
 
-public slots:
-	void SelectedItem(const QuantumGate* item);
-
-
 private:
 	std::shared_ptr<QGridLayout> m_layout =
 		std::make_shared<QGridLayout>(this);
+
+
+public slots:
+	// a component has been selected
+	void SelectedItem(const QuantumGate* item);
+
+
+signals:
+	// the current component's configuration has been changed
+	void SignalConfigChanged(const ComponentConfigs& cfg);
 };
 
 

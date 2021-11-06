@@ -70,7 +70,12 @@ protected:
 
 private:
 	QmScene *m_scene = nullptr;
-	const QuantumGateItem *m_curItem = nullptr;
+	QuantumGateItem *m_curItem = nullptr;
+
+
+public slots:
+	// change the configuration of the current component
+	void SetCurItemConfig(const ComponentConfigs& cfg);
 
 
 signals:

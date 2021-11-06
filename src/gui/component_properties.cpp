@@ -48,7 +48,7 @@ void ComponentProperties::Clear()
 
 
 /**
- * a component was selected -> show its properties
+ * a component has been selected -> show its properties
  */
 void ComponentProperties::SelectedItem(const QuantumGate* item)
 {
@@ -73,6 +73,21 @@ void ComponentProperties::SelectedItem(const QuantumGate* item)
 			spinVal->setMinimum(std::get<std::size_t>(*cfg.min_value));
 		if(cfg.max_value)
 			spinVal->setMaximum(std::get<std::size_t>(*cfg.max_value));
+
+		connect(spinVal, static_cast<void (QSpinBox::*)(int)>
+			(&QSpinBox::valueChanged), [this, cfg](int val) -> void
+		{
+			ComponentConfigs configs;
+
+			configs.configs = std::vector<ComponentConfig>
+			{{
+				ComponentConfig{.key = cfg.key, .value = std::size_t(val)},
+			}};
+
+			// send the changes back to the component
+			emit this->SignalConfigChanged(configs);
+		});
+
 		m_layout->addWidget(spinVal, layout_y++, 0, 1, 1);
 	}
 

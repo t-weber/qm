@@ -272,8 +272,11 @@ QmWnd::QmWnd(QWidget* pParent)
 			SetStatusMessage(QString("x=%1, y=%2.").arg(x, 5).arg(y, 5));
 		});
 
+	// signals to read and write component properties
 	connect(m_view.get(), &QmView::SignalSelectedItem,
 		m_properties->GetWidget(), &ComponentProperties::SelectedItem);
+	connect(m_properties->GetWidget(), &ComponentProperties::SignalConfigChanged,
+		m_view.get(), &QmView::SetCurItemConfig);
 
 
 	m_recent.CreateRecentFileMenu(

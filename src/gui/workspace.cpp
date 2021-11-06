@@ -139,6 +139,31 @@ QmView::~QmView()
 }
 
 
+/**
+ * change the configuration of the current component
+ */
+void QmView::SetCurItemConfig(const ComponentConfigs& cfg)
+{
+	if(!m_curItem)
+		return;
+
+	m_curItem->SetConfig(cfg);
+
+	// redraw the component
+	//m_curItem->update();
+	viewport()->update();
+
+	// refresh properties widget in case the ranges have changed
+	if(cfg.configs.size() && cfg.configs.begin()->key == "num_qbits")
+	{
+		QMetaObject::invokeMethod(this, [this]() -> void
+		{
+			emit this->SignalSelectedItem(this->m_curItem);
+		}, Qt::QueuedConnection);
+	}
+}
+
+
 void QmView::resizeEvent(QResizeEvent* evt)
 {
 	QPointF pt1{mapToScene(QPoint{0,0})};
@@ -157,11 +182,10 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 	//QPointF posScene = mapToScene(posVP);
 
 	QList<QGraphicsItem*> items = this->items(posVP);
-
 	const QGraphicsItem *oldItem = m_curItem;
 
 	if(items.size())
-		m_curItem = dynamic_cast<const QuantumGateItem*>(*items.begin());
+		m_curItem = dynamic_cast<QuantumGateItem*>(*items.begin());
 	else
 		m_curItem = nullptr;
 
