@@ -12,18 +12,22 @@
 #include <QtWidgets/QDockWidget>
 
 #include "types.h"
-
+#include "components.h"
 
 
 /**
  * widget for component properties
  */
 class ComponentProperties : public QWidget
-{
+{ Q_OBJECT
 public:
 	ComponentProperties(QWidget *parent=nullptr);
 
 	virtual ~ComponentProperties();
+
+
+public slots:
+	void SelectedItem(const QuantumGate* item);
 
 
 private:

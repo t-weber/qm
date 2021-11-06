@@ -272,6 +272,9 @@ QmWnd::QmWnd(QWidget* pParent)
 			SetStatusMessage(QString("x=%1, y=%2.").arg(x, 5).arg(y, 5));
 		});
 
+	connect(m_view.get(), &QmView::SignalSelectedItem,
+		m_properties->GetWidget(), &ComponentProperties::SelectedItem);
+
 
 	m_recent.CreateRecentFileMenu(
 		[this](const QString& filename)->bool { return this->LoadFile(filename); });

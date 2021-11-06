@@ -20,7 +20,7 @@
 
 
 /**
- * struct for the exchange of component configuration options
+ * component configuration options
  */
 struct ComponentConfig
 {
@@ -41,6 +41,15 @@ struct ComponentConfig
 
 
 /**
+ * struct for the exchange of component configuration options
+ */
+struct ComponentConfigs
+{
+	std::vector<ComponentConfig> configs{};
+};
+
+
+/**
  * basic interface for a quantum gate
  */
 class QuantumGate
@@ -50,8 +59,8 @@ public:
 
 	virtual t_mat GetOperator() const = 0;
 
-	virtual std::vector<ComponentConfig> GetConfig() const = 0;
-	virtual void SetConfig(const std::vector<ComponentConfig>&) = 0;
+	virtual ComponentConfigs GetConfig() const = 0;
+	virtual void SetConfig(const ComponentConfigs&) = 0;
 };
 
 
@@ -90,8 +99,8 @@ public:
 
 	virtual t_mat GetOperator() const override;
 
-	virtual std::vector<ComponentConfig> GetConfig() const override;
-	virtual void SetConfig(const std::vector<ComponentConfig>&) override;
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
 
 
 private:
@@ -132,8 +141,8 @@ public:
 
 	virtual t_mat GetOperator() const override;
 
-	virtual std::vector<ComponentConfig> GetConfig() const override;
-	virtual void SetConfig(const std::vector<ComponentConfig>&) override;
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
 
 
 private:

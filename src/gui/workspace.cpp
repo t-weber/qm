@@ -6,6 +6,10 @@
  */
 
 #include <QtGui/QMouseEvent>
+#include <QtGui/QPaintEvent>
+#include <QtGui/QResizeEvent>
+#include <QtWidgets/QGraphicsSceneMouseEvent>
+
 #include <cmath>
 
 #include "qm_gui.h"
@@ -62,8 +66,6 @@ void QmScene::drawBackground(QPainter* painter, const QRectF& rect)
 
 	QPen pen(colour_line);
 	pen.setWidthF(0.5);
-	//pen.setDashPattern(QVector<qreal>{{ 
-	//	1./4.*g_raster_size, 1./2*g_raster_size }});
 	painter->setPen(pen);
 
 	// horizontal guide lines
@@ -128,6 +130,7 @@ QmView::QmView(QmScene *scene, QWidget *parent)
 
 	setInteractive(true);
 	setMouseTracking(true);
+	setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
 }
 
 
@@ -136,7 +139,7 @@ QmView::~QmView()
 }
 
 
-void QmView::resizeEvent(QResizeEvent *evt)
+void QmView::resizeEvent(QResizeEvent* evt)
 {
 	QPointF pt1{mapToScene(QPoint{0,0})};
 	QPointF pt2{mapToScene(QPoint{evt->size().width(), evt->size().height()})};
@@ -148,36 +151,72 @@ void QmView::resizeEvent(QResizeEvent *evt)
 }
 
 
-void QmView::mousePressEvent(QMouseEvent *evt)
+void QmView::mousePressEvent(QMouseEvent* evt)
 {
 	QPoint posVP = evt->pos();
 	//QPointF posScene = mapToScene(posVP);
 
 	QList<QGraphicsItem*> items = this->items(posVP);
 
-	// TODO
+	const QGraphicsItem *oldItem = m_curItem;
+
+	if(items.size())
+		m_curItem = dynamic_cast<const QuantumGateItem*>(*items.begin());
+	else
+		m_curItem = nullptr;
+
+	if(m_curItem != oldItem)
+		emit SignalSelectedItem(m_curItem);
 
 	QGraphicsView::mousePressEvent(evt);
 }
 
 
-void QmView::mouseReleaseEvent(QMouseEvent *evt)
+void QmView::mouseReleaseEvent(QMouseEvent* evt)
 {
-	// TODO
-
 	QGraphicsView::mouseReleaseEvent(evt);
 }
 
 
-void QmView::mouseMoveEvent(QMouseEvent *evt)
+void QmView::mouseMoveEvent(QMouseEvent* evt)
 {
-	QGraphicsView::mouseMoveEvent(evt);
-
-	// TODO
-
 	QPoint posVP = evt->pos();
 	QPointF posScene = mapToScene(posVP);
 
 	emit SignalMouseCoordinates(posScene.x(), posScene.y());
+
+	QGraphicsView::mouseMoveEvent(evt);
 }
+
+
+void QmView::paintEvent(QPaintEvent* evt)
+{
+	QGraphicsView::paintEvent(evt);
+
+	// draw a selection rectangle around the current item
+	if(m_curItem)
+	{
+		// local to scene coordinate trafo
+		QTransform trafo = m_curItem->sceneTransform();
+		QPolygonF polyScene = trafo.map(m_curItem->boundingRect());
+		// scene to viewport coordinate trafo
+		QPolygon poly = mapFromScene(polyScene);
+
+		// line colour
+		const QColor& colour_fg = get_foreground_colour();
+		const QColor& colour_bg = get_background_colour();
+		QColor colour_line = lerp(colour_fg, colour_bg, 0.5);
+
+		// selection rectangle pen
+		QPen pen(colour_line);
+		pen.setWidthF(1.);
+		pen.setDashPattern(QVector<qreal>{{ 4, 2 }});
+
+		// paint the selection rectangle
+		QPainter painter(viewport());
+		painter.setPen(pen);
+		painter.drawPolygon(poly);
+	}
+}
+
 // ----------------------------------------------------------------------------

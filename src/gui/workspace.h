@@ -11,7 +11,6 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsItem>
-#include <QtWidgets/QGraphicsSceneMouseEvent>
 
 #include <memory>
 #include <vector>
@@ -60,20 +59,23 @@ public:
 
 
 protected:
-	virtual void mousePressEvent(QMouseEvent *evt) override;
-	virtual void mouseReleaseEvent(QMouseEvent *evt) override;
-	virtual void mouseMoveEvent(QMouseEvent *evt) override;
+	virtual void mousePressEvent(QMouseEvent* evt) override;
+	virtual void mouseReleaseEvent(QMouseEvent* evt) override;
+	virtual void mouseMoveEvent(QMouseEvent* evt) override;
 
-	virtual void resizeEvent(QResizeEvent *evt) override;
+	virtual void resizeEvent(QResizeEvent* evt) override;
+
+	virtual void paintEvent(QPaintEvent* evt) override;
 
 
 private:
 	QmScene *m_scene = nullptr;
-	bool m_dragging = false;
+	const QuantumGateItem *m_curItem = nullptr;
 
 
 signals:
 	void SignalMouseCoordinates(double x, double y);
+	void SignalSelectedItem(const QuantumGate *item);
 };
 
 

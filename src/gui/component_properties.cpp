@@ -24,3 +24,8 @@ ComponentProperties::ComponentProperties(QWidget* parent)
 ComponentProperties::~ComponentProperties()
 {
 }
+
+
+void ComponentProperties::SelectedItem(const QuantumGate* item)
+{
+}

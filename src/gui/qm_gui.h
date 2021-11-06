@@ -55,7 +55,6 @@ private:
 	std::shared_ptr<QmScene> m_scene{};
 	std::shared_ptr<QmView> m_view{};
 	std::shared_ptr<QLabel> m_statusLabel{};
-
 	std::shared_ptr<DockWidgetWrapper<ComponentProperties>> m_properties{};
 };
 

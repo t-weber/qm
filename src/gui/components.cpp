@@ -124,9 +124,11 @@ t_mat CNotGate::GetOperator() const
 }
 
 
-std::vector<ComponentConfig> CNotGate::GetConfig() const
+ComponentConfigs CNotGate::GetConfig() const
 {
-	return std::vector<ComponentConfig>
+	ComponentConfigs cfgs;
+
+	cfgs.configs = std::vector<ComponentConfig>
 	{{
 		ComponentConfig{.key = "num_qbits",
 			.value = GetNumQBits(),
@@ -140,12 +142,14 @@ std::vector<ComponentConfig> CNotGate::GetConfig() const
 			.min_value = 0,
 			.max_value = GetNumQBits() - 1},
 	}};
+
+	return cfgs;
 }
 
 
-void CNotGate::SetConfig(const std::vector<ComponentConfig>& config)
+void CNotGate::SetConfig(const ComponentConfigs& configs)
 {
-	for(const ComponentConfig& cfg : config)
+	for(const ComponentConfig& cfg : configs.configs)
 	{
 		if(cfg.key == "num_qbits")
 		{
@@ -311,9 +315,11 @@ t_mat ToffoliGate::GetOperator() const
 }
 
 
-std::vector<ComponentConfig> ToffoliGate::GetConfig() const
+ComponentConfigs ToffoliGate::GetConfig() const
 {
-	return std::vector<ComponentConfig>
+	ComponentConfigs cfgs;
+
+	cfgs.configs = std::vector<ComponentConfig>
 	{{
 		ComponentConfig{.key = "num_qbits",
 			.value = GetNumQBits(),
@@ -331,12 +337,14 @@ std::vector<ComponentConfig> ToffoliGate::GetConfig() const
 			.min_value = 0,
 			.max_value = GetNumQBits() - 1},
 	}};
+
+	return cfgs;
 }
 
 
-void ToffoliGate::SetConfig(const std::vector<ComponentConfig>& config)
+void ToffoliGate::SetConfig(const ComponentConfigs& configs)
 {
-	for(const ComponentConfig& cfg : config)
+	for(const ComponentConfig& cfg : configs.configs)
 	{
 		if(cfg.key == "num_qbits")
 		{
