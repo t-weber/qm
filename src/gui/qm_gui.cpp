@@ -315,7 +315,11 @@ void QmWnd::SetupGUI()
 
 
 	m_recent.CreateRecentFileMenu(
-		[this](const QString& filename)->bool { return this->LoadFile(filename); });
+		[this](const QString& filename)->bool
+	{
+		this->FileNew();
+		return this->LoadFile(filename);
+	});
 	SetStatusMessage("Ready.");
 }
 
@@ -446,25 +450,25 @@ bool QmWnd::SaveFile(const QString& filename) const
 			// test for all possible types of the variant
 			if(std::holds_alternative<t_real>(config.value))
 			{
-				std::string key = "gate." + config.key; 
+				std::string key = "gate." + config.key;
 				propGate.put<t_real>(
 					key, std::get<t_real>(config.value));
 			}
 			else if(std::holds_alternative<t_int>(config.value))
 			{
-				std::string key = "gate." + config.key; 
+				std::string key = "gate." + config.key;
 				propGate.put<t_int>(
 					key, std::get<t_int>(config.value));
 			}
 			else if(std::holds_alternative<t_uint>(config.value))
 			{
-				std::string key = "gate." + config.key; 
+				std::string key = "gate." + config.key;
 				propGate.put<t_uint>(
 					key, std::get<t_uint>(config.value));
 			}
 			else if(std::holds_alternative<std::string>(config.value))
 			{
-				std::string key = "gate." + config.key; 
+				std::string key = "gate." + config.key;
 				propGate.put<std::string>(
 					key, std::get<std::string>(config.value));
 			}
