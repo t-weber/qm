@@ -127,6 +127,7 @@ t_mat CNotGate::GetOperator() const
 ComponentConfigs CNotGate::GetConfig() const
 {
 	ComponentConfigs cfgs;
+	cfgs.name = GetName();
 
 	cfgs.configs = std::vector<ComponentConfig>
 	{{
@@ -196,7 +197,7 @@ QRectF ToffoliGate::boundingRect() const
 	t_real w = std::max(m_control_bit_radius, m_target_bit_radius);
 
 	// centre positions
-	t_real pos[] = 
+	t_real pos[] =
 	{
 		m_control_bit_1_pos * g_raster_size,
 		m_control_bit_2_pos * g_raster_size,
@@ -321,6 +322,7 @@ t_mat ToffoliGate::GetOperator() const
 ComponentConfigs ToffoliGate::GetConfig() const
 {
 	ComponentConfigs cfgs;
+	cfgs.name = GetName();
 
 	cfgs.configs = std::vector<ComponentConfig>
 	{{

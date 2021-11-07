@@ -60,6 +60,12 @@ void ComponentProperties::SelectedItem(const QuantumGate* item)
 	// component configuration
 	const ComponentConfigs& cfgs = item->GetConfig();
 	int layout_y = 0;
+	QLabel *labelName = new QLabel(cfgs.name.c_str(), this);
+	QFont fontName = labelName->font();
+	fontName.setBold(true);
+	labelName->setFont(fontName);
+	m_layout->addWidget(labelName, layout_y++, 0, 1, 1);
+
 	for(const ComponentConfig& cfg : cfgs.configs)
 	{
 		// description label

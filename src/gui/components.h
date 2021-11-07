@@ -50,6 +50,7 @@ struct ComponentConfig
  */
 struct ComponentConfigs
 {
+	std::string name{};
 	std::vector<ComponentConfig> configs{};
 };
 
@@ -62,6 +63,8 @@ class QuantumGate
 public:
 	virtual ~QuantumGate() = default;
 
+	virtual std::string GetIdent() const = 0;
+	virtual std::string GetName() const = 0;
 	virtual t_mat GetOperator() const = 0;
 
 	virtual ComponentConfigs GetConfig() const = 0;
@@ -102,6 +105,8 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
+	virtual std::string GetIdent() const override { return "cnot"; }
+	virtual std::string GetName() const override { return "CNOT Gate"; }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -144,6 +149,8 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
+	virtual std::string GetIdent() const override { return "toffoli"; }
+	virtual std::string GetName() const override { return "Toffoli Gate"; }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;

@@ -31,8 +31,9 @@ public:
 	QmScene(QmScene&) = delete;
 	const QmScene& operator=(const QmScene&) const = delete;
 
-	void AddGate(QuantumGateItem *gate);
 	void Clear();
+	void AddGate(QuantumGateItem *gate);
+	const std::vector<QuantumGateItem*>& GetGates() const { return m_gates; }
 
 
 protected:

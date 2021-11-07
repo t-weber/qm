@@ -29,7 +29,6 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-namespace ptree = boost::property_tree;
 
 
 #define GUI_THEME_UNSET   "Unset"
@@ -418,13 +417,68 @@ void QmWnd::FileSaveAs()
 
 bool QmWnd::SaveFile(const QString& filename) const
 {
+	namespace ptree = boost::property_tree;
+
 	std::ofstream ofstr{filename.toStdString()};
 	if(!ofstr)
 		return false;
 
 	ptree::ptree prop{};
 
-	// TODO
+	// save gates
+	ptree::ptree propGates{};
+	const std::vector<QuantumGateItem*>& gates = m_scene->GetGates();
+	for(const QuantumGateItem *gate : gates)
+	{
+		ptree::ptree propGate{};
+		propGate.put<std::string>("gate.<xmlattr>.ident", gate->GetIdent());
+
+		QPointF pos = gate->scenePos();
+		t_int pos_x = t_int(std::round(pos.x()/g_raster_size));
+		t_int pos_y = t_int(std::round(pos.y()/g_raster_size));
+		propGate.put<t_int>("gate.pos_x", pos_x);
+		propGate.put<t_int>("gate.pos_y", pos_y);
+
+		// get configuration settings
+		const ComponentConfigs& configs = gate->GetConfig();
+		for(const ComponentConfig& config : configs.configs)
+		{
+			// test for all possible types of the variant
+			if(std::holds_alternative<std::size_t>(config.value))
+			{
+				std::string key = "gate." + config.key; 
+				propGate.put<std::size_t>(
+					key, std::get<std::size_t>(config.value));
+			}
+			else if(std::holds_alternative<t_real>(config.value))
+			{
+				std::string key = "gate." + config.key; 
+				propGate.put<t_real>(
+					key, std::get<t_real>(config.value));
+			}
+			else if(std::holds_alternative<t_int>(config.value))
+			{
+				std::string key = "gate." + config.key; 
+				propGate.put<t_int>(
+					key, std::get<t_int>(config.value));
+			}
+			else if(std::holds_alternative<t_uint>(config.value))
+			{
+				std::string key = "gate." + config.key; 
+				propGate.put<t_uint>(
+					key, std::get<t_uint>(config.value));
+			}
+			else if(std::holds_alternative<std::string>(config.value))
+			{
+				std::string key = "gate." + config.key; 
+				propGate.put<std::string>(
+					key, std::get<std::string>(config.value));
+			}
+		}
+
+		propGates.push_back(*propGate.begin());
+	}
+	prop.put_child("qm.gates", propGates);
 
 	ptree::write_xml(ofstr, prop, ptree::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
 
@@ -434,6 +488,8 @@ bool QmWnd::SaveFile(const QString& filename) const
 
 bool QmWnd::LoadFile(const QString& filename)
 {
+	namespace ptree = boost::property_tree;
+
 	std::ifstream ifstr{filename.toStdString()};
 	if(!ifstr)
 		return false;
@@ -441,7 +497,37 @@ bool QmWnd::LoadFile(const QString& filename)
 	ptree::ptree prop{};
 	ptree::read_xml(ifstr, prop);
 
-	// TODO
+	// load gates
+	if(auto propGates = prop.get_child_optional("qm.gates"); propGates)
+	{
+		for(const auto& [tagGate, propGate] : *propGates)
+		{
+			// ignore unknown tags
+			if(tagGate != "gate")
+				continue;
+
+			std::string id = propGate.get<std::string>("<xmlattr>.ident", "");
+
+			QuantumGateItem *gate = nullptr;
+			if(id == "cnot")
+				gate = new CNotGate();
+			else if(id == "toffoli")
+				gate = new ToffoliGate();
+
+			// TODO: read qubit config
+
+			if(gate)
+			{
+				t_int pos_x = propGate.get<t_int>("pos_x", 0);
+				t_int pos_y = propGate.get<t_int>("pos_y", 0);
+
+				QPointF posScene(pos_x*g_raster_size, pos_y*g_raster_size);
+				gate->setPos(posScene);
+
+				m_scene->AddGate(gate);
+			}
+		}
+	}
 
 	return true;
 }

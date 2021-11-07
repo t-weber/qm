@@ -6,7 +6,6 @@
  */
 
 #include "qm_gui.h"
-#include "resources.h"
 
 #include <QtCore/QLocale>
 #include <QtWidgets/QApplication>
