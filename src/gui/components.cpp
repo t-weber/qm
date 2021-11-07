@@ -134,17 +134,17 @@ ComponentConfigs CNotGate::GetConfig() const
 		ComponentConfig{.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = std::size_t(2)},
+			.min_value = t_uint(2)},
 		ComponentConfig{.key = "control_bit_pos",
 			.value = GetControlBitPos(),
 			.description = "Control qubit position",
-			.min_value = std::size_t(0),
-			.max_value = std::size_t(GetNumQBits() - 1)},
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)},
 		ComponentConfig{.key = "target_bit_pos",
 			.value = GetTargetBitPos(),
 			.description = "Target qubit position",
-			.min_value = std::size_t(0),
-			.max_value = std::size_t(GetNumQBits() - 1)},
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)},
 	}};
 
 	return cfgs;
@@ -157,17 +157,17 @@ void CNotGate::SetConfig(const ComponentConfigs& configs)
 	{
 		if(cfg.key == "num_qbits")
 		{
-			std::size_t bits = std::get<std::size_t>(cfg.value);
+			t_uint bits = std::get<t_uint>(cfg.value);
 			SetNumQBits(bits);
 		}
 		else if(cfg.key == "control_bit_pos")
 		{
-			std::size_t bits = std::get<std::size_t>(cfg.value);
+			t_uint bits = std::get<t_uint>(cfg.value);
 			SetControlBitPos(bits);
 		}
 		else if(cfg.key == "target_bit_pos")
 		{
-			std::size_t bits = std::get<std::size_t>(cfg.value);
+			t_uint bits = std::get<t_uint>(cfg.value);
 			SetTargetBitPos(bits);
 		}
 	}
@@ -329,22 +329,22 @@ ComponentConfigs ToffoliGate::GetConfig() const
 		ComponentConfig{.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = std::size_t(3)},
+			.min_value = t_uint(3)},
 		ComponentConfig{.key = "control_bit_1_pos",
 			.value = GetControlBit1Pos(),
 			.description = "Control qubit 1 position",
-			.min_value = std::size_t(0),
-			.max_value = std::size_t(GetNumQBits() - 1)},
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)},
 		ComponentConfig{.key = "control_bit_2_pos",
 			.value = GetControlBit2Pos(),
 			.description = "Control qubit 2 position",
-			.min_value = std::size_t(0),
-			.max_value = std::size_t(GetNumQBits() - 1)},
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)},
 		ComponentConfig{.key = "target_bit_pos",
 			.value = GetTargetBitPos(),
 			.description = "Target qubit position",
-			.min_value = std::size_t(0),
-			.max_value = std::size_t(GetNumQBits() - 1)},
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)},
 	}};
 
 	return cfgs;
@@ -357,22 +357,22 @@ void ToffoliGate::SetConfig(const ComponentConfigs& configs)
 	{
 		if(cfg.key == "num_qbits")
 		{
-			std::size_t bits = std::get<std::size_t>(cfg.value);
+			t_uint bits = std::get<t_uint>(cfg.value);
 			SetNumQBits(bits);
 		}
 		else if(cfg.key == "control_bit_1_pos")
 		{
-			std::size_t bits = std::get<std::size_t>(cfg.value);
+			t_uint bits = std::get<t_uint>(cfg.value);
 			SetControlBit1Pos(bits);
 		}
 		else if(cfg.key == "control_bit_2_pos")
 		{
-			std::size_t bits = std::get<std::size_t>(cfg.value);
+			t_uint bits = std::get<t_uint>(cfg.value);
 			SetControlBit2Pos(bits);
 		}
 		else if(cfg.key == "target_bit_pos")
 		{
-			std::size_t bits = std::get<std::size_t>(cfg.value);
+			t_uint bits = std::get<t_uint>(cfg.value);
 			SetTargetBitPos(bits);
 		}
 	}

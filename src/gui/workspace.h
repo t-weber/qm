@@ -77,7 +77,7 @@ private:
 	QmScene *m_scene = nullptr;
 	QuantumGateItem *m_curItem = nullptr;
 
-	std::shared_ptr<QMenu> m_context;
+	std::shared_ptr<QMenu> m_context{};
 
 
 public slots:

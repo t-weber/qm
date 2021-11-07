@@ -444,13 +444,7 @@ bool QmWnd::SaveFile(const QString& filename) const
 		for(const ComponentConfig& config : configs.configs)
 		{
 			// test for all possible types of the variant
-			if(std::holds_alternative<std::size_t>(config.value))
-			{
-				std::string key = "gate." + config.key; 
-				propGate.put<std::size_t>(
-					key, std::get<std::size_t>(config.value));
-			}
-			else if(std::holds_alternative<t_real>(config.value))
+			if(std::holds_alternative<t_real>(config.value))
 			{
 				std::string key = "gate." + config.key; 
 				propGate.put<t_real>(
@@ -514,10 +508,25 @@ bool QmWnd::LoadFile(const QString& filename)
 			else if(id == "toffoli")
 				gate = new ToffoliGate();
 
-			// TODO: read qubit config
-
 			if(gate)
 			{
+				// get configuration settings
+				ComponentConfigs configs = gate->GetConfig();
+				for(ComponentConfig& config : configs.configs)
+				{
+					// test for all possible types of the variant
+					// and set the new value with the same type
+					if(std::holds_alternative<t_real>(config.value))
+						config.value = propGate.get<t_real>(config.key, 0);
+					else if(std::holds_alternative<t_int>(config.value))
+						config.value = propGate.get<t_int>(config.key, 0);
+					else if(std::holds_alternative<t_uint>(config.value))
+						config.value = propGate.get<t_uint>(config.key, 0);
+					else if(std::holds_alternative<std::string>(config.value))
+						config.value = propGate.get<std::string>(config.key, "");
+				}
+				gate->SetConfig(configs);
+
 				t_int pos_x = propGate.get<t_int>("pos_x", 0);
 				t_int pos_y = propGate.get<t_int>("pos_y", 0);
 

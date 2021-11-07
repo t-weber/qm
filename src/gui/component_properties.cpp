@@ -74,11 +74,11 @@ void ComponentProperties::SelectedItem(const QuantumGate* item)
 
 		// value
 		QSpinBox *spinVal = new QSpinBox(this);
-		spinVal->setValue(std::get<std::size_t>(cfg.value));
+		spinVal->setValue(std::get<t_uint>(cfg.value));
 		if(cfg.min_value)
-			spinVal->setMinimum(std::get<std::size_t>(*cfg.min_value));
+			spinVal->setMinimum(std::get<t_uint>(*cfg.min_value));
 		if(cfg.max_value)
-			spinVal->setMaximum(std::get<std::size_t>(*cfg.max_value));
+			spinVal->setMaximum(std::get<t_uint>(*cfg.max_value));
 
 		connect(spinVal, static_cast<void (QSpinBox::*)(int)>
 			(&QSpinBox::valueChanged), [this, cfg](int val) -> void
@@ -87,7 +87,7 @@ void ComponentProperties::SelectedItem(const QuantumGate* item)
 
 			configs.configs = std::vector<ComponentConfig>
 			{{
-				ComponentConfig{.key = cfg.key, .value = std::size_t(val)},
+				ComponentConfig{.key = cfg.key, .value = t_uint(val)},
 			}};
 
 			// send the changes back to the component
