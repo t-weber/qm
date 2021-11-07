@@ -11,6 +11,7 @@
 #include <QtGui/QMouseEvent>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QToolBar>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QFileDialog>
@@ -75,8 +76,14 @@ QmWnd::QmWnd(QWidget* pParent)
 	if(settings.contains("file_recent_dir"))
 		m_recent.SetRecentDir(settings.value("file_recent_dir").toString());
 	// ------------------------------------------------------------------------
+}
 
 
+/**
+ * create all gui elements
+ */
+void QmWnd::SetupGUI()
+{
 	setWindowTitle("QM");
 	setCentralWidget(m_view.get());
 
@@ -87,6 +94,7 @@ QmWnd::QmWnd(QWidget* pParent)
 
 	QStatusBar *statusBar = new QStatusBar{this};
 	statusBar->addPermanentWidget(m_statusLabel.get(), 1);
+	statusBar->setSizeGripEnabled(true);
 	setStatusBar(statusBar);
 
 
@@ -131,7 +139,7 @@ QmWnd::QmWnd(QWidget* pParent)
 				svggen.setFileName(files[0]);
 
 				QPainter paint(&svggen);
-				//m_scene->render(&paint);
+				m_scene->render(&paint);
 			}
 		}
 	});
@@ -157,6 +165,52 @@ QmWnd::QmWnd(QWidget* pParent)
 	menuFile->addAction(actionExportSvg);
 	menuFile->addSeparator();
 	menuFile->addAction(actionExit);
+	// ------------------------------------------------------------------------
+
+
+	// ------------------------------------------------------------------------
+	// components menu
+
+	QAction *actionAddCnot = new QAction{"Add CNOT Gate", this};
+	if(auto optIconFile = m_res.FindFile("cnot.svg"); optIconFile)
+		actionAddCnot->setIcon(QIcon{optIconFile->string().c_str()});
+	connect(actionAddCnot, &QAction::triggered, [this]()
+	{
+		QuantumGateItem *gate = new CNotGate();
+		m_scene->AddGate(gate);
+	});
+
+	QAction *actionAddToffoli = new QAction{"Add Toffoli Gate", this};
+	if(auto optIconFile = m_res.FindFile("toffoli.svg"); optIconFile)
+		actionAddToffoli->setIcon(QIcon{optIconFile->string().c_str()});
+	connect(actionAddToffoli, &QAction::triggered, [this]()
+	{
+		QuantumGateItem *gate = new ToffoliGate();
+		m_scene->AddGate(gate);
+	});
+
+	QMenu *menuComponents = new QMenu{"Components", this};
+	menuComponents->addAction(actionAddCnot);
+	menuComponents->addAction(actionAddToffoli);
+	// ------------------------------------------------------------------------
+
+
+	// ------------------------------------------------------------------------
+	// tool bar
+	QToolBar *toolbarFile = new QToolBar{"File", this};
+	toolbarFile->setObjectName("FileToolbar");
+	toolbarFile->addAction(actionNew);
+	toolbarFile->addAction(actionLoad);
+	toolbarFile->addAction(actionSave);
+	toolbarFile->addAction(actionSaveAs);
+
+	QToolBar *toolbarComponents = new QToolBar{"Components", this};
+	toolbarComponents->setObjectName("ComponentsToolbar");
+	toolbarComponents->addAction(actionAddCnot);
+	toolbarComponents->addAction(actionAddToffoli);
+
+	addToolBar(toolbarFile);
+	addToolBar(toolbarComponents);
 	// ------------------------------------------------------------------------
 
 
@@ -217,32 +271,12 @@ QmWnd::QmWnd(QWidget* pParent)
 		set_gui_native(checked);
 	});
 
+	menuSettings->addAction(toolbarFile->toggleViewAction());
+	menuSettings->addAction(toolbarComponents->toggleViewAction());
 	menuSettings->addAction(m_properties->toggleViewAction());
 	menuSettings->addSeparator();
 	menuSettings->addMenu(menuGuiTheme);
 	menuSettings->addAction(actionGuiNative);
-	// ------------------------------------------------------------------------
-
-
-	// ------------------------------------------------------------------------
-	// components menu
-	QAction *actionAddCnot = new QAction{"Add CNOT Gate", this};
-	connect(actionAddCnot, &QAction::triggered, [this]()
-	{
-		QuantumGateItem *gate = new CNotGate();
-		m_scene->AddGate(gate);
-	});
-
-	QAction *actionAddToffoli = new QAction{"Add Toffoli Gate", this};
-	connect(actionAddToffoli, &QAction::triggered, [this]()
-	{
-		QuantumGateItem *gate = new ToffoliGate();
-		m_scene->AddGate(gate);
-	});
-
-	QMenu *menuComponents = new QMenu{"Components", this};
-	menuComponents->addAction(actionAddCnot);
-	menuComponents->addAction(actionAddToffoli);
 	// ------------------------------------------------------------------------
 
 
@@ -262,8 +296,8 @@ QmWnd::QmWnd(QWidget* pParent)
 	// menu bar
 	QMenuBar *menuBar = new QMenuBar{this};
 	menuBar->addMenu(menuFile);
-	menuBar->addMenu(menuSettings);
 	menuBar->addMenu(menuComponents);
+	menuBar->addMenu(menuSettings);
 	setMenuBar(menuBar);
 
 

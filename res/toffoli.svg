@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="48mm"
+   height="48mm"
+   viewBox="0 0 48 48"
+   version="1.1"
+   id="toffoli_svg"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
+   sodipodi:docname="toffoli.svg">
+  <defs
+     id="defs" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.7"
+     inkscape:cx="139.72522"
+     inkscape:cy="90.065035"
+     inkscape:document-units="mm"
+     inkscape:current-layer="g99"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-width="961"
+     inkscape:window-height="636"
+     inkscape:window-x="401"
+     inkscape:window-y="105"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>tweber</dc:title>
+          </cc:Agent>
+        </dc:creator>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="toffoli_gate"
+     id="toffoli_gate"
+     sodipodi:insensitive="true">
+    <circle
+       cx="24.903749"
+       cy="37.662991"
+       r="8.9296875"
+       id="target_bit_circle"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <polyline
+       fill="none"
+       vector-effect="none"
+       points="-12.5,0 12.5,0 "
+       id="target_bit_line"
+       style="fill-rule:evenodd;stroke:#000000;stroke-width:3.32345;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       transform="matrix(0.6473371,0,0,0.55943856,24.933514,37.424867)" />
+    <g
+       fill="none"
+       stroke="#000000"
+       stroke-opacity="1"
+       stroke-width="1"
+       stroke-linecap="square"
+       stroke-linejoin="bevel"
+       transform="matrix(0.47624999,0,0,0.57840332,24.665625,5.3018667)"
+       id="connection"
+       style="fill-rule:evenodd;stroke:#000000;stroke-width:3.81063;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       inkscape:label="connection">
+      <polyline
+         fill="none"
+         vector-effect="none"
+         points="0,0 0,70 "
+         id="connection_line"
+         style="stroke:#000000;stroke-width:3.81063;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    </g>
+    <g
+       fill="#000000"
+       stroke="#000000"
+       stroke-opacity="1"
+       stroke-width="1"
+       stroke-linecap="square"
+       stroke-linejoin="bevel"
+       transform="matrix(0.71437499,0,0,0.71437498,24.665625,5.145702)"
+       id="control_bit_1"
+       style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.79965;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       inkscape:label="control_bit_1">
+      <circle
+         cx="0"
+         cy="0"
+         r="5"
+         id="control_bit_1_circle"
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.79965;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    </g>
+    <g
+       fill="#000000"
+       stroke="#000000"
+       stroke-opacity="1"
+       stroke-width="1"
+       stroke-linecap="square"
+       stroke-linejoin="bevel"
+       transform="matrix(0.71437499,0,0,0.71437499,24.665625,19.697783)"
+       id="control_bit_2"
+       style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2.79965;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       inkscape:label="control_bit_2"
+       inkscape:groupmode="layer">
+      <circle
+         cx="0"
+         cy="0"
+         r="5"
+         id="control_bit_2_circle"
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.79965;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         inkscape:label="control_bit_2_circle" />
+    </g>
+  </g>
+</svg>

@@ -36,16 +36,19 @@ int main(int argc, char** argv)
 		app->setApplicationName("qm");
 		set_locales();
 
-		// resources
-		Resources res;
+		// main window
+		auto qm = std::make_unique<QmWnd>();
+
+		// ressources
+		Resources& res = qm->GetResources();
 		fs::path appdir = app->applicationDirPath().toStdString();
 		res.AddPath(appdir);
 		res.AddPath(appdir / "res");
+		res.AddPath(appdir / ".." / "res");
 
-		// main window
-		auto qm = std::make_unique<QmWnd>();
+		// show main window
+		qm->SetupGUI();
 		qm->show();
-
 		return app->exec();
 	}
 	catch(const std::exception& ex)

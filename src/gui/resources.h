@@ -29,10 +29,7 @@ public:
 	Resources() = default;
 	~Resources() = default;
 
-	void AddPath(const std::string& path);
 	void AddPath(const fs::path& path);
-
-	std::optional<fs::path> FindFile(const std::string& file) const;
 	std::optional<fs::path> FindFile(const fs::path& file) const;
 
 

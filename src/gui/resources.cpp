@@ -18,16 +18,6 @@ void Resources::AddPath(const fs::path& path)
 
 
 /**
- * add a resource search path entry
- */
-void Resources::AddPath(const std::string& pathname)
-{
-	fs::path path{pathname};
-	AddPath(path);
-}
-
-
-/**
  * find a resource file
  */
 std::optional<fs::path>
@@ -42,15 +32,4 @@ Resources::FindFile(const fs::path& file) const
 	}
 
 	return std::nullopt;
-}
-
-
-/**
- * find a resource file
- */
-std::optional<fs::path>
-Resources::FindFile(const std::string& filename) const
-{
-	fs::path file{filename};
-	return FindFile(file);
 }

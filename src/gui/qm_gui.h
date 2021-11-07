@@ -19,6 +19,7 @@
 #include "component_properties.h"
 #include "workspace.h"
 #include "recent.h"
+#include "resources.h"
 #include "types.h"
 #include "settings.h"
 
@@ -31,6 +32,7 @@ public:
 	QmWnd(QWidget* pParent = nullptr);
 	~QmWnd();
 
+	void SetupGUI();
 	void SetStatusMessage(const QString& msg);
 
 	void FileNew();
@@ -41,6 +43,9 @@ public:
 	bool SaveFile(const QString& filename) const;
 	bool LoadFile(const QString& filename);
 
+	Resources& GetResources() { return m_res; }
+	const Resources& GetResources() const { return m_res; }
+
 
 private:
 	virtual void closeEvent(QCloseEvent *) override;
@@ -50,6 +55,7 @@ private:
 	QString m_gui_theme{};
 	bool m_gui_native{false};
 
+	Resources m_res{};
 	RecentFiles m_recent{this, 16};
 
 	std::shared_ptr<QmScene> m_scene{};
