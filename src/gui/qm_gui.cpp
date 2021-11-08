@@ -302,9 +302,15 @@ void QmWnd::SetupGUI()
 
 	// connections
 	connect(m_view.get(), &QmView::SignalMouseCoordinates,
-		[this](double x, double y) -> void
+		[this](qreal scene_x, qreal scene_y) -> void
 		{
-			SetStatusMessage(QString("x=%1, y=%2.").arg(x, 5).arg(y, 5));
+			t_int tile_x = t_int(std::round(scene_x/g_raster_size));
+			t_int tile_y = t_int(std::round(scene_y/g_raster_size));
+
+			SetStatusMessage(QString(
+				"Tile: (%1, %2), scene: (%3, %4).")
+				.arg(tile_x, 2).arg(tile_y, 2)
+				.arg(scene_x, 5).arg(scene_y, 5));
 		});
 
 	// signals to read and write component properties
@@ -486,6 +492,9 @@ bool QmWnd::SaveFile(const QString& filename) const
 
 bool QmWnd::LoadFile(const QString& filename)
 {
+	if(!m_scene || !m_view)
+		return false;
+
 	namespace ptree = boost::property_tree;
 
 	std::ifstream ifstr{filename.toStdString()};
@@ -542,6 +551,7 @@ bool QmWnd::LoadFile(const QString& filename)
 		}
 	}
 
+	m_view->FitAreaToScene();
 	return true;
 }
 

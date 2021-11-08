@@ -8,6 +8,9 @@
 #include <QtGui/QMouseEvent>
 #include <QtGui/QPaintEvent>
 #include <QtGui/QResizeEvent>
+#include <QtGui/QWheelEvent>
+#include <QtGui/QKeyEvent>
+#include <QtGui/QDragMoveEvent>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
 
 #include <cmath>
@@ -160,6 +163,8 @@ QmView::QmView(QmScene *scene, QWidget *parent)
 
 	setInteractive(true);
 	setMouseTracking(true);
+	setDragMode(QGraphicsView::NoDrag);
+
 	setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
 }
 
@@ -206,13 +211,50 @@ void QmView::SetCurItemConfig(const ComponentConfigs& cfg)
 
 void QmView::resizeEvent(QResizeEvent* evt)
 {
-	QPointF pt1{mapToScene(QPoint{0,0})};
+	//QPointF pt1{mapToScene(QPoint{0,0})};
+	QPointF topLeft{this->sceneRect().topLeft()};
+	QPointF pt1{-g_raster_size*0.5, -g_raster_size*0.5};
+	pt1.rx() = std::min(pt1.x(), topLeft.x());
+	pt1.ry() = std::min(pt1.y(), topLeft.y());
+
 	QPointF pt2{mapToScene(QPoint{evt->size().width(), evt->size().height()})};
 
-	// TODO: include bounds given by all components
+	QRectF sceneRect{pt1, pt2};
+	FitAreaToScene(&sceneRect);
+
+	QGraphicsView::resizeEvent(evt);
+}
+
+
+void QmView::FitAreaToScene(const QRectF *_sceneRect)
+{
+	if(!m_scene)
+		return;
+
+	// current scene rectangle
+	QRectF sceneRect = _sceneRect ? *_sceneRect : this->sceneRect();
+	QPointF pt1{sceneRect.topLeft()};
+	QPointF pt2{sceneRect.bottomRight()};
+
+	if(m_scene)
+	{
+		// include the bounds from all items in the scene
+		for(const QGraphicsItem *item : m_scene->items())
+		{
+			QTransform trafo = item->sceneTransform();
+			QPolygonF polyScene = trafo.map(item->boundingRect());
+
+			for(const QPointF& pt : polyScene)
+			{
+				if(pt.x() < pt1.x()) pt1.setX(pt.x());
+				if(pt.y() < pt1.y()) pt1.setY(pt.y());
+				if(pt.x() > pt2.x()) pt2.setX(pt.x());
+				if(pt.y() > pt2.y()) pt2.setY(pt.y());
+			}
+		}
+	}
 
 	setSceneRect(QRectF{pt1, pt2});
-	QGraphicsView::resizeEvent(evt);
 }
 
 
@@ -226,11 +268,13 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 	QList<QGraphicsItem*> items = this->items(posVP);
 	const QGraphicsItem *oldItem = m_curItem;
 
+	// get current item under the cursor
 	if(items.size())
 		m_curItem = dynamic_cast<QuantumGateItem*>(*items.begin());
 	else
 		m_curItem = nullptr;
 
+	// a new item was selected
 	if(m_curItem != oldItem)
 	{
 		emit SignalSelectedItem(m_curItem);
@@ -255,6 +299,8 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 
 void QmView::mouseReleaseEvent(QMouseEvent* evt)
 {
+	if(m_curItem)
+		FitAreaToScene();
 	QGraphicsView::mouseReleaseEvent(evt);
 }
 
@@ -267,6 +313,44 @@ void QmView::mouseMoveEvent(QMouseEvent* evt)
 	emit SignalMouseCoordinates(posScene.x(), posScene.y());
 
 	QGraphicsView::mouseMoveEvent(evt);
+}
+
+
+void QmView::wheelEvent(QWheelEvent *evt)
+{
+	const t_real angular_speed = 0.0075;
+	const t_real angle_deg = evt->angleDelta().y() / 8.;
+	const t_real zoom_factor = std::pow(2., angle_deg*angular_speed);
+
+	if(angle_deg > 0.)
+		centerOn(evt->position());
+	scale(zoom_factor, zoom_factor);
+
+	//QGraphicsView::wheelEvent(evt);
+}
+
+
+void QmView::keyPressEvent(QKeyEvent *evt)
+{
+	if(evt->key() == Qt::Key_Control)
+		setDragMode(QGraphicsView::ScrollHandDrag);
+
+	QGraphicsView::keyPressEvent(evt);
+}
+
+
+void QmView::keyReleaseEvent(QKeyEvent *evt)
+{
+	if(evt->key() == Qt::Key_Control)
+		setDragMode(QGraphicsView::NoDrag);
+
+	QGraphicsView::keyReleaseEvent(evt);
+}
+
+
+void QmView::dragMoveEvent(QDragMoveEvent *evt)
+{
+	QGraphicsView::dragMoveEvent(evt);
 }
 
 

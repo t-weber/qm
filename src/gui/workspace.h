@@ -61,16 +61,21 @@ public:
 	const QmView& operator=(const QmView&) const = delete;
 
 	void Clear();
+	void FitAreaToScene(const QRectF *_sceneRect = nullptr);
 
 
 protected:
-	virtual void mousePressEvent(QMouseEvent* evt) override;
-	virtual void mouseReleaseEvent(QMouseEvent* evt) override;
-	virtual void mouseMoveEvent(QMouseEvent* evt) override;
+	virtual void mousePressEvent(QMouseEvent *evt) override;
+	virtual void mouseReleaseEvent(QMouseEvent *evt) override;
+	virtual void mouseMoveEvent(QMouseEvent *evt) override;
+	virtual void wheelEvent(QWheelEvent *evt) override;
 
-	virtual void resizeEvent(QResizeEvent* evt) override;
+	virtual void keyPressEvent(QKeyEvent *evt) override;
+	virtual void keyReleaseEvent(QKeyEvent *evt) override;
 
+	virtual void dragMoveEvent(QDragMoveEvent *evt) override;
 	virtual void paintEvent(QPaintEvent* evt) override;
+	virtual void resizeEvent(QResizeEvent* evt) override;
 
 
 private:
@@ -86,7 +91,7 @@ public slots:
 
 
 signals:
-	void SignalMouseCoordinates(double x, double y);
+	void SignalMouseCoordinates(qreal scene_x, qreal scene_y);
 	void SignalSelectedItem(const QuantumGate *item);
 };
 
