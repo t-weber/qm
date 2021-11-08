@@ -21,8 +21,7 @@
 // ----------------------------------------------------------------------------
 // graphics scene
 // ----------------------------------------------------------------------------
-QmScene::QmScene(QWidget* parent)
-	: QGraphicsScene(parent), m_parent{parent}
+QmScene::QmScene(QWidget* parent) : QGraphicsScene(parent)
 {
 }
 
@@ -35,9 +34,9 @@ QmScene::~QmScene()
 /**
  * insert a quantum gate into the scene
  */
-void QmScene::AddGate(QuantumGateItem *gate)
+void QmScene::AddQuantumComponent(QuantumComponentItem *gate)
 {
-	m_gates.push_back(gate);
+	m_components.push_back(gate);
 	addItem(gate);
 }
 
@@ -48,7 +47,7 @@ void QmScene::AddGate(QuantumGateItem *gate)
 void QmScene::Clear()
 {
 	clear();
-	m_gates.clear();
+	m_components.clear();
 }
 
 
@@ -269,7 +268,7 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 
 	// get current item under the cursor
 	if(items.size())
-		m_curItem = dynamic_cast<QuantumGateItem*>(*items.begin());
+		m_curItem = dynamic_cast<QuantumComponentItem*>(*items.begin());
 	else
 		m_curItem = nullptr;
 

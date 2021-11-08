@@ -19,6 +19,9 @@
 #include "types.h"
 
 
+// ----------------------------------------------------------------------------
+// configuration structs
+// ----------------------------------------------------------------------------
 /**
  * component configuration options
  */
@@ -53,18 +56,34 @@ struct ComponentConfigs
 	std::string name{};
 	std::vector<ComponentConfig> configs{};
 };
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// interface classes for quantum circuit components
+// ----------------------------------------------------------------------------
+enum class ComponentType
+{
+	STATE,
+	GATE
+};
 
 
 /**
- * basic interface for a quantum gate
+ * basic interface for a quantum component:
+ * either a collection of states or a gate
  */
-class QuantumGate
+class QuantumComponent
 {
 public:
-	virtual ~QuantumGate() = default;
+	virtual ~QuantumComponent() = default;
 
 	virtual std::string GetIdent() const = 0;
 	virtual std::string GetName() const = 0;
+
+	virtual ComponentType GetType() const = 0;
+	virtual t_vec GetState() const = 0;
 	virtual t_mat GetOperator() const = 0;
 
 	virtual ComponentConfigs GetConfig() const = 0;
@@ -72,21 +91,94 @@ public:
 };
 
 
-class QuantumGateItem : public QuantumGate, public QGraphicsItem
+/**
+ * a graphical representation of a quantum component
+ */
+class QuantumComponentItem : public QuantumComponent, public QGraphicsItem
 {
 public:
-	QuantumGateItem() = default;
-	virtual ~QuantumGateItem() = default;
+	QuantumComponentItem() = default;
+	virtual ~QuantumComponentItem() = default;
 };
 
-using t_gateptr = std::shared_ptr<QuantumGateItem>;
+using t_gateptr = std::shared_ptr<QuantumComponentItem>;
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// quantum state vectors
+// ----------------------------------------------------------------------------
+class InputStates : public QuantumComponentItem
+{
+public:
+	InputStates();
+	virtual ~InputStates();
+
+	// getter
+	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
+	void SetWidth(t_uint w) { m_width = w; }
+
+	// setter
+	t_uint GetNumQBits() const { return m_num_qbits; }
+	t_uint GetWidth() const { return m_width; }
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+	virtual std::string GetIdent() const override { return "input_states"; }
+	virtual std::string GetName() const override { return "Input States"; }
+
+	virtual ComponentType GetType() const override { return ComponentType::STATE; }
+	virtual t_vec GetState() const override;
+	virtual t_mat GetOperator() const override;
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+
+
+private:
+	t_uint m_num_qbits = 4;
+	t_uint m_width = 8;
+};
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// quantum gates
+// ----------------------------------------------------------------------------
+/**
+ * Hadamard gate
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Hadamard_gate
+ */
+class HadamardGate : public QuantumComponentItem
+{
+public:
+	HadamardGate();
+	virtual ~HadamardGate();
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+	virtual std::string GetIdent() const override { return "hadamard"; }
+	virtual std::string GetName() const override { return "Hadamard Gate"; }
+
+	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	virtual t_vec GetState() const override;
+	virtual t_mat GetOperator() const override;
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+};
+
 
 
 /**
  * Controlled NOT gate
  * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
  */
-class CNotGate : public QuantumGateItem
+class CNotGate : public QuantumComponentItem
 {
 public:
 	CNotGate();
@@ -107,6 +199,9 @@ public:
 
 	virtual std::string GetIdent() const override { return "cnot"; }
 	virtual std::string GetName() const override { return "CNOT Gate"; }
+
+	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -128,7 +223,7 @@ private:
  * Toffoli gate
  * @see https://en.wikipedia.org/wiki/Toffoli_gate
  */
-class ToffoliGate : public QuantumGateItem
+class ToffoliGate : public QuantumComponentItem
 {
 public:
 	ToffoliGate();
@@ -149,8 +244,10 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
-	virtual std::string GetIdent() const override { return "toffoli"; }
+	virtual ComponentType GetType() const override { return ComponentType::GATE; }	virtual std::string GetIdent() const override { return "toffoli"; }
 	virtual std::string GetName() const override { return "Toffoli Gate"; }
+
+	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -166,6 +263,7 @@ private:
 	t_real m_control_bit_radius = 10.;
 	t_real m_target_bit_radius = 25.;
 };
+// ----------------------------------------------------------------------------
 
 
 #endif

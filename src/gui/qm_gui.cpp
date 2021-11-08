@@ -169,14 +169,31 @@ void QmWnd::SetupGUI()
 
 	// ------------------------------------------------------------------------
 	// components menu
+	QAction *actionAddInputStates = new QAction{"Add Input qubits", this};
+	if(auto optIconFile = m_res.FindFile("input.svg"); optIconFile)
+		actionAddInputStates->setIcon(QIcon{optIconFile->string().c_str()});
+	connect(actionAddInputStates, &QAction::triggered, [this]()
+	{
+		QuantumComponentItem *gate = new InputStates();
+		m_scene->AddQuantumComponent(gate);
+	});
+
+	QAction *actionAddHadamard = new QAction{"Add Hadamard Gate", this};
+	if(auto optIconFile = m_res.FindFile("hadamard.svg"); optIconFile)
+		actionAddHadamard->setIcon(QIcon{optIconFile->string().c_str()});
+	connect(actionAddHadamard, &QAction::triggered, [this]()
+	{
+		QuantumComponentItem *gate = new HadamardGate();
+		m_scene->AddQuantumComponent(gate);
+	});
 
 	QAction *actionAddCnot = new QAction{"Add CNOT Gate", this};
 	if(auto optIconFile = m_res.FindFile("cnot.svg"); optIconFile)
 		actionAddCnot->setIcon(QIcon{optIconFile->string().c_str()});
 	connect(actionAddCnot, &QAction::triggered, [this]()
 	{
-		QuantumGateItem *gate = new CNotGate();
-		m_scene->AddGate(gate);
+		QuantumComponentItem *gate = new CNotGate();
+		m_scene->AddQuantumComponent(gate);
 	});
 
 	QAction *actionAddToffoli = new QAction{"Add Toffoli Gate", this};
@@ -184,11 +201,14 @@ void QmWnd::SetupGUI()
 		actionAddToffoli->setIcon(QIcon{optIconFile->string().c_str()});
 	connect(actionAddToffoli, &QAction::triggered, [this]()
 	{
-		QuantumGateItem *gate = new ToffoliGate();
-		m_scene->AddGate(gate);
+		QuantumComponentItem *gate = new ToffoliGate();
+		m_scene->AddQuantumComponent(gate);
 	});
 
 	QMenu *menuComponents = new QMenu{"Components", this};
+	menuComponents->addAction(actionAddInputStates);
+	menuComponents->addSeparator();
+	menuComponents->addAction(actionAddHadamard);
 	menuComponents->addAction(actionAddCnot);
 	menuComponents->addAction(actionAddToffoli);
 	// ------------------------------------------------------------------------
@@ -437,17 +457,32 @@ bool QmWnd::SaveFile(const QString& filename) const
 
 	// save gates
 	ptree::ptree propGates{};
-	const std::vector<QuantumGateItem*>& gates = m_scene->GetGates();
-	for(const QuantumGateItem *gate : gates)
+	const std::vector<QuantumComponentItem*>& gates = 
+		m_scene->GetQuantumComponents();
+	for(const QuantumComponentItem *gate : gates)
 	{
+		std::string component_type = "unknown";
+		switch(gate->GetType())
+		{
+			case ComponentType::STATE:
+				component_type = "state";
+				break;
+			case ComponentType::GATE:
+				component_type = "gate";
+				break;
+		}
+
 		ptree::ptree propGate{};
-		propGate.put<std::string>("gate.<xmlattr>.ident", gate->GetIdent());
+		propGate.put<std::string>(
+			"component.<xmlattr>.type", component_type);
+		propGate.put<std::string>(
+			"component.<xmlattr>.ident", gate->GetIdent());
 
 		QPointF pos = gate->scenePos();
 		t_int pos_x = t_int(std::round(pos.x()/g_raster_size));
 		t_int pos_y = t_int(std::round(pos.y()/g_raster_size));
-		propGate.put<t_int>("gate.pos_x", pos_x);
-		propGate.put<t_int>("gate.pos_y", pos_y);
+		propGate.put<t_int>("component.pos_x", pos_x);
+		propGate.put<t_int>("component.pos_y", pos_y);
 
 		// get configuration settings
 		const ComponentConfigs& configs = gate->GetConfig();
@@ -456,25 +491,25 @@ bool QmWnd::SaveFile(const QString& filename) const
 			// test for all possible types of the variant
 			if(std::holds_alternative<t_real>(config.value))
 			{
-				std::string key = "gate." + config.key;
+				std::string key = "component." + config.key;
 				propGate.put<t_real>(
 					key, std::get<t_real>(config.value));
 			}
 			else if(std::holds_alternative<t_int>(config.value))
 			{
-				std::string key = "gate." + config.key;
+				std::string key = "component." + config.key;
 				propGate.put<t_int>(
 					key, std::get<t_int>(config.value));
 			}
 			else if(std::holds_alternative<t_uint>(config.value))
 			{
-				std::string key = "gate." + config.key;
+				std::string key = "component." + config.key;
 				propGate.put<t_uint>(
 					key, std::get<t_uint>(config.value));
 			}
 			else if(std::holds_alternative<std::string>(config.value))
 			{
-				std::string key = "gate." + config.key;
+				std::string key = "component." + config.key;
 				propGate.put<std::string>(
 					key, std::get<std::string>(config.value));
 			}
@@ -482,9 +517,11 @@ bool QmWnd::SaveFile(const QString& filename) const
 
 		propGates.push_back(*propGate.begin());
 	}
-	prop.put_child("qm.gates", propGates);
+	prop.put_child("qm.components", propGates);
 
-	ptree::write_xml(ofstr, prop, ptree::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
+	ptree::write_xml(ofstr, prop, 
+		ptree::xml_writer_make_settings(
+			'\t', 1, std::string{"utf-8"}));
 
 	return true;
 }
@@ -492,10 +529,10 @@ bool QmWnd::SaveFile(const QString& filename) const
 
 bool QmWnd::LoadFile(const QString& filename)
 {
+	namespace ptree = boost::property_tree;
+
 	if(!m_scene || !m_view)
 		return false;
-
-	namespace ptree = boost::property_tree;
 
 	std::ifstream ifstr{filename.toStdString()};
 	if(!ifstr)
@@ -505,18 +542,23 @@ bool QmWnd::LoadFile(const QString& filename)
 	ptree::read_xml(ifstr, prop);
 
 	// load gates
-	if(auto propGates = prop.get_child_optional("qm.gates"); propGates)
+	if(auto propGates = prop.get_child_optional("qm.components"); propGates)
 	{
 		for(const auto& [tagGate, propGate] : *propGates)
 		{
 			// ignore unknown tags
-			if(tagGate != "gate")
+			if(tagGate != "component")
 				continue;
 
 			std::string id = propGate.get<std::string>("<xmlattr>.ident", "");
 
-			QuantumGateItem *gate = nullptr;
-			if(id == "cnot")
+			// TODO: add a factory function
+			QuantumComponentItem *gate = nullptr;
+			if(id == "input_states")
+				gate = new InputStates();
+			else if(id == "hadamard")
+				gate = new HadamardGate();
+			else if(id == "cnot")
 				gate = new CNotGate();
 			else if(id == "toffoli")
 				gate = new ToffoliGate();
@@ -546,7 +588,7 @@ bool QmWnd::LoadFile(const QString& filename)
 				QPointF posScene(pos_x*g_raster_size, pos_y*g_raster_size);
 				gate->setPos(posScene);
 
-				m_scene->AddGate(gate);
+				m_scene->AddQuantumComponent(gate);
 			}
 		}
 	}

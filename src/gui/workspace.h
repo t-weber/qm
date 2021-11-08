@@ -32,8 +32,9 @@ public:
 	const QmScene& operator=(const QmScene&) const = delete;
 
 	void Clear();
-	void AddGate(QuantumGateItem *gate);
-	const std::vector<QuantumGateItem*>& GetGates() const { return m_gates; }
+	void AddQuantumComponent(QuantumComponentItem *comp);
+	const std::vector<QuantumComponentItem*>& GetQuantumComponents() const
+	{ return m_components; }
 
 
 protected:
@@ -45,8 +46,7 @@ protected:
 
 
 private:
-	QWidget *m_parent {nullptr};
-	std::vector<QuantumGateItem*> m_gates{};
+	std::vector<QuantumComponentItem*> m_components{};
 };
 
 
@@ -79,7 +79,7 @@ protected:
 
 private:
 	QmScene *m_scene = nullptr;
-	QuantumGateItem *m_curItem = nullptr;
+	QuantumComponentItem *m_curItem = nullptr;
 
 	std::shared_ptr<QMenu> m_context{};
 
@@ -91,7 +91,7 @@ public slots:
 
 signals:
 	void SignalMouseCoordinates(qreal scene_x, qreal scene_y);
-	void SignalSelectedItem(const QuantumGate *item);
+	void SignalSelectedItem(const QuantumComponent *item);
 };
 
 

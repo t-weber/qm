@@ -40,7 +40,7 @@ private:
 
 public slots:
 	// a component has been selected
-	void SelectedItem(const QuantumGate* item);
+	void SelectedItem(const QuantumComponent* item);
 
 
 signals:

@@ -15,6 +15,196 @@
 
 
 // ----------------------------------------------------------------------------
+// input qubit states
+// ----------------------------------------------------------------------------
+InputStates::InputStates()
+{
+	setPos(QPointF{0,0});
+	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+}
+
+
+InputStates::~InputStates()
+{
+}
+
+
+QRectF InputStates::boundingRect() const
+{
+	t_real w = t_real(m_width) * g_raster_size;
+	t_real h = t_real(m_num_qbits) * g_raster_size;
+
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+}
+
+
+void InputStates::paint(QPainter *painter, 
+	const QStyleOptionGraphicsItem*, QWidget*)
+{
+	const QColor& colour_fg = get_foreground_colour();
+
+	QPen pen(colour_fg);
+	pen.setWidthF(1.5);
+
+	//QFont font = painter->font();
+	//font.setPixelSize(g_raster_size*0.5);
+	//painter->setFont(font);
+
+	painter->setPen(pen);
+	painter->setBrush(Qt::NoBrush);
+
+	// iterate qubits
+	for(t_uint bit=0; bit<m_num_qbits; ++bit)
+	{
+		// write qubit state numbers
+		QRectF rectText{
+			-g_raster_size*0.5, bit*g_raster_size-g_raster_size*0.5,
+			g_raster_size, g_raster_size};
+		QString textState = QString{"|ψ%1>"}.arg(bit+1);
+		painter->drawText(rectText, Qt::AlignCenter, textState);
+
+		// draw qubit connection lines
+		painter->drawLine(
+			QPointF(0.5*g_raster_size, bit*g_raster_size),
+			QPointF((m_width-0.5)*g_raster_size, bit*g_raster_size));
+	}
+}
+
+
+t_mat InputStates::GetOperator() const
+{
+	return t_mat{};
+}
+
+
+t_vec InputStates::GetState() const
+{
+	// TODO
+	return t_vec{};
+};
+
+
+ComponentConfigs InputStates::GetConfig() const
+{
+	ComponentConfigs cfgs;
+	cfgs.name = GetName();
+
+	cfgs.configs = std::vector<ComponentConfig>
+	{{
+		ComponentConfig{.key = "num_qbits",
+			.value = GetNumQBits(),
+			.description = "Number of qubits",
+			.min_value = t_uint(1)},
+		ComponentConfig{.key = "width",
+			.value = GetWidth(),
+			.description = "Width",
+			.min_value = t_uint(2)},
+	}};
+
+	return cfgs;
+}
+
+
+void InputStates::SetConfig(const ComponentConfigs& configs)
+{
+	for(const ComponentConfig& cfg : configs.configs)
+	{
+		if(cfg.key == "num_qbits")
+		{
+			t_uint bits = std::get<t_uint>(cfg.value);
+			SetNumQBits(bits);
+		}
+		else if(cfg.key == "width")
+		{
+			t_uint w = std::get<t_uint>(cfg.value);
+			SetWidth(w);
+		}
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// Hadamard gate
+// ----------------------------------------------------------------------------
+HadamardGate::HadamardGate()
+{
+	setPos(QPointF{0,0});
+	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+}
+
+
+HadamardGate::~HadamardGate()
+{
+}
+
+
+QRectF HadamardGate::boundingRect() const
+{
+	t_real w = g_raster_size;
+	t_real h = g_raster_size;
+
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+}
+
+
+void HadamardGate::paint(QPainter *painter,
+	const QStyleOptionGraphicsItem*, QWidget*)
+{
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
+	QPen pen(colour_fg);
+	pen.setWidthF(1.);
+
+	QBrush brush{Qt::SolidPattern};
+	brush.setColor(colour_bg);
+
+	//QFont font = painter->font();
+	//font.setPixelSize(g_raster_size*0.5);
+	//painter->setFont(font);
+
+	painter->setPen(pen);
+	painter->setBrush(brush);
+
+	t_real size = g_raster_size*0.66;
+	QRectF rect{-size*0.5, -size*0.5, size, size};
+
+	painter->drawRect(rect);
+	painter->drawText(rect, Qt::AlignCenter, "H");
+}
+
+
+t_mat HadamardGate::GetOperator() const
+{
+	return m::hadamard<t_mat>();
+}
+
+
+t_vec HadamardGate::GetState() const
+{
+	return t_vec{};
+};
+
+
+ComponentConfigs HadamardGate::GetConfig() const
+{
+	ComponentConfigs cfgs;
+	cfgs.name = GetName();
+
+	return cfgs;
+}
+
+
+void HadamardGate::SetConfig(const ComponentConfigs&)
+{
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
 // CNOT gate
 // ----------------------------------------------------------------------------
 CNotGate::CNotGate()
@@ -31,26 +221,10 @@ CNotGate::~CNotGate()
 
 QRectF CNotGate::boundingRect() const
 {
-	t_real w = std::max(m_control_bit_radius, m_target_bit_radius);
+	t_real w = g_raster_size;
+	t_real h = t_real(m_num_qbits) * g_raster_size;
 
-	// centre positions
-	t_real ctrl_pos = m_control_bit_pos * g_raster_size;
-	t_real target_pos = m_target_bit_pos * g_raster_size;
-
-	// outer positions
-	t_real y_min = 0, y_max = 0;
-	if(m_control_bit_pos < m_target_bit_pos)
-	{
-		y_min = ctrl_pos - m_control_bit_radius;
-		y_max = target_pos + m_target_bit_radius;
-	}
-	else
-	{
-		y_min = target_pos - m_target_bit_radius;
-		y_max = ctrl_pos + m_control_bit_radius;
-	}
-
-	return QRectF{-w/2., y_min, w, y_max-y_min};
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
 }
 
 
@@ -124,6 +298,12 @@ t_mat CNotGate::GetOperator() const
 }
 
 
+t_vec CNotGate::GetState() const
+{
+	return t_vec{};
+};
+
+
 ComponentConfigs CNotGate::GetConfig() const
 {
 	ComponentConfigs cfgs;
@@ -172,7 +352,6 @@ void CNotGate::SetConfig(const ComponentConfigs& configs)
 		}
 	}
 }
-
 // ----------------------------------------------------------------------------
 
 
@@ -194,35 +373,10 @@ ToffoliGate::~ToffoliGate()
 
 QRectF ToffoliGate::boundingRect() const
 {
-	t_real w = std::max(m_control_bit_radius, m_target_bit_radius);
+	t_real w = g_raster_size;
+	t_real h = t_real(m_num_qbits) * g_raster_size;
 
-	// centre positions
-	t_real pos[] =
-	{
-		m_control_bit_1_pos * g_raster_size,
-		m_control_bit_2_pos * g_raster_size,
-		m_target_bit_pos * g_raster_size,
-	};
-
-	// element radii
-	t_real radii[] =
-	{
-		m_control_bit_radius,
-		m_control_bit_radius,
-		m_target_bit_radius,
-	};
-
-	//get indices of minimum and maximum element
-	auto [_min, _max] = std::minmax_element(
-		pos, pos+sizeof(pos)/sizeof(*pos));
-	std::size_t min_idx = _min - pos;
-	std::size_t max_idx = _max - pos;
-
-	// outer positions
-	t_real y_min = pos[min_idx] - radii[min_idx];
-	t_real y_max = pos[max_idx] + radii[max_idx];
-
-	return QRectF{-w/2., y_min, w, y_max-y_min};
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
 }
 
 
@@ -317,6 +471,12 @@ t_mat ToffoliGate::GetOperator() const
 		m_control_bit_1_pos, m_control_bit_2_pos,
 		m_target_bit_pos);
 }
+
+
+t_vec ToffoliGate::GetState() const
+{
+	return t_vec{};
+};
 
 
 ComponentConfigs ToffoliGate::GetConfig() const

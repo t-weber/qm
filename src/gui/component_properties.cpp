@@ -50,7 +50,7 @@ void ComponentProperties::Clear()
 /**
  * a component has been selected -> show its properties
  */
-void ComponentProperties::SelectedItem(const QuantumGate* item)
+void ComponentProperties::SelectedItem(const QuantumComponent* item)
 {
 	Clear();
 
