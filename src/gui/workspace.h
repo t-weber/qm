@@ -73,7 +73,6 @@ protected:
 	virtual void keyPressEvent(QKeyEvent *evt) override;
 	virtual void keyReleaseEvent(QKeyEvent *evt) override;
 
-	virtual void dragMoveEvent(QDragMoveEvent *evt) override;
 	virtual void paintEvent(QPaintEvent* evt) override;
 	virtual void resizeEvent(QResizeEvent* evt) override;
 

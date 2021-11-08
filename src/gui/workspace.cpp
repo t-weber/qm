@@ -10,7 +10,6 @@
 #include <QtGui/QResizeEvent>
 #include <QtGui/QWheelEvent>
 #include <QtGui/QKeyEvent>
-#include <QtGui/QDragMoveEvent>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
 
 #include <cmath>
@@ -345,12 +344,6 @@ void QmView::keyReleaseEvent(QKeyEvent *evt)
 		setDragMode(QGraphicsView::NoDrag);
 
 	QGraphicsView::keyReleaseEvent(evt);
-}
-
-
-void QmView::dragMoveEvent(QDragMoveEvent *evt)
-{
-	QGraphicsView::dragMoveEvent(evt);
 }
 
 
