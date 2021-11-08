@@ -45,8 +45,11 @@ int main(int argc, char** argv)
 		res.AddPath(appdir / "res");
 		res.AddPath(appdir / ".." / "res");
 
-		// show main window
+		// setup main window gui
 		qm->SetupGUI();
+		qm->FileNew();
+
+		// show main window
 		qm->show();
 		return app->exec();
 	}

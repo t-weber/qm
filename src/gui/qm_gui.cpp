@@ -169,13 +169,13 @@ void QmWnd::SetupGUI()
 
 	// ------------------------------------------------------------------------
 	// components menu
-	QAction *actionAddInputStates = new QAction{"Add Input qubits", this};
-	if(auto optIconFile = m_res.FindFile("input.svg"); optIconFile)
+	QAction *actionAddInputStates = new QAction{"Add input qubits", this};
+	if(auto optIconFile = m_res.FindFile("input_state.svg"); optIconFile)
 		actionAddInputStates->setIcon(QIcon{optIconFile->string().c_str()});
 	connect(actionAddInputStates, &QAction::triggered, [this]()
 	{
-		QuantumComponentItem *gate = new InputStates();
-		m_scene->AddQuantumComponent(gate);
+		QuantumComponentItem *state = new InputStates();
+		m_scene->AddQuantumComponent(state);
 	});
 
 	QAction *actionAddHadamard = new QAction{"Add Hadamard Gate", this};
@@ -225,6 +225,7 @@ void QmWnd::SetupGUI()
 
 	QToolBar *toolbarComponents = new QToolBar{"Components", this};
 	toolbarComponents->setObjectName("ComponentsToolbar");
+	toolbarComponents->addAction(actionAddHadamard);
 	toolbarComponents->addAction(actionAddCnot);
 	toolbarComponents->addAction(actionAddToffoli);
 
@@ -362,6 +363,9 @@ void QmWnd::FileNew()
 	m_scene->Clear();
 
 	m_recent.SetOpenFile("");
+
+	QuantumComponentItem *state = new InputStates();
+	m_scene->AddQuantumComponent(state);
 }
 
 
