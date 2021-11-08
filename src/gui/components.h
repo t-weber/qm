@@ -99,6 +99,8 @@ class QuantumComponentItem : public QuantumComponent, public QGraphicsItem
 public:
 	QuantumComponentItem() = default;
 	virtual ~QuantumComponentItem() = default;
+
+	static QuantumComponentItem* create(const std::string& id);
 };
 
 using t_gateptr = std::shared_ptr<QuantumComponentItem>;
@@ -170,6 +172,42 @@ public:
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
+};
+
+
+
+/**
+ * Pauli X/Y/Z gate
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Pauli_gates_(X,Y,Z)
+ */
+class PauliGate : public QuantumComponentItem
+{
+public:
+	PauliGate();
+	virtual ~PauliGate();
+
+	// getter
+	void SetDirection(t_uint dir) { m_dir = dir; }
+
+	// setter
+	t_uint GetDirection() const { return m_dir; }
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+	virtual std::string GetIdent() const override { return "pauli"; }
+	virtual std::string GetName() const override { return "Pauli Gate"; }
+
+	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	virtual t_vec GetState() const override;
+	virtual t_mat GetOperator() const override;
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+
+
+private:
+	t_uint m_dir = 0;
 };
 
 

@@ -35,6 +35,7 @@ public:
 	void SetupGUI();
 	void SetStatusMessage(const QString& msg);
 
+	void Clear();
 	void FileNew();
 	void FileLoad();
 	void FileSave();

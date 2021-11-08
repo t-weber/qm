@@ -169,7 +169,7 @@ void QmWnd::SetupGUI()
 
 	// ------------------------------------------------------------------------
 	// components menu
-	QAction *actionAddInputStates = new QAction{"Add input qubits", this};
+	QAction *actionAddInputStates = new QAction{"Add Input Qubits", this};
 	if(auto optIconFile = m_res.FindFile("input_state.svg"); optIconFile)
 		actionAddInputStates->setIcon(QIcon{optIconFile->string().c_str()});
 	connect(actionAddInputStates, &QAction::triggered, [this]()
@@ -184,6 +184,15 @@ void QmWnd::SetupGUI()
 	connect(actionAddHadamard, &QAction::triggered, [this]()
 	{
 		QuantumComponentItem *gate = new HadamardGate();
+		m_scene->AddQuantumComponent(gate);
+	});
+
+	QAction *actionAddPauli = new QAction{"Add Pauli Gate", this};
+	if(auto optIconFile = m_res.FindFile("pauli_x.svg"); optIconFile)
+		actionAddPauli->setIcon(QIcon{optIconFile->string().c_str()});
+	connect(actionAddPauli, &QAction::triggered, [this]()
+	{
+		QuantumComponentItem *gate = new PauliGate();
 		m_scene->AddQuantumComponent(gate);
 	});
 
@@ -209,6 +218,7 @@ void QmWnd::SetupGUI()
 	menuComponents->addAction(actionAddInputStates);
 	menuComponents->addSeparator();
 	menuComponents->addAction(actionAddHadamard);
+	menuComponents->addAction(actionAddPauli);
 	menuComponents->addAction(actionAddCnot);
 	menuComponents->addAction(actionAddToffoli);
 	// ------------------------------------------------------------------------
@@ -226,6 +236,7 @@ void QmWnd::SetupGUI()
 	QToolBar *toolbarComponents = new QToolBar{"Components", this};
 	toolbarComponents->setObjectName("ComponentsToolbar");
 	toolbarComponents->addAction(actionAddHadamard);
+	toolbarComponents->addAction(actionAddPauli);
 	toolbarComponents->addAction(actionAddCnot);
 	toolbarComponents->addAction(actionAddToffoli);
 
@@ -342,9 +353,9 @@ void QmWnd::SetupGUI()
 
 
 	m_recent.CreateRecentFileMenu(
-		[this](const QString& filename)->bool
+		[this](const QString& filename) -> bool
 	{
-		this->FileNew();
+		this->Clear();
 		return this->LoadFile(filename);
 	});
 	SetStatusMessage("Ready.");
@@ -357,12 +368,18 @@ void QmWnd::SetStatusMessage(const QString& msg)
 }
 
 
-void QmWnd::FileNew()
+void QmWnd::Clear()
 {
 	m_view->Clear();
 	m_scene->Clear();
 
 	m_recent.SetOpenFile("");
+}
+
+
+void QmWnd::FileNew()
+{
+	Clear();
 
 	QuantumComponentItem *state = new InputStates();
 	m_scene->AddQuantumComponent(state);
@@ -371,8 +388,6 @@ void QmWnd::FileNew()
 
 void QmWnd::FileLoad()
 {
-	FileNew();
-
 	auto filedlg = std::make_shared<QFileDialog>(
 		this, "Load Data", m_recent.GetRecentDir(),
 		"XML Files (*.xml);;All Files (* *.*)");
@@ -380,25 +395,31 @@ void QmWnd::FileLoad()
 	filedlg->setDefaultSuffix("xml");
 	filedlg->setFileMode(QFileDialog::AnyFile);
 
-	if(filedlg->exec())
-	{
-		QStringList files = filedlg->selectedFiles();
-		if(files.size() > 0 && files[0] != "")
-		{
-			if(LoadFile(files[0]))
-			{
-				m_recent.SetOpenFile(files[0]);
-				m_recent.AddRecentFile(m_recent.GetOpenFile(),
-					[this](const QString& filename)->bool { return this->LoadFile(filename); });
+	if(!filedlg->exec())
+		return;
 
-				fs::path file{files[0].toStdString()};
-				m_recent.SetRecentDir(file.parent_path().string().c_str());
-			}
-			else
-			{
-				QMessageBox::critical(this, "Error", "File could not be loaded.");
-			}
-		}
+	QStringList files = filedlg->selectedFiles();
+	if(files.size() == 0 || files[0] == "")
+		return;
+
+	Clear();
+	if(LoadFile(files[0]))
+	{
+		m_recent.SetOpenFile(files[0]);
+		m_recent.AddRecentFile(m_recent.GetOpenFile(),
+			[this](const QString& filename) -> bool
+		{
+			this->Clear();
+			return this->LoadFile(filename);
+		});
+
+		fs::path file{files[0].toStdString()};
+		m_recent.SetRecentDir(file.parent_path().string().c_str());
+	}
+	else
+	{
+		QMessageBox::critical(this, "Error",
+			QString("File \"%1\" could not be loaded.").arg(files[0]));
 	}
 }
 
@@ -426,25 +447,30 @@ void QmWnd::FileSaveAs()
 	filedlg->setDefaultSuffix("xml");
 	filedlg->setFileMode(QFileDialog::AnyFile);
 
-	if(filedlg->exec())
-	{
-		QStringList files = filedlg->selectedFiles();
-		if(files.size() > 0 && files[0] != "")
-		{
-			if(SaveFile(files[0]))
-			{
-				m_recent.SetOpenFile(files[0]);
-				m_recent.AddRecentFile(m_recent.GetOpenFile(),
-					[this](const QString& filename)->bool { return this->LoadFile(filename); });
+	if(!filedlg->exec())
+		return;
 
-				fs::path file{files[0].toStdString()};
-				m_recent.SetRecentDir(file.parent_path().string().c_str());
-			}
-			else
-			{
-				QMessageBox::critical(this, "Error", "File could not be saved.");
-			}
-		}
+	QStringList files = filedlg->selectedFiles();
+	if(files.size() == 0 || files[0] == "")
+		return;
+
+	if(SaveFile(files[0]))
+	{
+		m_recent.SetOpenFile(files[0]);
+		m_recent.AddRecentFile(m_recent.GetOpenFile(),
+			[this](const QString& filename) -> bool
+		{
+			this->Clear();
+			return this->LoadFile(filename);
+		});
+
+		fs::path file{files[0].toStdString()};
+		m_recent.SetRecentDir(file.parent_path().string().c_str());
+	}
+	else
+	{
+		QMessageBox::critical(this, "Error",
+			QString("File \"%1\" could not be saved.").arg(files[0]));
 	}
 }
 
@@ -461,7 +487,7 @@ bool QmWnd::SaveFile(const QString& filename) const
 
 	// save gates
 	ptree::ptree propGates{};
-	const std::vector<QuantumComponentItem*>& gates = 
+	const std::vector<QuantumComponentItem*>& gates =
 		m_scene->GetQuantumComponents();
 	for(const QuantumComponentItem *gate : gates)
 	{
@@ -523,7 +549,7 @@ bool QmWnd::SaveFile(const QString& filename) const
 	}
 	prop.put_child("qm.components", propGates);
 
-	ptree::write_xml(ofstr, prop, 
+	ptree::write_xml(ofstr, prop,
 		ptree::xml_writer_make_settings(
 			'\t', 1, std::string{"utf-8"}));
 
@@ -555,17 +581,7 @@ bool QmWnd::LoadFile(const QString& filename)
 				continue;
 
 			std::string id = propGate.get<std::string>("<xmlattr>.ident", "");
-
-			// TODO: add a factory function
-			QuantumComponentItem *gate = nullptr;
-			if(id == "input_states")
-				gate = new InputStates();
-			else if(id == "hadamard")
-				gate = new HadamardGate();
-			else if(id == "cnot")
-				gate = new CNotGate();
-			else if(id == "toffoli")
-				gate = new ToffoliGate();
+			QuantumComponentItem *gate = QuantumComponentItem::create(id);
 
 			if(gate)
 			{

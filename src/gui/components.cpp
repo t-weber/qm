@@ -14,6 +14,7 @@
 #include "lib/qm_algos.h"
 
 
+
 // ----------------------------------------------------------------------------
 // input qubit states
 // ----------------------------------------------------------------------------
@@ -199,6 +200,104 @@ ComponentConfigs HadamardGate::GetConfig() const
 
 void HadamardGate::SetConfig(const ComponentConfigs&)
 {
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// Pauli X/Y/Z gate
+// ----------------------------------------------------------------------------
+PauliGate::PauliGate()
+{
+	setPos(QPointF{0,0});
+	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+}
+
+
+PauliGate::~PauliGate()
+{
+}
+
+
+QRectF PauliGate::boundingRect() const
+{
+	t_real w = g_raster_size;
+	t_real h = g_raster_size;
+
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+}
+
+
+void PauliGate::paint(QPainter *painter,
+	const QStyleOptionGraphicsItem*, QWidget*)
+{
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
+	QPen pen(colour_fg);
+	pen.setWidthF(1.);
+
+	QBrush brush{Qt::SolidPattern};
+	brush.setColor(colour_bg);
+
+	//QFont font = painter->font();
+	//font.setPixelSize(g_raster_size*0.5);
+	//painter->setFont(font);
+
+	painter->setPen(pen);
+	painter->setBrush(brush);
+
+	t_real size = g_raster_size*0.66;
+	QRectF rect{-size*0.5, -size*0.5, size, size};
+
+	painter->drawRect(rect);
+	QString texts[]{"X", "Y", "Z"};
+	if(m_dir <= 2)
+		painter->drawText(rect, Qt::AlignCenter, texts[m_dir]);
+}
+
+
+t_mat PauliGate::GetOperator() const
+{
+	return m::su2_matrix<t_mat>(m_dir);
+}
+
+
+t_vec PauliGate::GetState() const
+{
+	return t_vec{};
+};
+
+
+ComponentConfigs PauliGate::GetConfig() const
+{
+	ComponentConfigs cfgs;
+	cfgs.name = GetName();
+
+	cfgs.configs = std::vector<ComponentConfig>
+	{{
+		ComponentConfig{.key = "dir",
+			.value = GetDirection(),
+			.description = "Direction",
+			.min_value = t_uint(0),
+			.max_value = t_uint(2),},
+	}};
+
+	return cfgs;
+}
+
+
+void PauliGate::SetConfig(const ComponentConfigs& configs)
+{
+	for(const ComponentConfig& cfg : configs.configs)
+	{
+		if(cfg.key == "dir")
+		{
+			t_uint dir = std::get<t_uint>(cfg.value);
+			SetDirection(dir);
+		}
+	}
 }
 // ----------------------------------------------------------------------------
 
@@ -538,3 +637,26 @@ void ToffoliGate::SetConfig(const ComponentConfigs& configs)
 	}
 }
 // ----------------------------------------------------------------------------
+
+
+
+/**
+ * factory function to create the component with the given id
+ */
+QuantumComponentItem* QuantumComponentItem::create(const std::string& id)
+{
+	QuantumComponentItem *comp = nullptr;
+
+	if(id == "input_states")
+		comp = new InputStates();
+	else if(id == "hadamard")
+		comp = new HadamardGate();
+	else if(id == "pauli")
+		comp = new PauliGate();
+	else if(id == "cnot")
+		comp = new CNotGate();
+	else if(id == "toffoli")
+		comp = new ToffoliGate();
+
+	return comp;
+}
