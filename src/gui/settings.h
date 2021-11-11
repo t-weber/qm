@@ -16,6 +16,9 @@
 // size of the components grid
 extern t_real g_raster_size;
 
+// snap component to the grid while dragging
+extern bool g_snap_on_move;
+
 
 // basic colours
 extern const QColor& get_foreground_colour();

@@ -30,6 +30,18 @@ InputStates::~InputStates()
 }
 
 
+QuantumComponentItem* InputStates::clone() const
+{
+	InputStates *item = new InputStates{};
+
+	item->SetNumQBits(this->GetNumQBits());
+	item->SetWidth(this->GetWidth());
+	//*static_cast<QGraphicsItem*>(item) = *this;
+
+	return item;
+}
+
+
 QRectF InputStates::boundingRect() const
 {
 	t_real w = t_real(m_width) * g_raster_size;
@@ -141,6 +153,13 @@ HadamardGate::~HadamardGate()
 }
 
 
+QuantumComponentItem* HadamardGate::clone() const
+{
+	HadamardGate *item = new HadamardGate{};
+	return item;
+}
+
+
 QRectF HadamardGate::boundingRect() const
 {
 	t_real w = g_raster_size;
@@ -217,6 +236,16 @@ PauliGate::PauliGate()
 
 PauliGate::~PauliGate()
 {
+}
+
+
+QuantumComponentItem* PauliGate::clone() const
+{
+	PauliGate *item = new PauliGate{};
+
+	item->SetDirection(this->GetDirection());
+
+	return item;
 }
 
 
@@ -315,6 +344,18 @@ CNotGate::CNotGate()
 
 CNotGate::~CNotGate()
 {
+}
+
+
+QuantumComponentItem* CNotGate::clone() const
+{
+	CNotGate *item = new CNotGate{};
+
+	item->SetNumQBits(this->GetNumQBits());
+	item->SetControlBitPos(this->GetControlBitPos());
+	item->SetTargetBitPos(this->GetTargetBitPos());
+
+	return item;
 }
 
 
@@ -467,6 +508,19 @@ ToffoliGate::ToffoliGate()
 
 ToffoliGate::~ToffoliGate()
 {
+}
+
+
+QuantumComponentItem* ToffoliGate::clone() const
+{
+	ToffoliGate *item = new ToffoliGate{};
+
+	item->SetNumQBits(this->GetNumQBits());
+	item->SetControlBit1Pos(this->GetControlBit1Pos());
+	item->SetControlBit2Pos(this->GetControlBit2Pos());
+	item->SetTargetBitPos(this->GetTargetBitPos());
+
+	return item;
 }
 
 

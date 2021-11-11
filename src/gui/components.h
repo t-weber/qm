@@ -100,6 +100,9 @@ public:
 	QuantumComponentItem() = default;
 	virtual ~QuantumComponentItem() = default;
 
+	virtual QuantumComponentItem* clone() const = 0;
+
+	// factory function
 	static QuantumComponentItem* create(const std::string& id);
 };
 
@@ -117,11 +120,13 @@ public:
 	InputStates();
 	virtual ~InputStates();
 
-	// getter
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
 	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
 	void SetWidth(t_uint w) { m_width = w; }
 
-	// setter
+	// getter
 	t_uint GetNumQBits() const { return m_num_qbits; }
 	t_uint GetWidth() const { return m_width; }
 
@@ -160,6 +165,8 @@ public:
 	HadamardGate();
 	virtual ~HadamardGate();
 
+	virtual QuantumComponentItem* clone() const override;
+
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
@@ -186,10 +193,12 @@ public:
 	PauliGate();
 	virtual ~PauliGate();
 
-	// getter
-	void SetDirection(t_uint dir) { m_dir = dir; }
+	virtual QuantumComponentItem* clone() const override;
 
 	// setter
+	void SetDirection(t_uint dir) { m_dir = dir; }
+
+	// getter
 	t_uint GetDirection() const { return m_dir; }
 
 	virtual QRectF boundingRect() const override;
@@ -222,12 +231,14 @@ public:
 	CNotGate();
 	virtual ~CNotGate();
 
-	// getter
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
 	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
 	void SetControlBitPos(t_uint pos) { m_control_bit_pos = pos; }
 	void SetTargetBitPos(t_uint pos) { m_target_bit_pos = pos; }
 
-	// setter
+	// getter
 	t_uint GetNumQBits() const { return m_num_qbits; }
 	t_uint GetControlBitPos() const { return m_control_bit_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
@@ -267,13 +278,15 @@ public:
 	ToffoliGate();
 	virtual ~ToffoliGate();
 
-	// getter
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
 	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
 	void SetControlBit1Pos(t_uint pos) { m_control_bit_1_pos = pos; }
 	void SetControlBit2Pos(t_uint pos) { m_control_bit_2_pos = pos; }
 	void SetTargetBitPos(t_uint pos) { m_target_bit_pos = pos; }
 
-	// setter
+	// getter
 	t_uint GetNumQBits() const { return m_num_qbits; }
 	t_uint GetControlBit1Pos() const { return m_control_bit_1_pos; }
 	t_uint GetControlBit2Pos() const { return m_control_bit_2_pos; }

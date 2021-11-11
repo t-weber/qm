@@ -65,34 +65,28 @@ void QmScene::drawBackground(QPainter* painter, const QRectF& rect)
 	QPointF topLeft = rect.topLeft();
 	QPointF bottomRight = rect.bottomRight();
 
-	t_real start_y = std::round(topLeft.y() / g_raster_size) *
-		g_raster_size - 0.5*g_raster_size;
-	t_real end_y = std::round(bottomRight.y() / g_raster_size) *
-		g_raster_size + 0.5*g_raster_size;
-
-	t_real start_x = std::round(topLeft.x() / g_raster_size) *
-		g_raster_size - 0.5*g_raster_size;
-	t_real end_x = std::round(bottomRight.x() / g_raster_size) *
-		g_raster_size + 0.5*g_raster_size;
+	QPointF halfgrid(0.5*g_raster_size, 0.5*g_raster_size);
+	QPointF start = snap_to_grid(topLeft) - halfgrid;
+	QPointF end = snap_to_grid(bottomRight) + halfgrid;
 
 	QPen pen(colour_line);
 	pen.setWidthF(0.5);
 	painter->setPen(pen);
 
 	// horizontal guide lines
-	for(t_real y=start_y; y<end_y; y+=g_raster_size)
+	for(t_real y=start.y(); y<end.y(); y+=g_raster_size)
 	{
 		painter->drawLine(
-			QPointF(start_x, y),
-			QPointF(end_x, y));
+			QPointF(start.x(), y),
+			QPointF(end.x(), y));
 	}
 
 	// vertical guide lines
-	for(t_real x=start_x; x<end_x; x+=g_raster_size)
+	for(t_real x=start.x(); x<end.x(); x+=g_raster_size)
 	{
 		painter->drawLine(
-			QPointF(x, start_y),
-			QPointF(x, end_y));
+			QPointF(x, start.y()),
+			QPointF(x, end.y()));
 	}
 }
 
@@ -105,26 +99,32 @@ void QmScene::mousePressEvent(QGraphicsSceneMouseEvent *evt)
 
 void QmScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *evt)
 {
+	// get the item being dragged
+	QGraphicsItem* item = mouseGrabberItem();
+
+	// finish dragging the item
 	QGraphicsScene::mouseReleaseEvent(evt);
+
+	// snap the item to the grid
+	if(item)
+		item->setPos(snap_to_grid(item->scenePos()));
 }
 
 
 void QmScene::mouseMoveEvent(QGraphicsSceneMouseEvent *evt)
 {
-	QPointF posScene = evt->scenePos();
+	m_curScenePos = evt->scenePos();
+	m_curRasterScenePos = snap_to_grid(m_curScenePos);
 
-	if(QGraphicsItem* item = mouseGrabberItem(); item)
-	{
-		qreal raster_x = std::round(posScene.x() / g_raster_size);
-		qreal raster_y = std::round(posScene.y() / g_raster_size);
+	// get the item being dragged
+	QGraphicsItem* item = mouseGrabberItem();
 
-		item->setX(raster_x * g_raster_size);
-		item->setY(raster_y * g_raster_size);
-	}
-	else
-	{
-		QGraphicsScene::mouseMoveEvent(evt);
-	}
+	// drag the item
+	QGraphicsScene::mouseMoveEvent(evt);
+
+	// snap the item to the grid
+	if(item && g_snap_on_move)
+		item->setPos(snap_to_grid(item->scenePos()));
 }
 // ----------------------------------------------------------------------------
 
@@ -136,23 +136,31 @@ void QmScene::mouseMoveEvent(QGraphicsSceneMouseEvent *evt)
 QmView::QmView(QmScene *scene, QWidget *parent)
 	: QGraphicsView(scene, parent), m_scene{scene}
 {
-	// context menu
+	// context menus
 	m_context = std::make_shared<QMenu>(this);
+	m_contextNoItem = std::make_shared<QMenu>(this);
+
+	QIcon iconCopy = QIcon::fromTheme("edit-copy");
+	QAction *actionCopy = new QAction(iconCopy, "Copy Component", m_context.get());
+
+	QIcon iconPaste = QIcon::fromTheme("edit-paste");
+	QAction *actionPaste = new QAction(iconPaste, "Paste Component", m_context.get());
+
 	QIcon iconDelete = QIcon::fromTheme("edit-delete");
 	QAction *actionDelete = new QAction(iconDelete, "Delete Component", m_context.get());
+
+	m_context->addAction(actionCopy);
+	m_context->addAction(actionPaste);
+	m_context->addSeparator();
 	m_context->addAction(actionDelete);
+
+	m_contextNoItem->addAction(actionPaste);
 
 
 	// connections
-	connect(actionDelete, &QAction::triggered, [this]()
-	{
-		if(m_curItem)
-		{
-			delete m_curItem;
-			m_curItem = nullptr;
-			emit SignalSelectedItem(nullptr);
-		}
-	});
+	connect(actionCopy, &QAction::triggered, this, &QmView::CopyCurItem);
+	connect(actionPaste, &QAction::triggered, this, &QmView::PasteItem);
+	connect(actionDelete, &QAction::triggered, this, &QmView::DeleteCurItem);
 
 
 	// settings
@@ -169,6 +177,12 @@ QmView::QmView(QmScene *scene, QWidget *parent)
 
 QmView::~QmView()
 {
+	// remove any previous copy
+	if(m_copiedItem)
+	{
+		delete m_copiedItem;
+		m_copiedItem = nullptr;
+	}
 }
 
 
@@ -204,6 +218,52 @@ void QmView::SetCurItemConfig(const ComponentConfigs& cfg)
 			emit this->SignalSelectedItem(this->m_curItem);
 		}, Qt::QueuedConnection);
 	}
+}
+
+
+/**
+ * delete the currently selected component
+ */
+void QmView::DeleteCurItem()
+{
+	if(!m_curItem)
+		return;
+
+	delete m_curItem;
+	m_curItem = nullptr;
+	emit SignalSelectedItem(nullptr);
+}
+
+
+/**
+ * copy the currently selected component
+ */
+void QmView::CopyCurItem()
+{
+	// remove any previous copy
+	if(m_copiedItem)
+	{
+		delete m_copiedItem;
+		m_copiedItem = nullptr;
+	}
+
+	// clone the currently selected item
+	if(m_curItem)
+		m_copiedItem = m_curItem->clone();
+}
+
+
+/**
+ * paste a new component
+ */
+void QmView::PasteItem()
+{
+	if(!m_copiedItem)
+		return;
+
+	auto *clonedItem = m_copiedItem->clone();
+	clonedItem->setPos(m_scene->GetCursorPosition(true));
+	m_scene->AddQuantumComponent(clonedItem);
 }
 
 
@@ -280,12 +340,17 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 	}
 
 	// show context menu on right click on a component
-	if(m_curItem && (evt->buttons()&Qt::RightButton))
+	if(evt->buttons()&Qt::RightButton)
 	{
 		QPoint posGlobal = mapToGlobal(posVP);
 		posGlobal.rx() += 8;
 		posGlobal.ry() += 8;
-		m_context->popup(posGlobal);
+
+		// show different context menu depending on whether an item is selected
+		if(m_curItem)
+			m_context->popup(posGlobal);
+		else
+			m_contextNoItem->popup(posGlobal);
 
 		mouse_fully_handled = true;
 	}

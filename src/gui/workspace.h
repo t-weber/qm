@@ -36,6 +36,9 @@ public:
 	const std::vector<QuantumComponentItem*>& GetQuantumComponents() const
 	{ return m_components; }
 
+	const QPointF& GetCursorPosition(bool on_grid = true) const
+	{ return on_grid ? m_curRasterScenePos : m_curScenePos; }
+
 
 protected:
 	virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
@@ -47,6 +50,11 @@ protected:
 
 private:
 	std::vector<QuantumComponentItem*> m_components{};
+
+	// cursor position in scene
+	QPointF m_curScenePos{0, 0};
+	// cursor position in grid
+	QPointF m_curRasterScenePos{0, 0};
 };
 
 
@@ -80,13 +88,21 @@ protected:
 private:
 	QmScene *m_scene = nullptr;
 	QuantumComponentItem *m_curItem = nullptr;
+	QuantumComponentItem *m_copiedItem = nullptr;
 
+	// context menu for a selected item
 	std::shared_ptr<QMenu> m_context{};
+	// context menu in case no item has been selected
+	std::shared_ptr<QMenu> m_contextNoItem{};
 
 
 public slots:
 	// change the configuration of the current component
 	void SetCurItemConfig(const ComponentConfigs& cfg);
+
+	void DeleteCurItem();
+	void CopyCurItem();
+	void PasteItem();
 
 
 signals:

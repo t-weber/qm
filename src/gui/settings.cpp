@@ -12,6 +12,7 @@
 
 
 t_real g_raster_size = 35.;
+bool g_snap_on_move = false;
 
 
 const QColor& get_foreground_colour()

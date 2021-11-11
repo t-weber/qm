@@ -30,6 +30,8 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+#include "helpers.h"
+
 
 #define GUI_THEME_UNSET   "Unset"
 
@@ -164,6 +166,29 @@ void QmWnd::SetupGUI()
 	menuFile->addAction(actionExportSvg);
 	menuFile->addSeparator();
 	menuFile->addAction(actionExit);
+	// ------------------------------------------------------------------------
+
+
+	// ------------------------------------------------------------------------
+	// edit menu
+	QMenu *menuEdit = new QMenu{"Edit", this};
+
+	QIcon iconCopy = QIcon::fromTheme("edit-copy");
+	QAction *actionCopy = new QAction(iconCopy, "Copy Component", menuEdit);
+	connect(actionCopy, &QAction::triggered, m_view.get(), &QmView::CopyCurItem);
+
+	QIcon iconPaste = QIcon::fromTheme("edit-paste");
+	QAction *actionPaste = new QAction(iconPaste, "Paste Component", menuEdit);
+	connect(actionPaste, &QAction::triggered, m_view.get(), &QmView::PasteItem);
+
+	QIcon iconDelete = QIcon::fromTheme("edit-delete");
+	QAction *actionDelete = new QAction(iconDelete, "Delete Component", menuEdit);
+	connect(actionDelete, &QAction::triggered, m_view.get(), &QmView::DeleteCurItem);
+
+	menuEdit->addAction(actionCopy);
+	menuEdit->addAction(actionPaste);
+	menuEdit->addSeparator();
+	menuEdit->addAction(actionDelete);
 	// ------------------------------------------------------------------------
 
 
@@ -318,6 +343,10 @@ void QmWnd::SetupGUI()
 	actionSaveAs->setShortcut(QKeySequence::SaveAs);
 	actionExit->setShortcut(QKeySequence::Quit);
 
+	actionCopy->setShortcut(QKeySequence::Copy);
+	actionPaste->setShortcut(QKeySequence::Paste);
+	actionDelete->setShortcut(QKeySequence::Delete);
+
 
 	// apply settings
 	set_gui_theme(m_gui_theme);
@@ -327,6 +356,7 @@ void QmWnd::SetupGUI()
 	// menu bar
 	QMenuBar *menuBar = new QMenuBar{this};
 	menuBar->addMenu(menuFile);
+	menuBar->addMenu(menuEdit);
 	menuBar->addMenu(menuComponents);
 	menuBar->addMenu(menuSettings);
 	setMenuBar(menuBar);
@@ -336,8 +366,7 @@ void QmWnd::SetupGUI()
 	connect(m_view.get(), &QmView::SignalMouseCoordinates,
 		[this](qreal scene_x, qreal scene_y) -> void
 		{
-			t_int tile_x = t_int(std::round(scene_x/g_raster_size));
-			t_int tile_y = t_int(std::round(scene_y/g_raster_size));
+			auto [tile_x, tile_y] =  get_grid_indices(scene_x, scene_y);
 
 			SetStatusMessage(QString(
 				"Tile: (%1, %2), scene: (%3, %4).")
@@ -508,9 +537,7 @@ bool QmWnd::SaveFile(const QString& filename) const
 		propGate.put<std::string>(
 			"component.<xmlattr>.ident", gate->GetIdent());
 
-		QPointF pos = gate->scenePos();
-		t_int pos_x = t_int(std::round(pos.x()/g_raster_size));
-		t_int pos_y = t_int(std::round(pos.y()/g_raster_size));
+		auto [pos_x, pos_y] =  get_grid_indices(gate->scenePos());
 		propGate.put<t_int>("component.pos_x", pos_x);
 		propGate.put<t_int>("component.pos_y", pos_y);
 
