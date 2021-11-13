@@ -44,6 +44,8 @@ public:
 	bool SaveFile(const QString& filename) const;
 	bool LoadFile(const QString& filename);
 
+	void ShowSettings();
+
 	Resources& GetResources() { return m_res; }
 	const Resources& GetResources() const { return m_res; }
 
@@ -61,6 +63,7 @@ private:
 
 	std::shared_ptr<QmScene> m_scene{};
 	std::shared_ptr<QmView> m_view{};
+	std::shared_ptr<Settings> m_settings{};
 	std::shared_ptr<QLabel> m_statusLabel{};
 	std::shared_ptr<DockWidgetWrapper<ComponentProperties>> m_properties{};
 };

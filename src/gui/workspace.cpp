@@ -33,6 +33,21 @@ QmScene::~QmScene()
 
 
 /**
+ * is the given graphics item a known component?
+ */
+bool QmScene::IsQuantumComponent(const QGraphicsItem *item) const
+{
+	for(const QuantumComponentItem *comp : GetQuantumComponents())
+	{
+		if(item == comp)
+			return true;
+	}
+
+	return false;
+}
+
+
+/**
  * insert a quantum gate into the scene
  */
 void QmScene::AddQuantumComponent(QuantumComponentItem *gate)
@@ -55,8 +70,8 @@ void QmScene::Clear()
 /**
  * get the input state component associated with a given gate
  */
-const QuantumComponentItem*
-QmScene::GetCorrespondingInputState(const QuantumComponentItem* comp) const
+QuantumComponentItem*
+QmScene::GetCorrespondingInputState(QuantumComponentItem* comp) const
 {
 	if(!comp)
 		return nullptr;
@@ -68,14 +83,14 @@ QmScene::GetCorrespondingInputState(const QuantumComponentItem* comp) const
 	// grid position of the selected component
 	auto [pos_x, pos_y] =  get_grid_indices(comp->scenePos());
 
-	for(const auto* _input_comp : GetQuantumComponents())
+	for(auto* _input_comp : GetQuantumComponents())
 	{
 		// look for input state components
 		if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
 			continue;
 
 		// check if the components lies within the bounds of the input state
-		const InputStates *input_comp = static_cast<const InputStates*>(_input_comp);
+		InputStates *input_comp = static_cast<InputStates*>(_input_comp);
 		auto [input_pos_x, input_pos_y] =  get_grid_indices(input_comp->scenePos());
 		t_int input_height = input_comp->GetNumQBits();
 		t_int input_width = input_comp->GetWidth();
@@ -92,28 +107,28 @@ QmScene::GetCorrespondingInputState(const QuantumComponentItem* comp) const
 /**
  * get all gates associated with a given input gate
  */
-std::vector<const QuantumComponentItem*>
-QmScene::GetCorrespondingGates(const QuantumComponentItem* _input_comp) const
+std::vector<QuantumComponentItem*>
+QmScene::GetCorrespondingGates(QuantumComponentItem* _input_comp) const
 {
-	std::vector<const QuantumComponentItem*> gates;
+	std::vector<QuantumComponentItem*> gates;
 
 	if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
 		return gates;
 
 	// get input state dimensions
-	const InputStates *input_comp = static_cast<const InputStates*>(_input_comp);
-	auto [input_pos_x, input_pos_y] =  get_grid_indices(input_comp->scenePos());
+	InputStates *input_comp = static_cast<InputStates*>(_input_comp);
+	auto [input_pos_x, input_pos_y] = get_grid_indices(input_comp->scenePos());
 	t_int input_height = input_comp->GetNumQBits();
 	t_int input_width = input_comp->GetWidth();
 
-	for(const auto* gate : GetQuantumComponents())
+	for(auto* gate : GetQuantumComponents())
 	{
 		// look for gate components
 		if(!gate || gate->GetType() != ComponentType::GATE)
 			continue;
 
 		// grid position of the selected component
-		auto [pos_x, pos_y] =  get_grid_indices(gate->scenePos());
+		auto [pos_x, pos_y] = get_grid_indices(gate->scenePos());
 
 		// check if the gate lies within the bounds of the input state
 		if((pos_x >= input_pos_x && pos_x < input_pos_x+input_width) &&
@@ -126,13 +141,52 @@ QmScene::GetCorrespondingGates(const QuantumComponentItem* _input_comp) const
 
 
 /**
+ * get all gates associated with a given input gate
+ * (approximate version using scene coordinates used for dragging)
+ */
+std::vector<QuantumComponentItem*>
+QmScene::GetCorrespondingGatesApprox(QuantumComponentItem* _input_comp) const
+{
+	std::vector<QuantumComponentItem*> gates;
+
+	if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
+		return gates;
+
+	// get input state dimensions
+	InputStates *input_comp = static_cast<InputStates*>(_input_comp);
+	QPointF input_pos = input_comp->scenePos();
+	t_real input_height = input_comp->GetNumQBits() * g_raster_size;
+	t_real input_width = input_comp->GetWidth() * g_raster_size;
+
+	t_real eps = g_raster_size * 0.25;
+
+	for(auto* gate : GetQuantumComponents())
+	{
+		// look for gate components
+		if(!gate || gate->GetType() != ComponentType::GATE)
+			continue;
+
+		// grid position of the selected component
+		QPointF pos = gate->scenePos();
+
+		// check if the gate lies within the bounds of the input state
+		if((pos.x()+eps >= input_pos.x() && pos.x()-eps <= input_pos.x()+input_width) &&
+			(pos.y()+eps >= input_pos.y() && pos.y()-eps <= input_pos.y()+input_height))
+			gates.push_back(gate);
+	}
+
+	return gates;
+}
+
+
+/**
  * return all input state components
  */
-std::vector<const QuantumComponentItem*> QmScene::GetAllInputStates() const
+std::vector<QuantumComponentItem*> QmScene::GetAllInputStates() const
 {
-	std::vector<const QuantumComponentItem*> states;
+	std::vector<QuantumComponentItem*> states;
 
-	for(const auto* comp : GetQuantumComponents())
+	for(auto* comp : GetQuantumComponents())
 	{
 		if(comp && comp->GetType() == ComponentType::STATE)
 			states.push_back(comp);
@@ -145,13 +199,13 @@ std::vector<const QuantumComponentItem*> QmScene::GetAllInputStates() const
 /**
  * calculate the circuit associated with the given input state
  */
-void QmScene::Calculate(const QuantumComponentItem* _input_comp) const
+void QmScene::Calculate(QuantumComponentItem* _input_comp) const
 {
 	if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
 		return;
 
-	const InputStates *input_comp = static_cast<const InputStates*>(_input_comp);
-	std::vector<const QuantumComponentItem*> gates = GetCorrespondingGates(input_comp);
+	InputStates *input_comp = static_cast<InputStates*>(_input_comp);
+	std::vector<QuantumComponentItem*> gates = GetCorrespondingGates(input_comp);
 
 	// TODO: calculate total circuit operator
 }
@@ -160,9 +214,9 @@ void QmScene::Calculate(const QuantumComponentItem* _input_comp) const
 /**
  * calculate the circuits associated with the given input states
  */
-void QmScene::Calculate(std::vector<const QuantumComponentItem*>& input_states) const
+void QmScene::Calculate(std::vector<QuantumComponentItem*>& input_states) const
 {
-	for(const QuantumComponentItem* input_state : input_states)
+	for(QuantumComponentItem* input_state : input_states)
 		Calculate(input_state);
 }
 
@@ -209,38 +263,21 @@ void QmScene::drawBackground(QPainter* painter, const QRectF& rect)
 
 void QmScene::mousePressEvent(QGraphicsSceneMouseEvent *evt)
 {
+	//m_clickScenePos = evt->scenePos();
+
 	QGraphicsScene::mousePressEvent(evt);
 }
 
 
 void QmScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *evt)
 {
-	// get the item being dragged
-	QGraphicsItem* item = mouseGrabberItem();
-
-	// finish dragging the item
 	QGraphicsScene::mouseReleaseEvent(evt);
-
-	// snap the item to the grid
-	if(item)
-		item->setPos(snap_to_grid(item->scenePos()));
 }
 
 
 void QmScene::mouseMoveEvent(QGraphicsSceneMouseEvent *evt)
 {
-	m_curScenePos = evt->scenePos();
-	m_curRasterScenePos = snap_to_grid(m_curScenePos);
-
-	// get the item being dragged
-	QGraphicsItem* item = mouseGrabberItem();
-
-	// drag the item
 	QGraphicsScene::mouseMoveEvent(evt);
-
-	// snap the item to the grid
-	if(item && g_snap_on_move)
-		item->setPos(snap_to_grid(item->scenePos()));
 }
 // ----------------------------------------------------------------------------
 
@@ -321,8 +358,9 @@ void QmView::Clear()
  */
 void QmView::CalculateCurItem()
 {
-	const auto *selected_comp = GetCurItem();
-	const auto *input_comp = m_scene->GetCorrespondingInputState(selected_comp);
+	auto *selected_comp = GetCurItem();
+	auto *input_comp = m_scene->GetCorrespondingInputState(selected_comp);
+
 	if(!input_comp)
 	{
 		QMessageBox::critical(this, "Error", "No input state component was selected.");
@@ -399,7 +437,7 @@ void QmView::PasteItem()
 		return;
 
 	auto *clonedItem = m_copiedItem->clone();
-	clonedItem->setPos(m_scene->GetCursorPosition(true));
+	clonedItem->setPos(GetCursorPosition(true));
 	m_scene->AddQuantumComponent(clonedItem);
 }
 
@@ -464,10 +502,16 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 	const QGraphicsItem *oldItem = m_curItem;
 
 	// get current item under the cursor
-	if(items.size())
-		m_curItem = dynamic_cast<QuantumComponentItem*>(*items.begin());
+	if(items.size() && m_scene->IsQuantumComponent(*items.begin()))
+	{
+		m_curItem = static_cast<QuantumComponentItem*>(*items.begin());
+		m_curGates = m_scene->GetCorrespondingGates(m_curItem);
+	}
 	else
+	{
 		m_curItem = nullptr;
+		m_curGates.clear();
+	}
 
 	// a new item was selected
 	if(m_curItem != oldItem)
@@ -501,18 +545,72 @@ void QmView::mouseReleaseEvent(QMouseEvent* evt)
 {
 	if(m_curItem)
 		FitAreaToScene();
+
+
+	// get the item being dragged
+	QGraphicsItem* item = m_scene->mouseGrabberItem();
+
+	// finish dragging the item
 	QGraphicsView::mouseReleaseEvent(evt);
+
+	// snap the item to the grid
+	if(item)
+	{
+		item->setPos(snap_to_grid(item->scenePos()));
+
+		// also snap the corresponding gates to the grid
+		if(item==m_curItem && g_keep_gates_on_states)
+		{
+			// if this is an input state, move its gate by the same amount
+			for(auto *gate : m_curGates)
+				gate->setPos(snap_to_grid(gate->scenePos()));
+		}
+	}
 }
 
 
 void QmView::mouseMoveEvent(QMouseEvent* evt)
 {
 	QPoint posVP = evt->pos();
-	QPointF posScene = mapToScene(posVP);
+	m_curScenePos = mapToScene(posVP);
+	m_curRasterScenePos = snap_to_grid(m_curScenePos);
 
-	emit SignalMouseCoordinates(posScene.x(), posScene.y());
+	// get the item being dragged
+	QGraphicsItem* item = m_scene->mouseGrabberItem();
 
+	// original position of the item
+	QPointF posOrig{0, 0};
+	if(item)
+		posOrig = item->scenePos();
+
+	// drag the item
 	QGraphicsView::mouseMoveEvent(evt);
+
+	if(item)
+	{
+		// snap the item to the grid
+		if(g_snap_on_move)
+			item->setPos(snap_to_grid(item->scenePos()));
+
+		if(item==m_curItem && g_keep_gates_on_states)
+		{
+			// new position of the item
+			QPointF posNew = item->scenePos();
+			QPointF vecMoved = posNew - posOrig;
+
+			// if this is an input state, move its gate by the same amount
+			for(auto *gate : m_curGates)
+			{
+				gate->setPos(gate->pos() + vecMoved);
+
+				if(g_snap_on_move)
+					gate->setPos(snap_to_grid(gate->scenePos()));
+			}
+		}
+	}
+
+
+	emit SignalMouseCoordinates(m_curScenePos.x(), m_curScenePos.y());
 }
 
 

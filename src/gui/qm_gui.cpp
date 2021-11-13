@@ -85,7 +85,6 @@ QmWnd::QmWnd(QWidget* pParent)
  */
 void QmWnd::SetupGUI()
 {
-	setWindowTitle("QM");
 	setCentralWidget(m_view.get());
 
 	m_properties = std::make_shared<DockWidgetWrapper<ComponentProperties>>(this);
@@ -110,7 +109,10 @@ void QmWnd::SetupGUI()
 	QAction *actionLoad = new QAction{iconLoad, "Load...", this};
 	connect(actionLoad, &QAction::triggered, this, &QmWnd::FileLoad);
 
-	m_recent.SetRecentMenu(std::make_shared<QMenu>("Load Recent Files", this));
+	QIcon iconRecent = QIcon::fromTheme("document-open-recent");
+	auto menuRecent = std::make_shared<QMenu>("Load Recent Files", this);
+	menuRecent->setIcon(iconRecent);
+	m_recent.SetRecentMenu(menuRecent);
 
 	QIcon iconSave = QIcon::fromTheme("document-save");
 	QAction *actionSave = new QAction{iconSave, "Save", this};
@@ -120,7 +122,8 @@ void QmWnd::SetupGUI()
 	QAction *actionSaveAs = new QAction{iconSaveAs, "Save as...", this};
 	connect(actionSaveAs, &QAction::triggered, this, &QmWnd::FileSaveAs);
 
-	QAction *actionExportSvg = new QAction{"Export Graphics...", this};
+	QIcon iconExportSvg = QIcon::fromTheme("image-x-generic");
+	QAction *actionExportSvg = new QAction{iconExportSvg, "Export Graphics...", this};
 	connect(actionExportSvg, &QAction::triggered, [this]()
 	{
 		auto filedlg = std::make_shared<QFileDialog>(
@@ -251,10 +254,12 @@ void QmWnd::SetupGUI()
 
 	// ------------------------------------------------------------------------
 	// calculate menu
-	QAction *actionCalculateSelected = new QAction{"Selected Circuit", this};
+	QIcon iconCalc = QIcon::fromTheme("media-playback-start");
+	QAction *actionCalculateSelected = new QAction{iconCalc, "Calculate Selected Circuit", this};
 	connect(actionCalculateSelected, &QAction::triggered, m_view.get(), &QmView::CalculateCurItem);
 
-	QAction *actionCalculateAll = new QAction{"All Circuits", this};
+	QIcon iconCalcAll = QIcon::fromTheme("media-seek-forward");
+	QAction *actionCalculateAll = new QAction{iconCalcAll, "Calculate All Circuits", this};
 	connect(actionCalculateAll, &QAction::triggered, [this]()
 	{
 		auto input_comps = m_scene->GetAllInputStates();
@@ -283,8 +288,14 @@ void QmWnd::SetupGUI()
 	toolbarComponents->addAction(actionAddCnot);
 	toolbarComponents->addAction(actionAddToffoli);
 
+	QToolBar *toolbarCalc = new QToolBar{"Calculate", this};
+	toolbarCalc->setObjectName("CalculateToolbar");
+	toolbarCalc->addAction(actionCalculateSelected);
+	toolbarCalc->addAction(actionCalculateAll);
+
 	addToolBar(toolbarFile);
 	addToolBar(toolbarComponents);
+	addToolBar(toolbarCalc);
 	// ------------------------------------------------------------------------
 
 
@@ -313,7 +324,15 @@ void QmWnd::SetupGUI()
 	};
 
 	QMenu *menuSettings = new QMenu{"Settings", this};
+
+	QIcon iconSettings = QIcon::fromTheme("preferences-system");
+	QAction *actionSettings = new QAction{iconSettings, "Settings", this};
+	actionSettings->setMenuRole(QAction::PreferencesRole);
+	connect(actionSettings, &QAction::triggered, this, &QmWnd::ShowSettings);
+
+	QIcon iconGuiTheme = QIcon::fromTheme("preferences-desktop-theme");
 	QMenu *menuGuiTheme = new QMenu{"GUI Theme", this};
+	menuGuiTheme->setIcon(iconGuiTheme);
 	QActionGroup *groupTheme = new QActionGroup{this};
 	QStringList themes = QStyleFactory::keys();
 	themes.push_front(GUI_THEME_UNSET);
@@ -337,7 +356,8 @@ void QmWnd::SetupGUI()
 			menuGuiTheme->addSeparator();
 	}
 
-	QAction *actionGuiNative = new QAction{"Native GUI", this};
+	QIcon iconGuiNative = QIcon::fromTheme("preferences-desktop");
+	QAction *actionGuiNative = new QAction{iconGuiNative, "Native GUI", this};
 	actionGuiNative->setCheckable(true);
 	actionGuiNative->setChecked(m_gui_native);
 	connect(actionGuiNative, &QAction::triggered, [set_gui_native](bool checked)
@@ -345,9 +365,19 @@ void QmWnd::SetupGUI()
 		set_gui_native(checked);
 	});
 
-	menuSettings->addAction(toolbarFile->toggleViewAction());
-	menuSettings->addAction(toolbarComponents->toggleViewAction());
-	menuSettings->addAction(m_properties->toggleViewAction());
+	// tool menu
+	QIcon iconTools = QIcon::fromTheme("applications-system");
+	QMenu *menuTools = new QMenu{"Tools", this};
+	menuTools->setIcon(iconTools);
+	menuTools->addAction(toolbarFile->toggleViewAction());
+	menuTools->addAction(toolbarComponents->toggleViewAction());
+	menuTools->addAction(toolbarCalc->toggleViewAction());
+	menuTools->addSeparator();
+	menuTools->addAction(m_properties->toggleViewAction());
+
+	menuSettings->addAction(actionSettings);
+	menuSettings->addSeparator();
+	menuSettings->addMenu(menuTools);
 	menuSettings->addSeparator();
 	menuSettings->addMenu(menuGuiTheme);
 	menuSettings->addAction(actionGuiNative);
@@ -360,6 +390,7 @@ void QmWnd::SetupGUI()
 	actionSave->setShortcut(QKeySequence::Save);
 	actionSaveAs->setShortcut(QKeySequence::SaveAs);
 	actionExit->setShortcut(QKeySequence::Quit);
+	actionSettings->setShortcut(QKeySequence::Preferences);
 
 	actionCopy->setShortcut(QKeySequence::Copy);
 	actionPaste->setShortcut(QKeySequence::Paste);
@@ -404,8 +435,17 @@ void QmWnd::SetupGUI()
 		[this](const QString& filename) -> bool
 	{
 		this->Clear();
-		return this->LoadFile(filename);
+
+		if(this->LoadFile(filename))
+		{
+			m_recent.SetOpenFile(filename);
+			setWindowTitle(m_recent.GetOpenFile());
+			return true;
+		}
+
+		return false;
 	});
+
 	SetStatusMessage("Ready.");
 }
 
@@ -422,6 +462,7 @@ void QmWnd::Clear()
 	m_scene->Clear();
 
 	m_recent.SetOpenFile("");
+	setWindowTitle("");
 }
 
 
@@ -454,6 +495,8 @@ void QmWnd::FileLoad()
 	if(LoadFile(files[0]))
 	{
 		m_recent.SetOpenFile(files[0]);
+		setWindowTitle(m_recent.GetOpenFile());
+
 		m_recent.AddRecentFile(m_recent.GetOpenFile(),
 			[this](const QString& filename) -> bool
 		{
@@ -505,6 +548,8 @@ void QmWnd::FileSaveAs()
 	if(SaveFile(files[0]))
 	{
 		m_recent.SetOpenFile(files[0]);
+		setWindowTitle(m_recent.GetOpenFile());
+
 		m_recent.AddRecentFile(m_recent.GetOpenFile(),
 			[this](const QString& filename) -> bool
 		{
@@ -661,6 +706,20 @@ bool QmWnd::LoadFile(const QString& filename)
 
 	m_view->FitAreaToScene();
 	return true;
+}
+
+
+/**
+ * show settings dialog
+ */
+void QmWnd::ShowSettings()
+{
+	if(!m_settings)
+		m_settings = std::make_shared<Settings>(this);
+
+	m_settings->show();
+	m_settings->raise();
+	m_settings->activateWindow();
 }
 
 

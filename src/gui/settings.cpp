@@ -13,6 +13,7 @@
 
 t_real g_raster_size = 35.;
 bool g_snap_on_move = false;
+bool g_keep_gates_on_states = true;
 
 
 const QColor& get_foreground_colour()
@@ -33,3 +34,16 @@ const QColor& get_background_colour()
 
 	return col;
 }
+
+
+// ----------------------------------------------------------------------------
+// settings dialog
+// ----------------------------------------------------------------------------
+
+Settings::Settings(QWidget *parent)
+	: QDialog(parent)
+{
+}
+
+// TODO
+// ----------------------------------------------------------------------------

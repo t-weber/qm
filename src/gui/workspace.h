@@ -36,15 +36,14 @@ public:
 	const std::vector<QuantumComponentItem*>& GetQuantumComponents() const
 	{ return m_components; }
 
-	const QuantumComponentItem* GetCorrespondingInputState(const QuantumComponentItem* comp) const;
-	std::vector<const QuantumComponentItem*> GetCorrespondingGates(const QuantumComponentItem* input_state) const;
-	std::vector<const QuantumComponentItem*> GetAllInputStates() const;
+	bool IsQuantumComponent(const QGraphicsItem *item) const;
+	QuantumComponentItem* GetCorrespondingInputState(QuantumComponentItem* comp) const;
+	std::vector<QuantumComponentItem*> GetCorrespondingGates(QuantumComponentItem* input_state) const;
+	std::vector<QuantumComponentItem*> GetCorrespondingGatesApprox(QuantumComponentItem* input_state) const;
+	std::vector<QuantumComponentItem*> GetAllInputStates() const;
 
-	void Calculate(const QuantumComponentItem* input_state) const;
-	void Calculate(std::vector<const QuantumComponentItem*>& input_states) const;
-
-	const QPointF& GetCursorPosition(bool on_grid = true) const
-	{ return on_grid ? m_curRasterScenePos : m_curScenePos; }
+	void Calculate(QuantumComponentItem* input_state) const;
+	void Calculate(std::vector<QuantumComponentItem*>& input_states) const;
 
 
 protected:
@@ -57,11 +56,6 @@ protected:
 
 private:
 	std::vector<QuantumComponentItem*> m_components{};
-
-	// cursor position in scene
-	QPointF m_curScenePos{0, 0};
-	// cursor position in grid
-	QPointF m_curRasterScenePos{0, 0};
 };
 
 
@@ -80,6 +74,9 @@ public:
 
 	QuantumComponentItem* GetCurItem() { return m_curItem; }
 	const QuantumComponentItem* GetCurItem() const { return m_curItem; }
+
+	const QPointF& GetCursorPosition(bool on_grid = true) const
+	{ return on_grid ? m_curRasterScenePos : m_curScenePos; }
 
 
 protected:
@@ -100,10 +97,18 @@ private:
 	QuantumComponentItem *m_curItem = nullptr;
 	QuantumComponentItem *m_copiedItem = nullptr;
 
+	// gates connected to current item
+	std::vector<QuantumComponentItem*> m_curGates{};
+
 	// context menu for a selected item
 	std::shared_ptr<QMenu> m_context{};
 	// context menu in case no item has been selected
 	std::shared_ptr<QMenu> m_contextNoItem{};
+
+	// cursor position in scene
+	QPointF m_curScenePos{0, 0};
+	// cursor position in grid
+	QPointF m_curRasterScenePos{0, 0};
 
 
 public slots:

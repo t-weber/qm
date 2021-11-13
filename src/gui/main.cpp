@@ -33,6 +33,8 @@ int main(int argc, char** argv)
 		auto app = std::make_unique<QApplication>(argc, argv);
 		app->setOrganizationName("tw");
 		app->setApplicationName("qm");
+		app->setApplicationDisplayName("Quantum Algorithms Editor");
+		app->setApplicationVersion("0.2");
 		set_locales();
 
 		// main window
@@ -51,6 +53,9 @@ int main(int argc, char** argv)
 
 		// show main window
 		qm->show();
+		qm->raise();
+		qm->activateWindow();
+
 		return app->exec();
 	}
 	catch(const std::exception& ex)
