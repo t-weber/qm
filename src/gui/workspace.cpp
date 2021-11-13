@@ -11,6 +11,7 @@
 #include <QtGui/QWheelEvent>
 #include <QtGui/QKeyEvent>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
+#include <QtWidgets/QMessageBox>
 
 #include <cmath>
 
@@ -48,6 +49,121 @@ void QmScene::Clear()
 {
 	clear();
 	m_components.clear();
+}
+
+
+/**
+ * get the input state component associated with a given gate
+ */
+const QuantumComponentItem*
+QmScene::GetCorrespondingInputState(const QuantumComponentItem* comp) const
+{
+	if(!comp)
+		return nullptr;
+
+	// the component already is an input state component
+	if(comp->GetType() == ComponentType::STATE)
+		return comp;
+
+	// grid position of the selected component
+	auto [pos_x, pos_y] =  get_grid_indices(comp->scenePos());
+
+	for(const auto* _input_comp : GetQuantumComponents())
+	{
+		// look for input state components
+		if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
+			continue;
+
+		// check if the components lies within the bounds of the input state
+		const InputStates *input_comp = static_cast<const InputStates*>(_input_comp);
+		auto [input_pos_x, input_pos_y] =  get_grid_indices(input_comp->scenePos());
+		t_int input_height = input_comp->GetNumQBits();
+		t_int input_width = input_comp->GetWidth();
+
+		if((pos_x >= input_pos_x && pos_x < input_pos_x+input_width) &&
+			(pos_y >= input_pos_y && pos_y < input_pos_y+input_height))
+			return input_comp;
+	}
+
+	return nullptr;
+}
+
+
+/**
+ * get all gates associated with a given input gate
+ */
+std::vector<const QuantumComponentItem*>
+QmScene::GetCorrespondingGates(const QuantumComponentItem* _input_comp) const
+{
+	std::vector<const QuantumComponentItem*> gates;
+
+	if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
+		return gates;
+
+	// get input state dimensions
+	const InputStates *input_comp = static_cast<const InputStates*>(_input_comp);
+	auto [input_pos_x, input_pos_y] =  get_grid_indices(input_comp->scenePos());
+	t_int input_height = input_comp->GetNumQBits();
+	t_int input_width = input_comp->GetWidth();
+
+	for(const auto* gate : GetQuantumComponents())
+	{
+		// look for gate components
+		if(!gate || gate->GetType() != ComponentType::GATE)
+			continue;
+
+		// grid position of the selected component
+		auto [pos_x, pos_y] =  get_grid_indices(gate->scenePos());
+
+		// check if the gate lies within the bounds of the input state
+		if((pos_x >= input_pos_x && pos_x < input_pos_x+input_width) &&
+			(pos_y >= input_pos_y && pos_y < input_pos_y+input_height))
+			gates.push_back(gate);
+	}
+
+	return gates;
+}
+
+
+/**
+ * return all input state components
+ */
+std::vector<const QuantumComponentItem*> QmScene::GetAllInputStates() const
+{
+	std::vector<const QuantumComponentItem*> states;
+
+	for(const auto* comp : GetQuantumComponents())
+	{
+		if(comp && comp->GetType() == ComponentType::STATE)
+			states.push_back(comp);
+	}
+
+	return states;
+}
+
+
+/**
+ * calculate the circuit associated with the given input state
+ */
+void QmScene::Calculate(const QuantumComponentItem* _input_comp) const
+{
+	if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
+		return;
+
+	const InputStates *input_comp = static_cast<const InputStates*>(_input_comp);
+	std::vector<const QuantumComponentItem*> gates = GetCorrespondingGates(input_comp);
+
+	// TODO: calculate total circuit operator
+}
+
+
+/**
+ * calculate the circuits associated with the given input states
+ */
+void QmScene::Calculate(std::vector<const QuantumComponentItem*>& input_states) const
+{
+	for(const QuantumComponentItem* input_state : input_states)
+		Calculate(input_state);
 }
 
 
@@ -149,10 +265,13 @@ QmView::QmView(QmScene *scene, QWidget *parent)
 	QIcon iconDelete = QIcon::fromTheme("edit-delete");
 	QAction *actionDelete = new QAction(iconDelete, "Delete Component", m_context.get());
 
+	QAction *actionCalc = new QAction(iconDelete, "Calculate Circuit", m_context.get());
+
 	m_context->addAction(actionCopy);
 	m_context->addAction(actionPaste);
-	m_context->addSeparator();
 	m_context->addAction(actionDelete);
+	m_context->addSeparator();
+	m_context->addAction(actionCalc);
 
 	m_contextNoItem->addAction(actionPaste);
 
@@ -161,6 +280,7 @@ QmView::QmView(QmScene *scene, QWidget *parent)
 	connect(actionCopy, &QAction::triggered, this, &QmView::CopyCurItem);
 	connect(actionPaste, &QAction::triggered, this, &QmView::PasteItem);
 	connect(actionDelete, &QAction::triggered, this, &QmView::DeleteCurItem);
+	connect(actionCalc, &QAction::triggered, this, &QmView::CalculateCurItem);
 
 
 	// settings
@@ -193,6 +313,23 @@ void QmView::Clear()
 {
 	m_curItem = nullptr;
 	emit SignalSelectedItem(nullptr);
+}
+
+
+/**
+ * calculate the circuit associated with the currently selected item
+ */
+void QmView::CalculateCurItem()
+{
+	const auto *selected_comp = GetCurItem();
+	const auto *input_comp = m_scene->GetCorrespondingInputState(selected_comp);
+	if(!input_comp)
+	{
+		QMessageBox::critical(this, "Error", "No input state component was selected.");
+		return;
+	}
+
+	m_scene->Calculate(input_comp);
 }
 
 

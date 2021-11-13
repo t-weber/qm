@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <optional>
 #include <variant>
 #include <vector>
 

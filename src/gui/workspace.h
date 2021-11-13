@@ -36,6 +36,13 @@ public:
 	const std::vector<QuantumComponentItem*>& GetQuantumComponents() const
 	{ return m_components; }
 
+	const QuantumComponentItem* GetCorrespondingInputState(const QuantumComponentItem* comp) const;
+	std::vector<const QuantumComponentItem*> GetCorrespondingGates(const QuantumComponentItem* input_state) const;
+	std::vector<const QuantumComponentItem*> GetAllInputStates() const;
+
+	void Calculate(const QuantumComponentItem* input_state) const;
+	void Calculate(std::vector<const QuantumComponentItem*>& input_states) const;
+
 	const QPointF& GetCursorPosition(bool on_grid = true) const
 	{ return on_grid ? m_curRasterScenePos : m_curScenePos; }
 
@@ -71,6 +78,9 @@ public:
 	void Clear();
 	void FitAreaToScene(const QRectF *_sceneRect = nullptr);
 
+	QuantumComponentItem* GetCurItem() { return m_curItem; }
+	const QuantumComponentItem* GetCurItem() const { return m_curItem; }
+
 
 protected:
 	virtual void mousePressEvent(QMouseEvent *evt) override;
@@ -103,6 +113,8 @@ public slots:
 	void DeleteCurItem();
 	void CopyCurItem();
 	void PasteItem();
+
+	void CalculateCurItem();
 
 
 signals:

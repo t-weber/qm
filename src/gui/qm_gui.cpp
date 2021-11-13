@@ -250,6 +250,24 @@ void QmWnd::SetupGUI()
 
 
 	// ------------------------------------------------------------------------
+	// calculate menu
+	QAction *actionCalculateSelected = new QAction{"Selected Circuit", this};
+	connect(actionCalculateSelected, &QAction::triggered, m_view.get(), &QmView::CalculateCurItem);
+
+	QAction *actionCalculateAll = new QAction{"All Circuits", this};
+	connect(actionCalculateAll, &QAction::triggered, [this]()
+	{
+		auto input_comps = m_scene->GetAllInputStates();
+		m_scene->Calculate(input_comps);
+	});
+
+	QMenu *menuCalculate = new QMenu{"Calculate", this};
+	menuCalculate->addAction(actionCalculateSelected);
+	menuCalculate->addAction(actionCalculateAll);
+	// ------------------------------------------------------------------------
+
+
+	// ------------------------------------------------------------------------
 	// tool bar
 	QToolBar *toolbarFile = new QToolBar{"File", this};
 	toolbarFile->setObjectName("FileToolbar");
@@ -358,6 +376,7 @@ void QmWnd::SetupGUI()
 	menuBar->addMenu(menuFile);
 	menuBar->addMenu(menuEdit);
 	menuBar->addMenu(menuComponents);
+	menuBar->addMenu(menuCalculate);
 	menuBar->addMenu(menuSettings);
 	setMenuBar(menuBar);
 
