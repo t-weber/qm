@@ -10,6 +10,9 @@
 
 #include <QtGui/QColor>
 #include <QtWidgets/QDialog>
+#include <QtWidgets/QGridLayout>
+
+#include <memory>
 
 #include "types.h"
 
@@ -39,6 +42,18 @@ class Settings : public QDialog
 public:
 	Settings(QWidget *parent=nullptr);
 	virtual ~Settings() = default;
+
+	Settings(const Settings&) = delete;
+	const Settings& operator=(const Settings&) = delete;
+
+
+protected:
+	virtual void accept() override;
+	virtual void reject() override;
+
+
+private:
+	std::shared_ptr<QGridLayout> m_grid{};
 };
 
 #endif

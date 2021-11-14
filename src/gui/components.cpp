@@ -70,7 +70,7 @@ void InputStates::paint(QPainter *painter,
 	pen.setWidthF(1.5);
 
 	//QFont font = painter->font();
-	//font.setPixelSize(g_raster_size*0.5);
+	//font.setPointSize(g_raster_size*0.5);
 	//painter->setFont(font);
 
 	painter->setPen(pen);
@@ -192,7 +192,7 @@ void HadamardGate::paint(QPainter *painter,
 	brush.setColor(colour_bg);
 
 	//QFont font = painter->font();
-	//font.setPixelSize(g_raster_size*0.5);
+	//font.setPointSize(g_raster_size*0.5);
 	//painter->setFont(font);
 
 	painter->setPen(pen);
@@ -281,7 +281,7 @@ void PauliGate::paint(QPainter *painter,
 	brush.setColor(colour_bg);
 
 	//QFont font = painter->font();
-	//font.setPixelSize(g_raster_size*0.5);
+	//font.setPointSize(g_raster_size*0.5);
 	//painter->setFont(font);
 
 	painter->setPen(pen);

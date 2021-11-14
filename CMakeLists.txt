@@ -39,6 +39,7 @@ add_executable(qm
 	src/gui/components_table.cpp src/gui/components_table.h
 	src/gui/component_properties.cpp src/gui/component_properties.h
 	src/gui/settings.cpp src/gui/settings.h
+	src/gui/about.cpp src/gui/about.h
 	src/gui/resources.cpp src/gui/resources.h
 	src/gui/recent.h src/gui/types.h src/gui/helpers.h
 	src/lib/math_algos.h src/lib/math_conts.h src/lib/math_concepts.h

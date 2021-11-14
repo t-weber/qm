@@ -10,6 +10,7 @@
 
 #include <QtCore/QPointF>
 #include <QtGui/QColor>
+#include <QtWidgets/QWidget>
 
 #include <tuple>
 #include <cmath>
@@ -95,6 +96,21 @@ t_point snap_to_grid(
 	raster_y *= raster_h;
 
 	return t_point{raster_x, raster_y};
+}
+
+
+/**
+ * show a dialog
+ * @see https://doc.qt.io/qt-5/qdialog.html#code-examples
+ */
+static inline void show_dialog(QWidget *dlg)
+{
+	if(!dlg)
+		return;
+
+	dlg->show();
+	dlg->raise();
+	dlg->activateWindow();
 }
 
 #endif

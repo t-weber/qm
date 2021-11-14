@@ -7,8 +7,12 @@
 
 #include "settings.h"
 
+#include <QtCore/QSettings>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QPalette>
+#include <QtWidgets/QDialogButtonBox>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QSpacerItem>
 
 
 t_real g_raster_size = 35.;
@@ -43,6 +47,64 @@ const QColor& get_background_colour()
 Settings::Settings(QWidget *parent)
 	: QDialog(parent)
 {
+	setWindowTitle("Settings");
+	setSizeGripEnabled(true);
+
+
+	// grid layout
+	m_grid = std::make_shared<QGridLayout>(this);
+	m_grid->setSpacing(4);
+	m_grid->setContentsMargins(8, 8, 8, 8);
+
+
+	// buttons
+	QDialogButtonBox *buttonbox = new QDialogButtonBox(this);
+	buttonbox->setStandardButtons(
+		QDialogButtonBox::Ok |
+		QDialogButtonBox::Apply |
+		QDialogButtonBox::Cancel |
+		QDialogButtonBox::RestoreDefaults);
+	buttonbox->button(QDialogButtonBox::Ok)->setDefault(true);
+
+	connect(buttonbox, &QDialogButtonBox::clicked,
+		[this, buttonbox](QAbstractButton *btn) -> void
+	{
+		// get button role
+		QDialogButtonBox::ButtonRole role = buttonbox->buttonRole(btn);
+
+		if(role == QDialogButtonBox::AcceptRole)
+			this->accept();
+		else if(role == QDialogButtonBox::RejectRole)
+			this->reject();
+	});
+
+	m_grid->addWidget(buttonbox, m_grid->rowCount(), 0, 1, 1);
+
+
+	// restore settings
+	QSettings settings{this};
+	if(settings.contains("dlg_settings/wnd_geo"))
+	{
+		QByteArray arr{settings.value("dlg_settings/wnd_geo").toByteArray()};
+		this->restoreGeometry(arr);
+	}
+}
+
+
+void Settings::accept()
+{
+	// save settings
+	QSettings settings{this};
+	QByteArray geo{this->saveGeometry()};
+	settings.setValue("dlg_settings/wnd_geo", geo);
+
+	QDialog::accept();
+}
+
+
+void Settings::reject()
+{
+	QDialog::reject();
 }
 
 // TODO

@@ -333,7 +333,7 @@ void QmWnd::SetupGUI()
 	QMenu *menuSettings = new QMenu{"Settings", this};
 
 	QIcon iconSettings = QIcon::fromTheme("preferences-system");
-	QAction *actionSettings = new QAction{iconSettings, "Settings", this};
+	QAction *actionSettings = new QAction{iconSettings, "Settings...", this};
 	actionSettings->setMenuRole(QAction::PreferencesRole);
 	connect(actionSettings, &QAction::triggered, this, &QmWnd::ShowSettings);
 
@@ -391,6 +391,19 @@ void QmWnd::SetupGUI()
 	// ------------------------------------------------------------------------
 
 
+	// ------------------------------------------------------------------------
+	// about menu
+	QMenu *menuHelp = new QMenu{"Help", this};
+
+	QIcon iconAbout = QIcon::fromTheme("help-about");
+	QAction *actionAbout = new QAction{iconAbout, "About...", this};
+	actionAbout->setMenuRole(QAction::AboutRole);
+	connect(actionAbout, &QAction::triggered, this, &QmWnd::ShowAbout);
+
+	menuHelp->addAction(actionAbout);
+	// ------------------------------------------------------------------------
+
+
 	// keyboard shortcuts
 	actionNew->setShortcut(QKeySequence::New);
 	actionLoad->setShortcut(QKeySequence::Open);
@@ -416,6 +429,7 @@ void QmWnd::SetupGUI()
 	menuBar->addMenu(menuComponents);
 	menuBar->addMenu(menuCalculate);
 	menuBar->addMenu(menuSettings);
+	menuBar->addMenu(menuHelp);
 	setMenuBar(menuBar);
 
 
@@ -732,9 +746,19 @@ void QmWnd::ShowSettings()
 	if(!m_settings)
 		m_settings = std::make_shared<Settings>(this);
 
-	m_settings->show();
-	m_settings->raise();
-	m_settings->activateWindow();
+	show_dialog(m_settings.get());
+}
+
+
+/**
+ * show about dialog
+ */
+void QmWnd::ShowAbout()
+{
+	if(!m_about)
+		m_about = std::make_shared<About>(this);
+
+	show_dialog(m_about.get());
 }
 
 

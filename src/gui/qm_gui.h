@@ -22,6 +22,7 @@
 #include "resources.h"
 #include "types.h"
 #include "settings.h"
+#include "about.h"
 
 
 class QmWnd : public QMainWindow
@@ -30,7 +31,10 @@ public:
 	using QMainWindow::QMainWindow;
 
 	QmWnd(QWidget* pParent = nullptr);
-	~QmWnd();
+	virtual ~QmWnd();
+
+	QmWnd(const QmWnd&) = delete;
+	const QmWnd& operator=(const QmWnd&) = delete;
 
 	void SetupGUI();
 	void SetStatusMessage(const QString& msg);
@@ -47,6 +51,7 @@ public:
 	bool LoadFile(const QString& filename);
 
 	void ShowSettings();
+	void ShowAbout();
 
 	Resources& GetResources() { return m_res; }
 	const Resources& GetResources() const { return m_res; }
@@ -68,9 +73,11 @@ private:
 
 	std::shared_ptr<QmScene> m_scene{};
 	std::shared_ptr<QmView> m_view{};
-	std::shared_ptr<Settings> m_settings{};
 	std::shared_ptr<QLabel> m_statusLabel{};
 	std::shared_ptr<DockWidgetWrapper<ComponentProperties>> m_properties{};
+
+	std::shared_ptr<Settings> m_settings{};
+	std::shared_ptr<About> m_about{};
 };
 
 

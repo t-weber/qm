@@ -6,6 +6,7 @@
  */
 
 #include "qm_gui.h"
+#include "helpers.h"
 
 #include <QtCore/QLocale>
 #include <QtWidgets/QApplication>
@@ -51,11 +52,8 @@ int main(int argc, char** argv)
 		qm->SetupGUI();
 		qm->FileNew();
 
-		// show main window
-		qm->show();
-		qm->raise();
-		qm->activateWindow();
-
+		// show the main window
+		show_dialog(qm.get());
 		return app->exec();
 	}
 	catch(const std::exception& ex)
