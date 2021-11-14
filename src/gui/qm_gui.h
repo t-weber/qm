@@ -41,6 +41,8 @@ public:
 	void FileSave();
 	void FileSaveAs();
 
+	bool FileLoadRecent(const QString& filename);
+
 	bool SaveFile(const QString& filename) const;
 	bool LoadFile(const QString& filename);
 
@@ -50,8 +52,11 @@ public:
 	const Resources& GetResources() const { return m_res; }
 
 
-private:
+protected:
 	virtual void closeEvent(QCloseEvent *) override;
+
+	virtual void dragEnterEvent(QDragEnterEvent *) override;
+	virtual void dropEvent(QDropEvent *) override;
 
 
 private:

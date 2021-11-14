@@ -8,6 +8,7 @@
 #include "qm_gui.h"
 
 #include <QtCore/QSettings>
+#include <QtCore/QMimeData>
 #include <QtGui/QMouseEvent>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMenuBar>
@@ -45,6 +46,12 @@ QmWnd::QmWnd(QWidget* pParent)
 		m_view{new QmView{m_scene.get(), this}},
 		m_statusLabel{std::make_shared<QLabel>(this)}
 {
+	setWindowTitle("Quantum Algorithms Editor");
+
+	// allow dropping of files onto the main window
+	setAcceptDrops(true);
+
+
 	// ------------------------------------------------------------------------
 	// restore settings
 	QSettings settings{this};
@@ -434,16 +441,7 @@ void QmWnd::SetupGUI()
 	m_recent.CreateRecentFileMenu(
 		[this](const QString& filename) -> bool
 	{
-		this->Clear();
-
-		if(this->LoadFile(filename))
-		{
-			m_recent.SetOpenFile(filename);
-			setWindowTitle(m_recent.GetOpenFile());
-			return true;
-		}
-
-		return false;
+		return this->FileLoadRecent(filename);
 	});
 
 	SetStatusMessage("Ready.");
@@ -462,7 +460,7 @@ void QmWnd::Clear()
 	m_scene->Clear();
 
 	m_recent.SetOpenFile("");
-	setWindowTitle("");
+	setWindowFilePath("");
 }
 
 
@@ -495,13 +493,12 @@ void QmWnd::FileLoad()
 	if(LoadFile(files[0]))
 	{
 		m_recent.SetOpenFile(files[0]);
-		setWindowTitle(m_recent.GetOpenFile());
+		setWindowFilePath(m_recent.GetOpenFile());
 
 		m_recent.AddRecentFile(m_recent.GetOpenFile(),
 			[this](const QString& filename) -> bool
 		{
-			this->Clear();
-			return this->LoadFile(filename);
+			return this->FileLoadRecent(filename);
 		});
 
 		fs::path file{files[0].toStdString()};
@@ -511,6 +508,25 @@ void QmWnd::FileLoad()
 	{
 		QMessageBox::critical(this, "Error",
 			QString("File \"%1\" could not be loaded.").arg(files[0]));
+	}
+}
+
+
+bool QmWnd::FileLoadRecent(const QString& filename)
+{
+	this->Clear();
+
+	if(this->LoadFile(filename))
+	{
+		m_recent.SetOpenFile(filename);
+		this->setWindowFilePath(m_recent.GetOpenFile());
+		return true;
+	}
+	else
+	{
+		QMessageBox::critical(this, "Error",
+			QString("File \"%1\" could not be loaded.").arg(filename));
+		return false;
 	}
 }
 
@@ -548,13 +564,12 @@ void QmWnd::FileSaveAs()
 	if(SaveFile(files[0]))
 	{
 		m_recent.SetOpenFile(files[0]);
-		setWindowTitle(m_recent.GetOpenFile());
+		setWindowFilePath(m_recent.GetOpenFile());
 
 		m_recent.AddRecentFile(m_recent.GetOpenFile(),
 			[this](const QString& filename) -> bool
 		{
-			this->Clear();
-			return this->LoadFile(filename);
+			return this->FileLoadRecent(filename);
 		});
 
 		fs::path file{files[0].toStdString()};
@@ -601,7 +616,7 @@ bool QmWnd::SaveFile(const QString& filename) const
 		propGate.put<std::string>(
 			"component.<xmlattr>.ident", gate->GetIdent());
 
-		auto [pos_x, pos_y] =  get_grid_indices(gate->scenePos());
+		auto [pos_x, pos_y] = gate->GetGridPos();
 		propGate.put<t_int>("component.pos_x", pos_x);
 		propGate.put<t_int>("component.pos_y", pos_y);
 
@@ -739,6 +754,70 @@ void QmWnd::closeEvent(QCloseEvent *e)
 	// ------------------------------------------------------------------------
 
 	QMainWindow::closeEvent(e);
+}
+
+
+/**
+ * accept a file dropped onto the main window
+ * @see https://doc.qt.io/qt-5/dnd.html
+ */
+void QmWnd::dragEnterEvent(QDragEnterEvent *evt)
+{
+	if(!evt)
+		return;
+
+	// accept urls
+	if(evt->mimeData()->hasUrls())
+		evt->accept();
+
+	QMainWindow::dragEnterEvent(evt);
+}
+
+
+/**
+ * accept a file dropped onto the main window
+ * @see https://doc.qt.io/qt-5/dnd.html
+ */
+void QmWnd::dropEvent(QDropEvent *evt)
+{
+	if(!evt)
+		return;
+
+	// get mime data dropped on the main window
+	if(const QMimeData* dat = evt->mimeData(); dat && dat->hasUrls())
+	{
+		// get the list of urls dropped on the main window
+		if(QList<QUrl> urls = dat->urls(); urls.size() > 0)
+		{
+			// use the first url for the file name
+			const QUrl& url = *urls.begin();
+			QString filename = url.path();
+
+			// load the dropped file
+			Clear();
+			if(LoadFile(filename))
+			{
+				m_recent.SetOpenFile(filename);
+				setWindowFilePath(m_recent.GetOpenFile());
+
+				m_recent.AddRecentFile(m_recent.GetOpenFile(),
+				[this](const QString& filename) -> bool
+				{
+					return this->FileLoadRecent(filename);
+				});
+
+				fs::path file{filename.toStdString()};
+				m_recent.SetRecentDir(file.parent_path().string().c_str());
+			}
+			else
+			{
+				QMessageBox::critical(this, "Error",
+					QString("File \"%1\" could not be loaded.").arg(filename));
+			}
+		}
+	}
+
+	QMainWindow::dropEvent(evt);
 }
 
 

@@ -17,6 +17,7 @@
 
 #include "qm_gui.h"
 #include "helpers.h"
+#include "components_table.h"
 
 
 // ----------------------------------------------------------------------------
@@ -81,7 +82,7 @@ QmScene::GetCorrespondingInputState(QuantumComponentItem* comp) const
 		return comp;
 
 	// grid position of the selected component
-	auto [pos_x, pos_y] =  get_grid_indices(comp->scenePos());
+	auto [col_pos, row_pos] = comp->GetGridPos();
 
 	for(auto* _input_comp : GetQuantumComponents())
 	{
@@ -91,12 +92,12 @@ QmScene::GetCorrespondingInputState(QuantumComponentItem* comp) const
 
 		// check if the components lies within the bounds of the input state
 		InputStates *input_comp = static_cast<InputStates*>(_input_comp);
-		auto [input_pos_x, input_pos_y] =  get_grid_indices(input_comp->scenePos());
+		auto [input_col_pos, input_row_pos] = input_comp->GetGridPos();
 		t_int input_height = input_comp->GetNumQBits();
 		t_int input_width = input_comp->GetWidth();
 
-		if((pos_x >= input_pos_x && pos_x < input_pos_x+input_width) &&
-			(pos_y >= input_pos_y && pos_y < input_pos_y+input_height))
+		if((col_pos >= input_col_pos && col_pos < input_col_pos+input_width) &&
+			(row_pos >= input_row_pos && row_pos < input_row_pos+input_height))
 			return input_comp;
 	}
 
@@ -117,7 +118,7 @@ QmScene::GetCorrespondingGates(QuantumComponentItem* _input_comp) const
 
 	// get input state dimensions
 	InputStates *input_comp = static_cast<InputStates*>(_input_comp);
-	auto [input_pos_x, input_pos_y] = get_grid_indices(input_comp->scenePos());
+	auto [input_col_pos, input_row_pos] = input_comp->GetGridPos();
 	t_int input_height = input_comp->GetNumQBits();
 	t_int input_width = input_comp->GetWidth();
 
@@ -128,11 +129,11 @@ QmScene::GetCorrespondingGates(QuantumComponentItem* _input_comp) const
 			continue;
 
 		// grid position of the selected component
-		auto [pos_x, pos_y] = get_grid_indices(gate->scenePos());
+		auto [col_pos, row_pos] = gate->GetGridPos();
 
 		// check if the gate lies within the bounds of the input state
-		if((pos_x >= input_pos_x && pos_x < input_pos_x+input_width) &&
-			(pos_y >= input_pos_y && pos_y < input_pos_y+input_height))
+		if((col_pos >= input_col_pos && col_pos < input_col_pos+input_width) &&
+			(row_pos >= input_row_pos && row_pos < input_row_pos+input_height))
 			gates.push_back(gate);
 	}
 
@@ -199,25 +200,77 @@ std::vector<QuantumComponentItem*> QmScene::GetAllInputStates() const
 /**
  * calculate the circuit associated with the given input state
  */
-void QmScene::Calculate(QuantumComponentItem* _input_comp) const
+bool QmScene::Calculate(QuantumComponentItem* _input_comp) const
 {
 	if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
-		return;
+		return false;
 
+	// arrange the gates in a table
 	InputStates *input_comp = static_cast<InputStates*>(_input_comp);
 	std::vector<QuantumComponentItem*> gates = GetCorrespondingGates(input_comp);
 
-	// TODO: calculate total circuit operator
+	auto [input_col_pos, input_row_pos] = input_comp->GetGridPos();
+	ComponentsTable tab{input_comp->GetNumQBits(), input_comp->GetWidth()};
+
+	for(const QuantumComponentItem* gate : gates)
+	{
+		auto [gate_col_pos, gate_row_pos] = gate->GetGridPos();
+		t_int col_pos = gate_col_pos - input_col_pos;
+		t_int row_pos = gate_row_pos - input_row_pos;
+
+		if(col_pos<0 || row_pos<0 || col_pos>=t_int(tab.col_size()) || row_pos>=t_int(tab.row_size()))
+		{
+			QString err{"Component \"%1\" is outside the grid. Position: (%2, %3)."};
+			err = err.arg(gate->GetIdent().c_str()).arg(col_pos).arg(row_pos);
+
+			QMessageBox::critical(static_cast<QWidget*>(parent()), "Error", err);
+			return false;
+		}
+
+		if(tab(row_pos, col_pos))
+		{
+			QString err{"Cannot insert \"%1\" since position (%2, %3) is already occupied by \"%4\"."};
+			err = err.arg(gate->GetIdent().c_str()).
+				arg(col_pos).arg(row_pos).
+				arg(tab(row_pos, col_pos)->GetIdent().c_str());
+
+			QMessageBox::critical(static_cast<QWidget*>(parent()), "Error", err);
+			return false;
+		}
+
+		tab(row_pos, col_pos) = gate;
+	}
+
+	// is the circuit correct?
+	if(!tab.CheckCircuit())
+	{
+		QMessageBox::critical(static_cast<QWidget*>(parent()),
+			"Error", "Invalid circuit configuration.");
+		return false;
+	}
+
+
+	//std::cout << tab << std::endl;
+	// TODO: calculate total gate of the circuit
+
+	return true;
 }
 
 
 /**
  * calculate the circuits associated with the given input states
  */
-void QmScene::Calculate(std::vector<QuantumComponentItem*>& input_states) const
+bool QmScene::Calculate(std::vector<QuantumComponentItem*>& input_states) const
 {
+	bool ok = true;
+
 	for(QuantumComponentItem* input_state : input_states)
-		Calculate(input_state);
+	{
+		if(!Calculate(input_state))
+			ok = false;
+	}
+
+	return ok;
 }
 
 

@@ -42,8 +42,8 @@ public:
 	std::vector<QuantumComponentItem*> GetCorrespondingGatesApprox(QuantumComponentItem* input_state) const;
 	std::vector<QuantumComponentItem*> GetAllInputStates() const;
 
-	void Calculate(QuantumComponentItem* input_state) const;
-	void Calculate(std::vector<QuantumComponentItem*>& input_states) const;
+	bool Calculate(QuantumComponentItem* input_state) const;
+	bool Calculate(std::vector<QuantumComponentItem*>& input_states) const;
 
 
 protected:

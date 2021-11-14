@@ -89,6 +89,8 @@ public:
 
 	virtual ComponentConfigs GetConfig() const = 0;
 	virtual void SetConfig(const ComponentConfigs&) = 0;
+
+	virtual t_uint GetNumQBits() const = 0;
 };
 
 
@@ -105,6 +107,8 @@ public:
 
 	// factory function
 	static QuantumComponentItem* create(const std::string& id);
+
+	std::tuple<t_int, t_int> GetGridPos() const;
 };
 
 using t_gateptr = std::shared_ptr<QuantumComponentItem>;
@@ -128,7 +132,7 @@ public:
 	void SetWidth(t_uint w) { m_width = w; }
 
 	// getter
-	t_uint GetNumQBits() const { return m_num_qbits; }
+	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
 	t_uint GetWidth() const { return m_width; }
 
 	virtual QRectF boundingRect() const override;
@@ -168,6 +172,8 @@ public:
 
 	virtual QuantumComponentItem* clone() const override;
 
+	virtual t_uint GetNumQBits() const override { return 1; }
+
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
@@ -201,6 +207,7 @@ public:
 
 	// getter
 	t_uint GetDirection() const { return m_dir; }
+	virtual t_uint GetNumQBits() const override { return 1; }
 
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
@@ -240,7 +247,7 @@ public:
 	void SetTargetBitPos(t_uint pos) { m_target_bit_pos = pos; }
 
 	// getter
-	t_uint GetNumQBits() const { return m_num_qbits; }
+	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
 	t_uint GetControlBitPos() const { return m_control_bit_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
@@ -288,7 +295,7 @@ public:
 	void SetTargetBitPos(t_uint pos) { m_target_bit_pos = pos; }
 
 	// getter
-	t_uint GetNumQBits() const { return m_num_qbits; }
+	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
 	t_uint GetControlBit1Pos() const { return m_control_bit_1_pos; }
 	t_uint GetControlBit2Pos() const { return m_control_bit_2_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }

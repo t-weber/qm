@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 		auto app = std::make_unique<QApplication>(argc, argv);
 		app->setOrganizationName("tw");
 		app->setApplicationName("qm");
-		app->setApplicationDisplayName("Quantum Algorithms Editor");
+		//app->setApplicationDisplayName("Quantum Algorithms Editor");
 		app->setApplicationVersion("0.2");
 		set_locales();
 
