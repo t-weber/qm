@@ -80,7 +80,6 @@ About::About(QWidget *parent)
 	// buttons
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(this);
 	buttonbox->setStandardButtons(QDialogButtonBox::Ok);
-	buttonbox->button(QDialogButtonBox::Ok)->setDefault(true);
 
 	QPushButton *aboutQt = new QPushButton("About Qt...", this);
 	buttonbox->addButton(aboutQt, QDialogButtonBox::ActionRole);
@@ -99,6 +98,11 @@ About::About(QWidget *parent)
 			QApplication::aboutQt();
 	});
 
+	aboutQt->setAutoDefault(false);
+	aboutQt->setDefault(false);
+	buttonbox->button(QDialogButtonBox::Ok)->setAutoDefault(true);
+	buttonbox->button(QDialogButtonBox::Ok)->setDefault(true);
+	buttonbox->button(QDialogButtonBox::Ok)->setFocus();
 	m_grid->addWidget(buttonbox, m_grid->rowCount(), 0, 1, 2);
 
 
