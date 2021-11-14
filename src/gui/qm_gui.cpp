@@ -757,6 +757,8 @@ void QmWnd::ShowSettings(bool only_create)
 			"Snap to grid while dragging.", g_snap_on_move);
 		m_settings->AddCheckbox("settings/keep_gates_on_states",
 			"Keep gates on input state component.", g_keep_gates_on_states);
+		m_settings->AddSpinbox("settings/raster_size",
+			"Components raster size:", (int)g_raster_size, 1, 1000, 1);
 		m_settings->FinishSetup();
 	}
 
@@ -773,8 +775,13 @@ void QmWnd::ApplySettings()
 	if(!m_settings)
 		return;
 
-	g_snap_on_move = m_settings->GetCheckboxValue("settings/snap_on_move");
-	g_keep_gates_on_states = m_settings->GetCheckboxValue("settings/keep_gates_on_states");
+	g_snap_on_move = m_settings->GetValue("settings/snap_on_move").
+		value<decltype(g_snap_on_move)>();
+	g_keep_gates_on_states = m_settings->GetValue("settings/keep_gates_on_states").
+		value<decltype(g_keep_gates_on_states)>();
+	g_raster_size = m_settings->GetValue("settings/raster_size").value<int>();
+
+	update();
 }
 
 

@@ -11,6 +11,7 @@
 #include <QtGui/QGuiApplication>
 #include <QtGui/QPalette>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QSpacerItem>
 
 
@@ -102,13 +103,106 @@ void Settings::AddCheckbox(const QString& key, const QString& descr, bool value)
 	QCheckBox *box = new QCheckBox(this);
 	box->setText(descr);
 	box->setChecked(value);
-
 	box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 	int row = m_grid->rowCount();
-	m_grid->addWidget(box, row, 0, 1, 2);
+	m_grid->addWidget(box, row, m_curGridColumn*2+0, 1, 2);
 
 	m_checkboxes.push_back(std::make_tuple(box, key, initial_value));
+}
+
+
+/**
+ * adds a spin box to the end of the grid layout
+ */
+void Settings::AddSpinbox(const QString& key, const QString& descr,
+	int value, int min, int max, int step)
+{
+	int initial_value = value;
+
+	// look for already saved value
+	QSettings settings{this};
+	if(settings.contains(key))
+		value = settings.value(key).value<decltype(value)>();
+
+	QLabel *label = new QLabel(this);
+	label->setText(descr);
+	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	QSpinBox *box = new QSpinBox(this);
+	box->setValue(value);
+	box->setMinimum(min);
+	box->setMaximum(max);
+	box->setSingleStep(step);
+	box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	int row = m_grid->rowCount();
+	m_grid->addWidget(label, row, m_curGridColumn*2+0, 1, 1);
+	m_grid->addWidget(box, row, m_curGridColumn*2+1, 1, 1);
+
+	m_spinboxes.push_back(std::make_tuple(box, key, initial_value));
+}
+
+
+/**
+ * adds a double box to the end of the grid layout
+ */
+void Settings::AddDoubleSpinbox(const QString& key, const QString& descr,
+	double value, double min, double max, double step)
+{
+	double initial_value = value;
+
+	// look for already saved value
+	QSettings settings{this};
+	if(settings.contains(key))
+		value = settings.value(key).value<decltype(value)>();
+
+	QLabel *label = new QLabel(this);
+	label->setText(descr);
+	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	QDoubleSpinBox *box = new QDoubleSpinBox(this);
+	box->setValue(value);
+	box->setMinimum(min);
+	box->setMaximum(max);
+	box->setSingleStep(step);
+	box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	int row = m_grid->rowCount();
+	m_grid->addWidget(label, row, m_curGridColumn*2+0, 1, 1);
+	m_grid->addWidget(box, row, m_curGridColumn*2+1, 1, 1);
+
+	m_doublespinboxes.push_back(std::make_tuple(box, key, initial_value));
+}
+
+
+/**
+ * adds a combo box to the end of the grid layout
+ */
+void Settings::AddCombobox(const QString& key, const QString& descr,
+	const QStringList& items, int idx)
+{
+	int initial_idx = idx;
+
+	// look for already saved value
+	QSettings settings{this};
+	if(settings.contains(key))
+		idx = settings.value(key).value<decltype(idx)>();
+
+	QLabel *label = new QLabel(this);
+	label->setText(descr);
+	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	QComboBox *box = new QComboBox(this);
+	box->addItems(items);
+	box->setCurrentIndex(idx);
+	box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	int row = m_grid->rowCount();
+	m_grid->addWidget(label, row, m_curGridColumn*2+0, 1, 1);
+	m_grid->addWidget(box, row, m_curGridColumn*2+1, 1, 1);
+
+	m_comboboxes.push_back(std::make_tuple(box, key, initial_idx));
 }
 
 
@@ -128,7 +222,8 @@ void Settings::AddSpacer(int size_v)
 	}
 
 	QSpacerItem *spacer_end = new QSpacerItem(1, size_v, policy_h, policy_v);
-	m_grid->addItem(spacer_end, m_grid->rowCount(), 0, 1, 2);
+	m_grid->addItem(spacer_end,
+		m_grid->rowCount(), 0, 1, m_numGridColumns*2);
 }
 
 
@@ -138,24 +233,57 @@ void Settings::AddSpacer(int size_v)
 void Settings::FinishSetup()
 {
 	AddSpacer();
-	m_grid->addWidget(m_buttonbox.get(), m_grid->rowCount(), 0, 1, 1);
+	m_grid->addWidget(m_buttonbox.get(),
+		m_grid->rowCount(), 0, 1, m_numGridColumns*2);
 
 	ApplySettings();
 }
 
 
 /**
- * get the value of the check box with the given key
+ * get the settings value with the given key
  */
-bool Settings::GetCheckboxValue(const QString& key)
+QVariant Settings::GetValue(const QString& key) const
 {
+	QVariant val;
+
+	// look for the key among the check boxes
 	for(auto& [box, box_key, initial] : m_checkboxes)
 	{
 		if(key == box_key)
-			return box->isChecked();
+		{
+			val.setValue(box->isChecked());
+			break;
+		}
 	}
 
-	return false;
+	if(val.isValid())
+		return val;
+
+	// look for the key among the spin boxes
+	for(auto& [box, box_key, initial] : m_spinboxes)
+	{
+		if(key == box_key)
+		{
+			val.setValue(box->value());
+			break;
+		}
+	}
+
+	if(val.isValid())
+		return val;
+
+	// look for the key among the double spin boxes
+	for(auto& [box, box_key, initial] : m_doublespinboxes)
+	{
+		if(key == box_key)
+		{
+			val.setValue(box->value());
+			break;
+		}
+	}
+
+	return val;
 }
 
 
@@ -167,10 +295,13 @@ void Settings::ApplySettings()
 	// save current settings
 	QSettings settings{this};
 	for(const auto& [box, key, initial] : m_checkboxes)
-	{
-		bool value = box->isChecked();
-		settings.setValue(key, value);
-	}
+		settings.setValue(key, box->isChecked());
+	for(const auto& [box, key, initial] : m_spinboxes)
+		settings.setValue(key, box->value());
+	for(const auto& [box, key, initial] : m_doublespinboxes)
+		settings.setValue(key, box->value());
+	for(const auto& [box, key, initial] : m_comboboxes)
+		settings.setValue(key, box->currentIndex());
 
 	// signal changes
 	emit this->SignalApplySettings();
@@ -184,6 +315,12 @@ void Settings::RestoreDefaultSettings()
 {
 	for(auto& [box, key, initial] : m_checkboxes)
 		box->setChecked(initial);
+	for(auto& [box, key, initial] : m_spinboxes)
+		box->setValue(initial);
+	for(auto& [box, key, initial] : m_doublespinboxes)
+		box->setValue(initial);
+	for(auto& [box, key, initial] : m_comboboxes)
+		box->setCurrentIndex(initial);
 
 	// signal changes
 	emit this->SignalApplySettings();
