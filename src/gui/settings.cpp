@@ -10,14 +10,8 @@
 #include <QtCore/QSettings>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QPalette>
-#include <QtWidgets/QDialogButtonBox>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpacerItem>
-
-
-t_real g_raster_size = 35.;
-bool g_snap_on_move = false;
-bool g_keep_gates_on_states = true;
 
 
 const QColor& get_foreground_colour()
@@ -57,28 +51,30 @@ Settings::Settings(QWidget *parent)
 	m_grid->setContentsMargins(8, 8, 8, 8);
 
 
-	// buttons
-	QDialogButtonBox *buttonbox = new QDialogButtonBox(this);
-	buttonbox->setStandardButtons(
+	// button box
+	m_buttonbox = std::make_shared<QDialogButtonBox>(this);
+	m_buttonbox->setStandardButtons(
 		QDialogButtonBox::Ok |
 		QDialogButtonBox::Apply |
 		QDialogButtonBox::Cancel |
 		QDialogButtonBox::RestoreDefaults);
-	buttonbox->button(QDialogButtonBox::Ok)->setDefault(true);
+	m_buttonbox->button(QDialogButtonBox::Ok)->setDefault(true);
 
-	connect(buttonbox, &QDialogButtonBox::clicked,
-		[this, buttonbox](QAbstractButton *btn) -> void
+	connect(m_buttonbox.get(), &QDialogButtonBox::clicked,
+			[this](QAbstractButton *btn) -> void
 	{
 		// get button role
-		QDialogButtonBox::ButtonRole role = buttonbox->buttonRole(btn);
+		QDialogButtonBox::ButtonRole role = m_buttonbox->buttonRole(btn);
 
 		if(role == QDialogButtonBox::AcceptRole)
 			this->accept();
 		else if(role == QDialogButtonBox::RejectRole)
 			this->reject();
+		else if(role == QDialogButtonBox::ApplyRole)
+			ApplySettings();
+		else if(role == QDialogButtonBox::ResetRole)
+			RestoreDefaultSettings();
 	});
-
-	m_grid->addWidget(buttonbox, m_grid->rowCount(), 0, 1, 1);
 
 
 	// restore settings
@@ -91,8 +87,113 @@ Settings::Settings(QWidget *parent)
 }
 
 
+/**
+ * adds a check box to the end of the grid layout
+ */
+void Settings::AddCheckbox(const QString& key, const QString& descr, bool value)
+{
+	bool initial_value = value;
+
+	// look for already saved value
+	QSettings settings{this};
+	if(settings.contains(key))
+		value = settings.value(key).toBool();
+
+	QCheckBox *box = new QCheckBox(this);
+	box->setText(descr);
+	box->setChecked(value);
+
+	box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	int row = m_grid->rowCount();
+	m_grid->addWidget(box, row, 0, 1, 2);
+
+	m_checkboxes.push_back(std::make_tuple(box, key, initial_value));
+}
+
+
+/**
+ * adds a spacer to the end of the grid layout
+ */
+void Settings::AddSpacer(int size_v)
+{
+	QSizePolicy::Policy policy_h = QSizePolicy::Fixed;
+	QSizePolicy::Policy policy_v = QSizePolicy::Fixed;
+
+	// expanding spacer?
+	if(size_v < 0)
+	{
+		policy_v = QSizePolicy::Expanding;
+		size_v = 1;
+	}
+
+	QSpacerItem *spacer_end = new QSpacerItem(1, size_v, policy_h, policy_v);
+	m_grid->addItem(spacer_end, m_grid->rowCount(), 0, 1, 2);
+}
+
+
+/**
+ * adds the button box at the end of the grid layout
+ */
+void Settings::FinishSetup()
+{
+	AddSpacer();
+	m_grid->addWidget(m_buttonbox.get(), m_grid->rowCount(), 0, 1, 1);
+
+	ApplySettings();
+}
+
+
+/**
+ * get the value of the check box with the given key
+ */
+bool Settings::GetCheckboxValue(const QString& key)
+{
+	for(auto& [box, box_key, initial] : m_checkboxes)
+	{
+		if(key == box_key)
+			return box->isChecked();
+	}
+
+	return false;
+}
+
+
+/**
+ * save settings and notice any listeners
+ */
+void Settings::ApplySettings()
+{
+	// save current settings
+	QSettings settings{this};
+	for(const auto& [box, key, initial] : m_checkboxes)
+	{
+		bool value = box->isChecked();
+		settings.setValue(key, value);
+	}
+
+	// signal changes
+	emit this->SignalApplySettings();
+}
+
+
+/**
+ * restore the initial defaults
+ */
+void Settings::RestoreDefaultSettings()
+{
+	for(auto& [box, key, initial] : m_checkboxes)
+		box->setChecked(initial);
+
+	// signal changes
+	emit this->SignalApplySettings();
+}
+
+
 void Settings::accept()
 {
+	ApplySettings();
+
 	// save settings
 	QSettings settings{this};
 	QByteArray geo{this->saveGeometry()};

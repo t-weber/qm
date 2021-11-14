@@ -18,7 +18,7 @@
 
 #include "components.h"
 #include "types.h"
-#include "settings.h"
+#include "globals.h"
 #include "lib/qm_algos.h"
 
 

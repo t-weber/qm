@@ -183,8 +183,7 @@ void About::AddSpacer(int size_v)
 		size_v = 1;
 	}
 
-	QSpacerItem *spacer_end = new QSpacerItem(1, size_v,
-		policy_h, policy_v);
+	QSpacerItem *spacer_end = new QSpacerItem(1, size_v, policy_h, policy_v);
 	m_grid->addItem(spacer_end, m_grid->rowCount(), 0, 1, 2);
 }
 

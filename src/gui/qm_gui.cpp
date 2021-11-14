@@ -84,6 +84,10 @@ QmWnd::QmWnd(QWidget* pParent)
 	if(settings.contains("file_recent_dir"))
 		m_recent.SetRecentDir(settings.value("file_recent_dir").toString());
 	// ------------------------------------------------------------------------
+
+
+	// restore settings from settings dialog
+	ShowSettings(true);
 }
 
 
@@ -741,12 +745,36 @@ bool QmWnd::LoadFile(const QString& filename)
 /**
  * show settings dialog
  */
-void QmWnd::ShowSettings()
+void QmWnd::ShowSettings(bool only_create)
 {
 	if(!m_settings)
+	{
 		m_settings = std::make_shared<Settings>(this);
+		connect(m_settings.get(), &Settings::SignalApplySettings,
+			this, &QmWnd::ApplySettings);
 
-	show_dialog(m_settings.get());
+		m_settings->AddCheckbox("settings/snap_on_move",
+			"Snap to grid while dragging.", g_snap_on_move);
+		m_settings->AddCheckbox("settings/keep_gates_on_states",
+			"Keep gates on input state component.", g_keep_gates_on_states);
+		m_settings->FinishSetup();
+	}
+
+	if(!only_create)
+		show_dialog(m_settings.get());
+}
+
+
+/**
+ * apply changed settings from the settings dialog
+ */
+void QmWnd::ApplySettings()
+{
+	if(!m_settings)
+		return;
+
+	g_snap_on_move = m_settings->GetCheckboxValue("settings/snap_on_move");
+	g_keep_gates_on_states = m_settings->GetCheckboxValue("settings/keep_gates_on_states");
 }
 
 

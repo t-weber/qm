@@ -21,6 +21,7 @@
 #include "recent.h"
 #include "resources.h"
 #include "types.h"
+#include "globals.h"
 #include "settings.h"
 #include "about.h"
 
@@ -50,7 +51,7 @@ public:
 	bool SaveFile(const QString& filename) const;
 	bool LoadFile(const QString& filename);
 
-	void ShowSettings();
+	void ShowSettings(bool only_create = false);
 	void ShowAbout();
 
 	Resources& GetResources() { return m_res; }
@@ -78,6 +79,10 @@ private:
 
 	std::shared_ptr<Settings> m_settings{};
 	std::shared_ptr<About> m_about{};
+
+
+protected slots:
+	void ApplySettings();
 };
 
 

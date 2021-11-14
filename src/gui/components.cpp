@@ -9,9 +9,11 @@
 
 #include "components.h"
 #include "helpers.h"
+#include "globals.h"
 #include "settings.h"
 
 #include "lib/qm_algos.h"
+
 
 
 // ----------------------------------------------------------------------------

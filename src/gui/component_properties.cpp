@@ -6,7 +6,7 @@
  */
 
 #include "component_properties.h"
-#include "settings.h"
+#include "globals.h"
 
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLabel>

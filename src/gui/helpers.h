@@ -16,7 +16,7 @@
 #include <cmath>
 
 #include "types.h"
-#include "settings.h"
+#include "globals.h"
 
 #include "lib/math_concepts.h"
 
