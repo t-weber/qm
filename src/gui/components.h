@@ -111,7 +111,11 @@ public:
 	std::tuple<t_int, t_int> GetGridPos() const;
 };
 
+
+// shared pointer to a QuantumComponentItem
 using t_gateptr = std::shared_ptr<QuantumComponentItem>;
+// [column index, column operator]
+using t_columnop = std::tuple<std::size_t, t_mat>;
 // ----------------------------------------------------------------------------
 
 
@@ -130,10 +134,14 @@ public:
 	// setter
 	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
 	void SetWidth(t_uint w) { m_width = w; }
+	void SetOperators(const std::vector<t_columnop>& ops) { m_ops = ops; }
+	void SetOperators(std::vector<t_columnop>&& ops)
+	{ m_ops = std::forward<std::vector<t_columnop>>(ops); }
 
 	// getter
 	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
 	t_uint GetWidth() const { return m_width; }
+	const std::vector<t_columnop>& GetOperators() const { return m_ops; }
 
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
@@ -152,6 +160,9 @@ public:
 private:
 	t_uint m_num_qbits = 4;
 	t_uint m_width = 8;
+
+	// calculated operators for each column of the grid
+	std::vector<t_columnop> m_ops{};
 };
 // ----------------------------------------------------------------------------
 

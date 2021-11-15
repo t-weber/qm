@@ -96,9 +96,32 @@ void InputStates::paint(QPainter *painter,
 }
 
 
+/**
+ * get total calculated operator
+ */
 t_mat InputStates::GetOperator() const
 {
-	return t_mat{};
+	using namespace m_ops;
+	const auto& ops = GetOperators();
+
+	if(ops.size())
+	{
+		t_mat op_total;
+
+		auto iter = ops.rbegin();
+		op_total = std::get<t_mat>(*iter);
+		std::advance(iter, 1);
+
+		for(; iter!=ops.rend(); std::advance(iter, 1))
+			op_total = op_total * std::get<t_mat>(*iter);
+
+		return op_total;
+	}
+	else
+	{
+		// corresponds to identity
+		return t_mat{};
+	}
 }
 
 
@@ -208,6 +231,9 @@ void HadamardGate::paint(QPainter *painter,
 }
 
 
+/**
+ * get gate operator
+ */
 t_mat HadamardGate::GetOperator() const
 {
 	return m::hadamard<t_mat>();
@@ -299,6 +325,9 @@ void PauliGate::paint(QPainter *painter,
 }
 
 
+/**
+ * get gate operator
+ */
 t_mat PauliGate::GetOperator() const
 {
 	return m::su2_matrix<t_mat>(m_dir);
@@ -443,6 +472,9 @@ void CNotGate::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget
 }
 
 
+/**
+ * get gate operator
+ */
 t_mat CNotGate::GetOperator() const
 {
 	return m::cnot_nqbits<t_mat>(m_num_qbits,
@@ -630,6 +662,9 @@ void ToffoliGate::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWid
 }
 
 
+/**
+ * get gate operator
+ */
 t_mat ToffoliGate::GetOperator() const
 {
 	return m::toffoli_nqbits<t_mat>(m_num_qbits,

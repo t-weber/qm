@@ -59,6 +59,21 @@ void QmScene::AddQuantumComponent(QuantumComponentItem *gate)
 
 
 /**
+ * remove a quantum gate from the scene
+ */
+void QmScene::DeleteQuantumComponent(QuantumComponentItem *comp)
+{
+	delete comp;
+
+	if(auto iter = std::find(m_components.begin(), m_components.end(), comp);
+	   iter != m_components.end())
+	{
+		m_components.erase(iter);
+	}
+}
+
+
+/**
  * clear all components in the scene
  */
 void QmScene::Clear()
@@ -249,9 +264,13 @@ bool QmScene::Calculate(QuantumComponentItem* _input_comp) const
 		return false;
 	}
 
+	// calculate the operators
+	input_comp->SetOperators(tab.CalculateCircuitOperators());
 
-	//std::cout << tab << std::endl;
-	// TODO: calculate total gate of the circuit
+	// TODO
+	t_mat total_op = input_comp->GetOperator();
+	using namespace m_ops;
+	std::cout << total_op << std::endl;
 
 	return true;
 }
@@ -457,8 +476,11 @@ void QmView::DeleteCurItem()
 	if(!m_curItem)
 		return;
 
-	delete m_curItem;
+	if(m_scene)
+		m_scene->DeleteQuantumComponent(m_curItem);
+
 	m_curItem = nullptr;
+
 	emit SignalSelectedItem(nullptr);
 }
 

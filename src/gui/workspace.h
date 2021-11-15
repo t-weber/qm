@@ -33,6 +33,7 @@ public:
 
 	void Clear();
 	void AddQuantumComponent(QuantumComponentItem *comp);
+	void DeleteQuantumComponent(QuantumComponentItem *comp);
 	const std::vector<QuantumComponentItem*>& GetQuantumComponents() const
 	{ return m_components; }
 

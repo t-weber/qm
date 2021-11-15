@@ -17,6 +17,21 @@ ComponentsTable::ComponentsTable(std::size_t ROWS, std::size_t COLS)
 
 
 /**
+ * are there any gates in the given column?
+ */
+bool ComponentsTable::HasGates(std::size_t col) const
+{
+	for(std::size_t row=0; row<row_size(); ++row)
+	{
+		if(operator()(row, col))
+			return true;
+	}
+
+	return false;
+}
+
+
+/**
  * check if the circuit is correct
  */
 bool ComponentsTable::CheckCircuit() const
@@ -45,6 +60,62 @@ bool ComponentsTable::CheckCircuit() const
 	}
 
 	return true;
+}
+
+
+/**
+ * calculate the individual column operators of the circuit
+ * @returns [column index, column operator]
+ */
+std::vector<t_columnop>
+ComponentsTable::CalculateCircuitOperators() const
+{
+	std::size_t N = row_size();
+
+	std::vector<t_columnop> ops;
+	ops.reserve(N);
+
+	for(std::size_t col=0; col<col_size(); ++col)
+	{
+		// no gates in this column -> unit matrix
+		if(!HasGates(col))
+			continue;
+
+		t_mat col_op = CalculateCircuitOperator(col);
+
+		ops.emplace_back(std::make_tuple(col, std::move(col_op)));
+	}
+
+	return ops;
+}
+
+
+/**
+ * calculate an individual column operator of the circuit
+ */
+t_mat ComponentsTable::CalculateCircuitOperator(std::size_t col) const
+{
+	const t_mat I = m::unit<t_mat>(2);
+
+	t_mat col_op;
+
+	for(std::size_t row=0; row<row_size(); ++row)
+	{
+		const QuantumComponent* gate = operator()(row, col);
+
+		t_mat row_op = gate ? gate->GetOperator() : I;
+
+		if(!col_op.size1())
+			col_op = row_op;
+		else
+			col_op = m::outer<t_mat>(col_op, row_op);
+
+		// skip over the rest of the gate on the grid
+		if(gate)
+			row += gate->GetNumQBits()-1;
+	}
+
+	return col_op;
 }
 
 

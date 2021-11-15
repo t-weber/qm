@@ -30,7 +30,14 @@ public:
 	const value_type& operator()(std::size_t row, std::size_t col) const { return m_data[row*m_colsize + col]; }
 	value_type& operator()(std::size_t row, std::size_t col) { return m_data[row*m_colsize + col]; }
 
+	bool HasGates(std::size_t col) const;
+
+	// check circuit
 	bool CheckCircuit() const;
+
+	// calculate circuit
+	std::vector<t_columnop> CalculateCircuitOperators() const;
+	t_mat CalculateCircuitOperator(std::size_t col) const;
 
 	// print table
 	friend std::ostream& operator<<(std::ostream& ostr, const ComponentsTable& tab);
