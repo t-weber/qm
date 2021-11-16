@@ -22,6 +22,7 @@
 #include "lib/qm_algos.h"
 
 
+
 class QmScene : public QGraphicsScene
 {
 public:
@@ -94,9 +95,13 @@ protected:
 
 
 private:
+	// corresponding scene
 	QmScene *m_scene = nullptr;
+
+	// currently selected item
 	QuantumComponentItem *m_curItem = nullptr;
 	QuantumComponentItem *m_copiedItem = nullptr;
+	bool m_curItemIsDragged = false;
 
 	// gates connected to current item
 	std::vector<QuantumComponentItem*> m_curGates{};
@@ -120,13 +125,17 @@ public slots:
 	void CopyCurItem();
 	void PasteItem();
 
+	// functions to delegate to the scene
 	bool CalculateCurItem();
-	bool Calculate(QuantumComponentItem* input_state);
+	bool Calculate(QuantumComponentItem *input_state);
+	void AddQuantumComponent(QuantumComponentItem *comp);
+	void DeleteQuantumComponent(QuantumComponentItem *comp);
 
 
 signals:
 	void SignalMouseCoordinates(qreal scene_x, qreal scene_y);
 	void SignalSelectedItem(const QuantumComponent *item);
+	void SignalWorkspaceChanged(bool changed = true);
 };
 
 

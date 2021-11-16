@@ -46,7 +46,7 @@ QmWnd::QmWnd(QWidget* pParent)
 		m_view{new QmView{m_scene.get(), this}},
 		m_statusLabel{std::make_shared<QLabel>(this)}
 {
-	setWindowTitle("Quantum Algorithms Editor");
+	setWindowTitle("Quantum Algorithms Editor[*]");
 
 	// allow dropping of files onto the main window
 	setAcceptDrops(true);
@@ -77,6 +77,9 @@ QmWnd::QmWnd(QWidget* pParent)
 
 	if(settings.contains("wnd_native"))
 		m_gui_native = settings.value("wnd_native").toBool();
+
+	if(settings.contains("calc_auto"))
+		m_auto_calc = settings.value("calc_auto").toBool();
 
 	if(settings.contains("file_recent"))
 		m_recent.SetRecentFiles(settings.value("file_recent").toStringList());
@@ -214,7 +217,7 @@ void QmWnd::SetupGUI()
 	connect(actionAddInputStates, &QAction::triggered, [this]()
 	{
 		QuantumComponentItem *state = new InputStates();
-		m_scene->AddQuantumComponent(state);
+		m_view->AddQuantumComponent(state);
 	});
 
 	QAction *actionAddHadamard = new QAction{"Add Hadamard Gate", this};
@@ -223,7 +226,7 @@ void QmWnd::SetupGUI()
 	connect(actionAddHadamard, &QAction::triggered, [this]()
 	{
 		QuantumComponentItem *gate = new HadamardGate();
-		m_scene->AddQuantumComponent(gate);
+		m_view->AddQuantumComponent(gate);
 	});
 
 	QAction *actionAddPauli = new QAction{"Add Pauli Gate", this};
@@ -232,7 +235,7 @@ void QmWnd::SetupGUI()
 	connect(actionAddPauli, &QAction::triggered, [this]()
 	{
 		QuantumComponentItem *gate = new PauliGate();
-		m_scene->AddQuantumComponent(gate);
+		m_view->AddQuantumComponent(gate);
 	});
 
 	QAction *actionAddCnot = new QAction{"Add CNOT Gate", this};
@@ -241,7 +244,7 @@ void QmWnd::SetupGUI()
 	connect(actionAddCnot, &QAction::triggered, [this]()
 	{
 		QuantumComponentItem *gate = new CNotGate();
-		m_scene->AddQuantumComponent(gate);
+		m_view->AddQuantumComponent(gate);
 	});
 
 	QAction *actionAddToffoli = new QAction{"Add Toffoli Gate", this};
@@ -250,7 +253,7 @@ void QmWnd::SetupGUI()
 	connect(actionAddToffoli, &QAction::triggered, [this]()
 	{
 		QuantumComponentItem *gate = new ToffoliGate();
-		m_scene->AddQuantumComponent(gate);
+		m_view->AddQuantumComponent(gate);
 	});
 
 	QMenu *menuComponents = new QMenu{"Components", this};
@@ -271,15 +274,22 @@ void QmWnd::SetupGUI()
 
 	QIcon iconCalcAll = QIcon::fromTheme("media-seek-forward");
 	QAction *actionCalculateAll = new QAction{iconCalcAll, "Calculate All Circuits", this};
-	connect(actionCalculateAll, &QAction::triggered, [this]()
+	connect(actionCalculateAll, &QAction::triggered, this, &QmWnd::CalculateAllCircuits);
+
+	QIcon iconAutoCalc = QIcon::fromTheme("accessories-calculator");
+	QAction *actionAutoCalculate = new QAction{iconAutoCalc, "Automatically Calculate Circuits", this};
+	actionAutoCalculate->setCheckable(true);
+	actionAutoCalculate->setChecked(m_auto_calc);
+	connect(actionAutoCalculate, &QAction::toggled, [this](bool checked)
 	{
-		for(auto* comp : m_scene->GetAllInputStates())
-			m_view->Calculate(comp);
+		m_auto_calc = checked;
 	});
 
 	QMenu *menuCalculate = new QMenu{"Calculate", this};
 	menuCalculate->addAction(actionCalculateSelected);
 	menuCalculate->addAction(actionCalculateAll);
+	menuCalculate->addSeparator();
+	menuCalculate->addAction(actionAutoCalculate);
 	// ------------------------------------------------------------------------
 
 
@@ -294,6 +304,8 @@ void QmWnd::SetupGUI()
 
 	QToolBar *toolbarComponents = new QToolBar{"Components", this};
 	toolbarComponents->setObjectName("ComponentsToolbar");
+	toolbarComponents->addAction(actionAddInputStates);
+	toolbarComponents->addSeparator();
 	toolbarComponents->addAction(actionAddHadamard);
 	toolbarComponents->addAction(actionAddPauli);
 	toolbarComponents->addAction(actionAddCnot);
@@ -452,6 +464,8 @@ void QmWnd::SetupGUI()
 	// signals to read and write component properties
 	connect(m_view.get(), &QmView::SignalSelectedItem,
 		m_properties->GetWidget(), &ComponentProperties::SelectedItem);
+	connect(m_view.get(), &QmView::SignalWorkspaceChanged,
+		this, &QmWnd::WorkspaceChanged);
 	connect(m_properties->GetWidget(), &ComponentProperties::SignalConfigChanged,
 		m_view.get(), &QmView::SetCurItemConfig);
 
@@ -479,6 +493,7 @@ void QmWnd::Clear()
 
 	m_recent.SetOpenFile("");
 	setWindowFilePath("");
+	WorkspaceChanged(false);
 }
 
 
@@ -487,7 +502,8 @@ void QmWnd::FileNew()
 	Clear();
 
 	QuantumComponentItem *state = new InputStates();
-	m_scene->AddQuantumComponent(state);
+	m_view->AddQuantumComponent(state);
+	WorkspaceChanged(false);
 }
 
 
@@ -521,6 +537,7 @@ void QmWnd::FileLoad()
 
 		fs::path file{files[0].toStdString()};
 		m_recent.SetRecentDir(file.parent_path().string().c_str());
+		WorkspaceChanged(false);
 	}
 	else
 	{
@@ -530,6 +547,9 @@ void QmWnd::FileLoad()
 }
 
 
+/**
+ * an item from the recent files menu has been clicked
+ */
 bool QmWnd::FileLoadRecent(const QString& filename)
 {
 	this->Clear();
@@ -538,6 +558,7 @@ bool QmWnd::FileLoadRecent(const QString& filename)
 	{
 		m_recent.SetOpenFile(filename);
 		this->setWindowFilePath(m_recent.GetOpenFile());
+		WorkspaceChanged(false);
 		return true;
 	}
 	else
@@ -558,7 +579,9 @@ void QmWnd::FileSave()
 		return;
 	}
 
-	if(!SaveFile(m_recent.GetOpenFile()))
+	if(SaveFile(m_recent.GetOpenFile()))
+		WorkspaceChanged(false);
+	else
 		QMessageBox::critical(this, "Error", "File could not be saved.");
 }
 
@@ -592,6 +615,7 @@ void QmWnd::FileSaveAs()
 
 		fs::path file{files[0].toStdString()};
 		m_recent.SetRecentDir(file.parent_path().string().c_str());
+		WorkspaceChanged(false);
 	}
 	else
 	{
@@ -732,7 +756,7 @@ bool QmWnd::LoadFile(const QString& filename)
 				QPointF posScene(pos_x*g_raster_size, pos_y*g_raster_size);
 				gate->setPos(posScene);
 
-				m_scene->AddQuantumComponent(gate);
+				m_view->AddQuantumComponent(gate);
 			}
 		}
 	}
@@ -794,6 +818,28 @@ void QmWnd::ApplySettings()
 
 
 /**
+ * calculate all circuits in the scene
+ */
+void QmWnd::CalculateAllCircuits()
+{
+	for(auto* comp : m_scene->GetAllInputStates())
+		m_view->Calculate(comp);
+}
+
+
+/**
+ * indicate that the open workspace has unsaved changes
+ */
+void QmWnd::WorkspaceChanged(bool changed)
+{
+	if(m_auto_calc)
+		CalculateAllCircuits();
+
+	setWindowModified(changed);
+}
+
+
+/**
  * show about dialog
  */
 void QmWnd::ShowAbout()
@@ -816,6 +862,7 @@ void QmWnd::closeEvent(QCloseEvent *e)
 	settings.setValue("wnd_state", state);
 	settings.setValue("wnd_theme", m_gui_theme);
 	settings.setValue("wnd_native", m_gui_native);
+	settings.setValue("calc_auto", m_auto_calc);
 	settings.setValue("file_recent", m_recent.GetRecentFiles());
 	settings.setValue("file_recent_dir", m_recent.GetRecentDir());
 	// ------------------------------------------------------------------------
@@ -875,6 +922,7 @@ void QmWnd::dropEvent(QDropEvent *evt)
 
 				fs::path file{filename.toStdString()};
 				m_recent.SetRecentDir(file.parent_path().string().c_str());
+				WorkspaceChanged(false);
 			}
 			else
 			{

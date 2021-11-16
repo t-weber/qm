@@ -47,6 +47,9 @@ void ComponentProperties::Clear()
 			delete item->widget();
 		delete item;
 	}
+
+	if(m_compOperator)
+		m_compOperator->SetOperator(t_mat{});
 }
 
 
@@ -83,7 +86,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 			spinVal->setMaximum(std::get<t_uint>(*cfg.max_value));
 
 		connect(spinVal, static_cast<void (QSpinBox::*)(int)>
-			(&QSpinBox::valueChanged), [this, cfg](int val) -> void
+			(&QSpinBox::valueChanged), [this, cfg, comp](int val) -> void
 		{
 			ComponentConfigs configs;
 
@@ -94,6 +97,10 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 
 			// send the changes back to the component
 			emit this->SignalConfigChanged(configs);
+
+			// also update the operator dialog every time the configuration is changed
+			if(m_compOperator)
+				m_compOperator->SetOperator(comp->GetOperator());
 		});
 
 		m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, 1);
@@ -113,7 +120,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				m_compOperator = std::make_shared<ComponentOperator>(this);
 
 			// the pointer to comp is still valid in this lambda function,
-			// because the current item is still set as long as its
+			// because the current item is still selected as long as its
 			// properties are displayed
 			m_compOperator->SetOperator(comp->GetOperator());
 			show_dialog(m_compOperator.get());
@@ -131,7 +138,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 	QSpacerItem *spacer = new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding);
 	m_layout->addItem(spacer, m_layout->rowCount(), 0, 1, 1);
 
-	// also update operator dialog every time a new item is selected
+	// also update the operator dialog every time a new item is selected
 	if(m_compOperator)
 		m_compOperator->SetOperator(comp->GetOperator());
 }

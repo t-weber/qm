@@ -422,6 +422,36 @@ QmView::~QmView()
 
 
 /**
+ * insert a quantum gate into the scene
+ */
+void QmView::AddQuantumComponent(QuantumComponentItem *comp)
+{
+	if(!m_scene)
+		return;
+
+	// delegate call to the scene
+	m_scene->AddQuantumComponent(comp);
+
+	emit SignalWorkspaceChanged(true);
+}
+
+
+/**
+ * remove a quantum gate from the scene
+ */
+void QmView::DeleteQuantumComponent(QuantumComponentItem *comp)
+{
+	if(!m_scene)
+		return;
+
+	// delegate call to the scene
+	m_scene->DeleteQuantumComponent(comp);
+
+	emit SignalWorkspaceChanged(true);
+}
+
+
+/**
  * clear currently selected component
  */
 void QmView::Clear()
@@ -445,6 +475,7 @@ bool QmView::CalculateCurItem()
 		return false;
 	}
 
+	// delegate call to the scene
 	bool ok = m_scene->Calculate(input_comp);
 
 	if(ok)
@@ -462,6 +493,7 @@ bool QmView::Calculate(QuantumComponentItem *input_state)
 	if(!m_scene)
 		return false;
 
+	// delegate call to the scene
 	bool ok = m_scene->Calculate(input_state);
 
 	if(ok)
@@ -502,6 +534,8 @@ void QmView::SetCurItemConfig(const ComponentConfigs& cfg)
 			emit this->SignalSelectedItem(this->m_curItem);
 		}, Qt::QueuedConnection);
 	}
+
+	emit SignalWorkspaceChanged(true);
 }
 
 
@@ -513,9 +547,7 @@ void QmView::DeleteCurItem()
 	if(!m_curItem)
 		return;
 
-	if(m_scene)
-		m_scene->DeleteQuantumComponent(m_curItem);
-
+	DeleteQuantumComponent(m_curItem);
 	m_curItem = nullptr;
 
 	emit SignalSelectedItem(nullptr);
@@ -550,7 +582,7 @@ void QmView::PasteItem()
 
 	auto *clonedItem = m_copiedItem->clone();
 	clonedItem->setPos(GetCursorPosition(true));
-	m_scene->AddQuantumComponent(clonedItem);
+	AddQuantumComponent(clonedItem);
 }
 
 
@@ -633,7 +665,7 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 	}
 
 	// show context menu on right click on a component
-	if(evt->buttons()&Qt::RightButton)
+	if(evt->buttons() & Qt::RightButton)
 	{
 		QPoint posGlobal = mapToGlobal(posVP);
 		posGlobal.rx() += 8;
@@ -670,12 +702,21 @@ void QmView::mouseReleaseEvent(QMouseEvent* evt)
 	{
 		item->setPos(snap_to_grid(item->scenePos()));
 
-		// also snap the corresponding gates to the grid
-		if(item==m_curItem && g_keep_gates_on_states)
+		if(item == m_curItem)
 		{
-			// if this is an input state, move its gate by the same amount
-			for(auto *gate : m_curGates)
-				gate->setPos(snap_to_grid(gate->scenePos()));
+			// also snap the corresponding gates to the grid
+			if(g_keep_gates_on_states)
+			{
+				// if this is an input state, move its gate by the same amount
+				for(auto *gate : m_curGates)
+					gate->setPos(snap_to_grid(gate->scenePos()));
+			}
+
+			if(m_curItemIsDragged)
+			{
+				emit SignalWorkspaceChanged(true);
+				m_curItemIsDragged = false;
+			}
 		}
 	}
 }
@@ -700,6 +741,8 @@ void QmView::mouseMoveEvent(QMouseEvent* evt)
 
 	if(item)
 	{
+		m_curItemIsDragged = (item == m_curItem);
+
 		// snap the item to the grid
 		if(g_snap_on_move)
 			item->setPos(snap_to_grid(item->scenePos()));
@@ -719,6 +762,10 @@ void QmView::mouseMoveEvent(QMouseEvent* evt)
 					gate->setPos(snap_to_grid(gate->scenePos()));
 			}
 		}
+	}
+	else
+	{
+		m_curItemIsDragged = false;
 	}
 
 

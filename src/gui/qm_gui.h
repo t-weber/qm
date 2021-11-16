@@ -72,6 +72,8 @@ private:
 	Resources m_res{};
 	RecentFiles m_recent{this, 16};
 
+	bool m_auto_calc{true};
+
 	std::shared_ptr<QmScene> m_scene{};
 	std::shared_ptr<QmView> m_view{};
 	std::shared_ptr<QLabel> m_statusLabel{};
@@ -83,6 +85,8 @@ private:
 
 protected slots:
 	void ApplySettings();
+	void WorkspaceChanged(bool changed = true);
+	void CalculateAllCircuits();
 };
 
 
