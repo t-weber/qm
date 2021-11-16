@@ -273,8 +273,8 @@ void QmWnd::SetupGUI()
 	QAction *actionCalculateAll = new QAction{iconCalcAll, "Calculate All Circuits", this};
 	connect(actionCalculateAll, &QAction::triggered, [this]()
 	{
-		auto input_comps = m_scene->GetAllInputStates();
-		m_scene->Calculate(input_comps);
+		for(auto* comp : m_scene->GetAllInputStates())
+			m_view->Calculate(comp);
 	});
 
 	QMenu *menuCalculate = new QMenu{"Calculate", this};
@@ -759,6 +759,10 @@ void QmWnd::ShowSettings(bool only_create)
 			"Keep gates on input state component.", g_keep_gates_on_states);
 		m_settings->AddSpinbox("settings/raster_size",
 			"Components raster size:", (int)g_raster_size, 1, 1000, 1);
+		m_settings->AddSpinbox("settings/precision_gui",
+			"Number precision:", g_prec_gui, 0, 99, 1);
+		//m_settings->AddDoubleSpinbox("settings/epsilon",
+		//	"Calculation epsilon:", g_eps, g_eps, 1., 1e-6);
 		m_settings->FinishSetup();
 	}
 
@@ -780,6 +784,10 @@ void QmWnd::ApplySettings()
 	g_keep_gates_on_states = m_settings->GetValue("settings/keep_gates_on_states").
 		value<decltype(g_keep_gates_on_states)>();
 	g_raster_size = m_settings->GetValue("settings/raster_size").value<int>();
+	g_prec_gui = m_settings->GetValue("settings/precision_gui").
+		value<decltype(g_prec_gui)>();
+	//g_eps = m_settings->GetValue("settings/epsilon").
+	//	value<decltype(g_eps)>();
 
 	update();
 }

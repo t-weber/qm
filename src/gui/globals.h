@@ -11,6 +11,11 @@
 #include "types.h"
 
 
+// epsilon and precision values
+extern t_real g_eps;
+extern t_int g_prec_gui;
+
+
 // size of the components grid
 extern t_real g_raster_size;
 

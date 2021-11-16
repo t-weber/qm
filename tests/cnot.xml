@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<qm>
+	<components>
+		<component type="state" ident="input_states">
+			<pos_x>4</pos_x>
+			<pos_y>3</pos_y>
+			<num_qbits>2</num_qbits>
+			<width>8</width>
+		</component>
+		<component type="gate" ident="hadamard">
+			<pos_x>6</pos_x>
+			<pos_y>3</pos_y>
+		</component>
+		<component type="gate" ident="hadamard">
+			<pos_x>6</pos_x>
+			<pos_y>4</pos_y>
+		</component>
+		<component type="gate" ident="cnot">
+			<pos_x>8</pos_x>
+			<pos_y>3</pos_y>
+			<num_qbits>2</num_qbits>
+			<control_bit_pos>0</control_bit_pos>
+			<target_bit_pos>1</target_bit_pos>
+		</component>
+		<component type="gate" ident="hadamard">
+			<pos_x>10</pos_x>
+			<pos_y>3</pos_y>
+		</component>
+		<component type="gate" ident="hadamard">
+			<pos_x>10</pos_x>
+			<pos_y>4</pos_y>
+		</component>
+		<component type="state" ident="input_states">
+			<pos_x>4</pos_x>
+			<pos_y>7</pos_y>
+			<num_qbits>2</num_qbits>
+			<width>8</width>
+		</component>
+		<component type="gate" ident="cnot">
+			<pos_x>8</pos_x>
+			<pos_y>7</pos_y>
+			<num_qbits>2</num_qbits>
+			<control_bit_pos>1</control_bit_pos>
+			<target_bit_pos>0</target_bit_pos>
+		</component>
+	</components>
+</qm>

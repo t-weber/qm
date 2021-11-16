@@ -51,10 +51,16 @@ bool QmScene::IsQuantumComponent(const QGraphicsItem *item) const
 /**
  * insert a quantum gate into the scene
  */
-void QmScene::AddQuantumComponent(QuantumComponentItem *gate)
+void QmScene::AddQuantumComponent(QuantumComponentItem *comp)
 {
-	m_components.push_back(gate);
-	addItem(gate);
+	// ensure that gates are in front of states
+	if(comp->GetType() == ComponentType::STATE)
+		comp->setZValue(0.);
+	else if(comp->GetType() == ComponentType::GATE)
+		comp->setZValue(1.);
+
+	m_components.push_back(comp);
+	addItem(comp);
 }
 
 
@@ -268,9 +274,9 @@ bool QmScene::Calculate(QuantumComponentItem* _input_comp) const
 	input_comp->SetOperators(tab.CalculateCircuitOperators());
 
 	// TODO
-	t_mat total_op = input_comp->GetOperator();
-	using namespace m_ops;
-	std::cout << total_op << std::endl;
+	//t_mat total_op = input_comp->GetOperator();
+	//using namespace m_ops;
+	//std::cout << total_op << std::endl;
 
 	return true;
 }
@@ -428,7 +434,7 @@ void QmView::Clear()
 /**
  * calculate the circuit associated with the currently selected item
  */
-void QmView::CalculateCurItem()
+bool QmView::CalculateCurItem()
 {
 	auto *selected_comp = GetCurItem();
 	auto *input_comp = m_scene->GetCorrespondingInputState(selected_comp);
@@ -436,10 +442,41 @@ void QmView::CalculateCurItem()
 	if(!input_comp)
 	{
 		QMessageBox::critical(this, "Error", "No input state component was selected.");
-		return;
+		return false;
 	}
 
-	m_scene->Calculate(input_comp);
+	bool ok = m_scene->Calculate(input_comp);
+
+	if(ok)
+	{
+		// refresh the operator matrix dialog
+		emit SignalSelectedItem(selected_comp);
+	}
+
+	return ok;
+}
+
+
+bool QmView::Calculate(QuantumComponentItem *input_state)
+{
+	if(!m_scene)
+		return false;
+
+	bool ok = m_scene->Calculate(input_state);
+
+	if(ok)
+	{
+		auto *selected_comp = GetCurItem();
+		auto *selected_input = m_scene->GetCorrespondingInputState(selected_comp);
+
+		if(selected_input == input_state)
+		{
+			// refresh the operator matrix dialog
+			emit SignalSelectedItem(m_curItem);
+		}
+	}
+
+	return ok;
 }
 
 

@@ -16,6 +16,7 @@
 
 #include "types.h"
 #include "components.h"
+#include "component_operator.h"
 
 
 /**
@@ -36,6 +37,7 @@ protected:
 private:
 	std::shared_ptr<QGridLayout> m_layout =
 		std::make_shared<QGridLayout>(this);
+	std::shared_ptr<ComponentOperator> m_compOperator{};
 
 
 public slots:

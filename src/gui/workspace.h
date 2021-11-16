@@ -120,7 +120,8 @@ public slots:
 	void CopyCurItem();
 	void PasteItem();
 
-	void CalculateCurItem();
+	bool CalculateCurItem();
+	bool Calculate(QuantumComponentItem* input_state);
 
 
 signals:
