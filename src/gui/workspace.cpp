@@ -535,7 +535,10 @@ void QmView::SetCurItemConfig(const ComponentConfigs& cfg)
 		}, Qt::QueuedConnection);
 	}
 
-	emit SignalWorkspaceChanged(true);
+	QMetaObject::invokeMethod(this, [this]() -> void
+	{
+		emit this->SignalWorkspaceChanged(true);
+	}, Qt::QueuedConnection);
 }
 
 
@@ -780,7 +783,14 @@ void QmView::wheelEvent(QWheelEvent *evt)
 	const t_real zoom_factor = std::pow(2., angle_deg*angular_speed);
 
 	if(angle_deg > 0.)
+	{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 		centerOn(evt->position());
+#else
+		centerOn(evt->pos());
+#endif
+	}
+
 	scale(zoom_factor, zoom_factor);
 
 	//QGraphicsView::wheelEvent(evt);

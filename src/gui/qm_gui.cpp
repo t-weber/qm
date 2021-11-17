@@ -19,7 +19,7 @@
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QStyleFactory>
 #include <QtSvg/QSvgGenerator>
-#if QT_VERSION >= 0x060000
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	#include <QtGui/QActionGroup>
 #else
 	#include <QtWidgets/QActionGroup>
@@ -507,7 +507,7 @@ void QmWnd::FileNew()
 }
 
 
-void QmWnd::FileLoad()
+bool QmWnd::FileLoad()
 {
 	auto filedlg = std::make_shared<QFileDialog>(
 		this, "Load Data", m_recent.GetRecentDir(),
@@ -517,11 +517,11 @@ void QmWnd::FileLoad()
 	filedlg->setFileMode(QFileDialog::AnyFile);
 
 	if(!filedlg->exec())
-		return;
+		return false;
 
 	QStringList files = filedlg->selectedFiles();
 	if(files.size() == 0 || files[0] == "")
-		return;
+		return false;
 
 	Clear();
 	if(LoadFile(files[0]))
@@ -538,11 +538,13 @@ void QmWnd::FileLoad()
 		fs::path file{files[0].toStdString()};
 		m_recent.SetRecentDir(file.parent_path().string().c_str());
 		WorkspaceChanged(false);
+		return true;
 	}
 	else
 	{
 		QMessageBox::critical(this, "Error",
 			QString("File \"%1\" could not be loaded.").arg(files[0]));
+		return false;
 	}
 }
 
@@ -570,23 +572,26 @@ bool QmWnd::FileLoadRecent(const QString& filename)
 }
 
 
-void QmWnd::FileSave()
+bool QmWnd::FileSave()
 {
 	// no open file, use "save as..." instead
 	if(m_recent.GetOpenFile() == "")
-	{
-		FileSaveAs();
-		return;
-	}
+		return FileSaveAs();
 
 	if(SaveFile(m_recent.GetOpenFile()))
+	{
 		WorkspaceChanged(false);
+		return true;
+	}
 	else
+	{
 		QMessageBox::critical(this, "Error", "File could not be saved.");
+		return false;
+	}
 }
 
 
-void QmWnd::FileSaveAs()
+bool QmWnd::FileSaveAs()
 {
 	auto filedlg = std::make_shared<QFileDialog>(
 		this, "Save Data", m_recent.GetRecentDir(),
@@ -596,11 +601,11 @@ void QmWnd::FileSaveAs()
 	filedlg->setFileMode(QFileDialog::AnyFile);
 
 	if(!filedlg->exec())
-		return;
+		return false;
 
 	QStringList files = filedlg->selectedFiles();
 	if(files.size() == 0 || files[0] == "")
-		return;
+		return false;
 
 	if(SaveFile(files[0]))
 	{
@@ -616,11 +621,13 @@ void QmWnd::FileSaveAs()
 		fs::path file{files[0].toStdString()};
 		m_recent.SetRecentDir(file.parent_path().string().c_str());
 		WorkspaceChanged(false);
+		return true;
 	}
 	else
 	{
 		QMessageBox::critical(this, "Error",
 			QString("File \"%1\" could not be saved.").arg(files[0]));
+		return false;
 	}
 }
 
@@ -851,8 +858,32 @@ void QmWnd::ShowAbout()
 }
 
 
-void QmWnd::closeEvent(QCloseEvent *e)
+void QmWnd::closeEvent(QCloseEvent *evt)
 {
+	// unsaved changes?
+	if(isWindowModified())
+	{
+		QMessageBox::StandardButton btn = QMessageBox::question(
+			this, "Save Changes?",
+			"The workspace has unsaved changes. Save them now?",
+			QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel,
+			QMessageBox::Yes);
+
+		if(btn == QMessageBox::Yes)
+		{
+			if(!FileSave())
+			{
+				evt->ignore();
+				return;
+			}
+		}
+		else if(btn == QMessageBox::Cancel)
+		{
+			evt->ignore();
+			return;
+		}
+	}
+
 	// ------------------------------------------------------------------------
 	// save settings
 	QSettings settings{this};
@@ -867,7 +898,7 @@ void QmWnd::closeEvent(QCloseEvent *e)
 	settings.setValue("file_recent_dir", m_recent.GetRecentDir());
 	// ------------------------------------------------------------------------
 
-	QMainWindow::closeEvent(e);
+	QMainWindow::closeEvent(evt);
 }
 
 

@@ -13,7 +13,7 @@
  * 	- (Scarpino11): M. Scarpino, ISBN: 978-1-6172-9017-6 (2011).
  * 	- (Shirane02): G. Shirane et al., ISBN: 978-0-5214-1126-4 (2002).
  * 	- (Kuipers02): J. B. Kuipers, ISBN: 0-691-05872-5 (2002).
- * 	- (FUH 2021): "Effiziente Algorithmen" (2021), Kurs 1684, Fernuni Hagen (https://vu.fernuni-hagen.de/lvuweb/lvu/app/Kurs/01684).
+ * 	- (FUH 2021): A. Schulz and J. Rollin, "Effiziente Algorithmen", Kurs 1684 (2021), Fernuni Hagen (https://vu.fernuni-hagen.de/lvuweb/lvu/app/Kurs/01684).
  * 	- (Sellers 2014): G. Sellers et al., ISBN: 978-0-321-90294-8 (2014).
  */
 
@@ -2336,7 +2336,9 @@ requires is_vec<t_vec> && is_mat<t_mat>
 	const t_real lenaxis = norm<t_vec>(axis);
 
 	// rotation angle
-	const t_real angle = std::atan2(lenaxis, inner<t_vec>(vec1, vec2));
+	const t_real& sin_angle = lenaxis;
+	const t_real cos_angle = inner<t_vec>(vec1, vec2);
+	const t_real angle = std::atan2(sin_angle, cos_angle);
 	//std::cout << angle << " " << std::fmod(angle, pi<t_real>) << std::endl;
 
 	// collinear vectors?

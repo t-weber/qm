@@ -42,9 +42,9 @@ public:
 
 	void Clear();
 	void FileNew();
-	void FileLoad();
-	void FileSave();
-	void FileSaveAs();
+	bool FileLoad();
+	bool FileSave();
+	bool FileSaveAs();
 
 	bool FileLoadRecent(const QString& filename);
 
