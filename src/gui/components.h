@@ -239,6 +239,48 @@ private:
 };
 
 
+/**
+ * SWAP gate
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Swap_gate
+ */
+class SwapGate : public QuantumComponentItem
+{
+public:
+	SwapGate();
+	virtual ~SwapGate();
+
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
+	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
+	void SetSourceBitPos(t_uint pos) { m_source_bit_pos = pos; }
+	void SetTargetBitPos(t_uint pos) { m_target_bit_pos = pos; }
+
+	// getter
+	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
+	t_uint GetSourceBitPos() const { return m_source_bit_pos; }
+	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+	virtual std::string GetIdent() const override { return "swap"; }
+	virtual std::string GetName() const override { return "SWAP Gate"; }
+
+	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	virtual t_vec GetState() const override;
+	virtual t_mat GetOperator() const override;
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+
+
+private:
+	t_uint m_num_qbits = 2;
+	t_uint m_source_bit_pos = 0;
+	t_uint m_target_bit_pos = 1;
+};
+
 
 /**
  * Controlled NOT gate

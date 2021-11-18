@@ -238,6 +238,15 @@ void QmWnd::SetupGUI()
 		m_view->AddQuantumComponent(gate);
 	});
 
+	QAction *actionAddSwap = new QAction{"Add SWAP Gate", this};
+	if(auto optIconFile = m_res.FindFile("swap.svg"); optIconFile)
+		actionAddSwap->setIcon(QIcon{optIconFile->string().c_str()});
+	connect(actionAddSwap, &QAction::triggered, [this]()
+	{
+		QuantumComponentItem *gate = new SwapGate();
+		m_view->AddQuantumComponent(gate);
+	});
+
 	QAction *actionAddCnot = new QAction{"Add CNOT Gate", this};
 	if(auto optIconFile = m_res.FindFile("cnot.svg"); optIconFile)
 		actionAddCnot->setIcon(QIcon{optIconFile->string().c_str()});
@@ -261,6 +270,7 @@ void QmWnd::SetupGUI()
 	menuComponents->addSeparator();
 	menuComponents->addAction(actionAddHadamard);
 	menuComponents->addAction(actionAddPauli);
+	menuComponents->addAction(actionAddSwap);
 	menuComponents->addAction(actionAddCnot);
 	menuComponents->addAction(actionAddToffoli);
 	// ------------------------------------------------------------------------
@@ -308,6 +318,7 @@ void QmWnd::SetupGUI()
 	toolbarComponents->addSeparator();
 	toolbarComponents->addAction(actionAddHadamard);
 	toolbarComponents->addAction(actionAddPauli);
+	toolbarComponents->addAction(actionAddSwap);
 	toolbarComponents->addAction(actionAddCnot);
 	toolbarComponents->addAction(actionAddToffoli);
 

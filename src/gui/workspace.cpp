@@ -38,6 +38,9 @@ QmScene::~QmScene()
  */
 bool QmScene::IsQuantumComponent(const QGraphicsItem *item) const
 {
+	if(!item)
+		return false;
+
 	for(const QuantumComponentItem *comp : GetQuantumComponents())
 	{
 		if(item == comp)
@@ -53,6 +56,9 @@ bool QmScene::IsQuantumComponent(const QGraphicsItem *item) const
  */
 void QmScene::AddQuantumComponent(QuantumComponentItem *comp)
 {
+	if(!comp)
+		return;
+
 	// ensure that gates are in front of states
 	if(comp->GetType() == ComponentType::STATE)
 		comp->setZValue(0.);
@@ -132,7 +138,9 @@ QmScene::GetCorrespondingInputState(QuantumComponentItem* comp) const
 std::vector<QuantumComponentItem*>
 QmScene::GetCorrespondingGates(QuantumComponentItem* _input_comp) const
 {
-	std::vector<QuantumComponentItem*> gates;
+	std::vector<QuantumComponentItem*> gates{};
+	if(!_input_comp)
+		return gates;
 
 	if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
 		return gates;
@@ -169,7 +177,7 @@ QmScene::GetCorrespondingGates(QuantumComponentItem* _input_comp) const
 std::vector<QuantumComponentItem*>
 QmScene::GetCorrespondingGatesApprox(QuantumComponentItem* _input_comp) const
 {
-	std::vector<QuantumComponentItem*> gates;
+	std::vector<QuantumComponentItem*> gates{};
 
 	if(!_input_comp || _input_comp->GetType() != ComponentType::STATE)
 		return gates;
@@ -206,9 +214,9 @@ QmScene::GetCorrespondingGatesApprox(QuantumComponentItem* _input_comp) const
  */
 std::vector<QuantumComponentItem*> QmScene::GetAllInputStates() const
 {
-	std::vector<QuantumComponentItem*> states;
+	std::vector<QuantumComponentItem*> states{};
 
-	for(auto* comp : GetQuantumComponents())
+	for(auto *comp : GetQuantumComponents())
 	{
 		if(comp && comp->GetType() == ComponentType::STATE)
 			states.push_back(comp);
@@ -426,7 +434,7 @@ QmView::~QmView()
  */
 void QmView::AddQuantumComponent(QuantumComponentItem *comp)
 {
-	if(!m_scene)
+	if(!m_scene || !comp)
 		return;
 
 	// delegate call to the scene
@@ -441,10 +449,21 @@ void QmView::AddQuantumComponent(QuantumComponentItem *comp)
  */
 void QmView::DeleteQuantumComponent(QuantumComponentItem *comp)
 {
-	if(!m_scene)
+	if(!m_scene || !comp)
 		return;
 
-	// delegate call to the scene
+	// if the component is an input state, also delete all its gates
+	if(comp->GetType() == ComponentType::STATE && g_keep_gates_on_states)
+	{
+		InputStates *input_comp = static_cast<InputStates*>(comp);
+		std::vector<QuantumComponentItem*> gates =
+			m_scene->GetCorrespondingGates(input_comp);
+
+		for(auto* gate : gates)
+			m_scene->DeleteQuantumComponent(gate);
+	}
+
+	// delegate calls to the scene
 	m_scene->DeleteQuantumComponent(comp);
 
 	emit SignalWorkspaceChanged(true);
@@ -550,8 +569,9 @@ void QmView::DeleteCurItem()
 	if(!m_curItem)
 		return;
 
-	DeleteQuantumComponent(m_curItem);
+	QuantumComponentItem *item = m_curItem;
 	m_curItem = nullptr;
+	DeleteQuantumComponent(item);
 
 	emit SignalSelectedItem(nullptr);
 }
@@ -638,7 +658,7 @@ void QmView::FitAreaToScene(const QRectF *_sceneRect)
 }
 
 
-void QmView::mousePressEvent(QMouseEvent* evt)
+void QmView::mousePressEvent(QMouseEvent *evt)
 {
 	bool mouse_fully_handled = false;
 
@@ -688,7 +708,7 @@ void QmView::mousePressEvent(QMouseEvent* evt)
 }
 
 
-void QmView::mouseReleaseEvent(QMouseEvent* evt)
+void QmView::mouseReleaseEvent(QMouseEvent *evt)
 {
 	if(m_curItem)
 		FitAreaToScene();
@@ -725,7 +745,7 @@ void QmView::mouseReleaseEvent(QMouseEvent* evt)
 }
 
 
-void QmView::mouseMoveEvent(QMouseEvent* evt)
+void QmView::mouseMoveEvent(QMouseEvent *evt)
 {
 	QPoint posVP = evt->pos();
 	m_curScenePos = mapToScene(posVP);

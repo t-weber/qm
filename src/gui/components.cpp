@@ -374,6 +374,170 @@ void PauliGate::SetConfig(const ComponentConfigs& configs)
 
 
 // ----------------------------------------------------------------------------
+// SWAP gate
+// ----------------------------------------------------------------------------
+SwapGate::SwapGate()
+{
+	setPos(QPointF{0,0});
+	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+}
+
+
+SwapGate::~SwapGate()
+{
+}
+
+
+QuantumComponentItem* SwapGate::clone() const
+{
+	SwapGate *item = new SwapGate{};
+
+	item->SetNumQBits(this->GetNumQBits());
+	item->SetSourceBitPos(this->GetSourceBitPos());
+	item->SetTargetBitPos(this->GetTargetBitPos());
+
+	return item;
+}
+
+
+QRectF SwapGate::boundingRect() const
+{
+	t_real w = g_raster_size;
+	t_real h = t_real(m_num_qbits) * g_raster_size;
+
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+}
+
+
+void SwapGate::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
+{
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
+
+	// background rect
+	QBrush brushBg{Qt::SolidPattern};
+	brushBg.setColor(colour_bg);
+	painter->setBrush(brushBg);
+	painter->setPen(Qt::NoPen);
+
+	painter->drawRect(boundingRect());
+
+
+	// crossing qubits
+	QPen penLine(colour_fg);
+	penLine.setWidthF(1.5);
+
+	painter->setBrush(Qt::NoBrush);
+	painter->setPen(penLine);
+
+	const t_real border_pos = g_raster_size*0.5;
+	const t_real x_pos = g_raster_size*0.15;
+
+	painter->drawLine(
+		QPointF(-border_pos, m_source_bit_pos*g_raster_size),
+		QPointF(-x_pos, m_source_bit_pos*g_raster_size));
+	painter->drawLine(
+		QPointF(x_pos, m_source_bit_pos*g_raster_size),
+		QPointF(border_pos, m_source_bit_pos*g_raster_size));
+
+	painter->drawLine(
+		QPointF(-border_pos, m_target_bit_pos*g_raster_size),
+		QPointF(-x_pos, m_target_bit_pos*g_raster_size));
+	painter->drawLine(
+		QPointF(x_pos, m_target_bit_pos*g_raster_size),
+		QPointF(border_pos, m_target_bit_pos*g_raster_size));
+
+	painter->drawLine(
+		QPointF(-x_pos, m_source_bit_pos*g_raster_size),
+		QPointF(x_pos, m_target_bit_pos*g_raster_size));
+	painter->drawLine(
+		QPointF(-x_pos, m_target_bit_pos*g_raster_size),
+		QPointF(x_pos, m_source_bit_pos*g_raster_size));
+
+
+	// non-crossing qubits
+	for(t_uint bit=0; bit<m_num_qbits; ++bit)
+	{
+		if(bit == m_source_bit_pos || bit == m_target_bit_pos)
+			continue;
+
+		painter->drawLine(
+			QPointF(-border_pos, bit*g_raster_size),
+			QPointF(border_pos, bit*g_raster_size));
+	}
+}
+
+
+/**
+ * get gate operator
+ */
+t_mat SwapGate::GetOperator() const
+{
+	return m::swap_nqbits<t_mat>(m_num_qbits,
+		m_source_bit_pos, m_target_bit_pos);
+}
+
+
+t_vec SwapGate::GetState() const
+{
+	return t_vec{};
+};
+
+
+ComponentConfigs SwapGate::GetConfig() const
+{
+	ComponentConfigs cfgs;
+	cfgs.name = GetName();
+
+	cfgs.configs = std::vector<ComponentConfig>
+	{{
+		ComponentConfig{.key = "num_qbits",
+			.value = GetNumQBits(),
+			.description = "Number of qubits",
+			.min_value = t_uint(2)},
+		ComponentConfig{.key = "source_bit_pos",
+			.value = GetSourceBitPos(),
+			.description = "Source qubit position",
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)},
+		ComponentConfig{.key = "target_bit_pos",
+			.value = GetTargetBitPos(),
+			.description = "Target qubit position",
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)},
+	}};
+
+	return cfgs;
+}
+
+
+void SwapGate::SetConfig(const ComponentConfigs& configs)
+{
+	for(const ComponentConfig& cfg : configs.configs)
+	{
+		if(cfg.key == "num_qbits")
+		{
+			t_uint bits = std::get<t_uint>(cfg.value);
+			SetNumQBits(bits);
+		}
+		else if(cfg.key == "source_bit_pos")
+		{
+			t_uint bits = std::get<t_uint>(cfg.value);
+			SetSourceBitPos(bits);
+		}
+		else if(cfg.key == "target_bit_pos")
+		{
+			t_uint bits = std::get<t_uint>(cfg.value);
+			SetTargetBitPos(bits);
+		}
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
 // CNOT gate
 // ----------------------------------------------------------------------------
 CNotGate::CNotGate()

@@ -59,7 +59,6 @@ void ComponentProperties::Clear()
 void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 {
 	Clear();
-
 	if(!comp)
 		return;
 

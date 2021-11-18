@@ -183,20 +183,24 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
  */
 template<class t_mat>
 const t_mat cnot_nqbits(std::size_t num_qbits = 2,
-	std::size_t control_bit = 0, std::size_t target_bit = 1)
+	std::size_t control_bit = 0, std::size_t target_bit = 1,
+	bool reverse_state_numbering = true)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
 	//using t_cplx = typename t_mat::value_type;
 	//constexpr t_cplx c(1, 0);
 
-	// numbering of qubits from left-hand side
-	control_bit = num_qbits - control_bit - 1;
-	target_bit = num_qbits - target_bit - 1;
+	if(reverse_state_numbering)
+	{
+		// numbering of qubits from left-hand side
+		control_bit = num_qbits - control_bit - 1;
+		target_bit = num_qbits - target_bit - 1;
+	}
 
 	const std::size_t N = (1 << num_qbits);
 	t_mat mat = zero<t_mat>(N, N);
 
-	const std::size_t control_bit_mask = (1 <<  control_bit);
+	const std::size_t control_bit_mask = (1 << control_bit);
 	const std::size_t target_bit_mask = (1 << target_bit);
 
 	// iterate all qubits
@@ -214,6 +218,57 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 			bool target_bit_set = (bits & target_bit_mask) != 0;
 			if(!target_bit_set)
 				new_bits |= (1<<target_bit);
+		}
+
+		mat(bits, new_bits) = 1;
+	}
+
+	return mat;
+}
+
+
+/**
+ * 2-qubit SWAP gate
+ * flips source and target qubit
+ * https://en.wikipedia.org/wiki/Quantum_logic_gate#Swap_gate
+ */
+template<class t_mat>
+const t_mat swap_nqbits(std::size_t num_qbits = 2,
+	std::size_t source_bit = 0, std::size_t target_bit = 1,
+	bool reverse_state_numbering = true)
+requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
+{
+	if(reverse_state_numbering)
+	{
+		// numbering of qubit states from left-hand side,
+		// e.g.: |11>, |10>, |01>, |00>
+		source_bit = num_qbits - source_bit - 1;
+		target_bit = num_qbits - target_bit - 1;
+	}
+
+	const std::size_t N = (1 << num_qbits);
+	t_mat mat = zero<t_mat>(N, N);
+
+	const std::size_t source_bit_mask = (1 << source_bit);
+	const std::size_t target_bit_mask = (1 << target_bit);
+
+	// iterate all qubits
+	for(std::size_t bits=0; bits<N; ++bits)
+	{
+		std::size_t new_bits = bits;
+
+		bool source_bit_set = (bits == source_bit_mask);
+		if(source_bit_set)
+		{
+			// set target bit
+			new_bits = target_bit_mask;
+		}
+
+		bool target_bit_set = (bits == target_bit_mask);
+		if(target_bit_set)
+		{
+			// set source bit
+			new_bits = source_bit_mask;
 		}
 
 		mat(bits, new_bits) = 1;
@@ -256,22 +311,26 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
  */
 template<class t_mat>
 const t_mat toffoli_nqbits(std::size_t num_qbits = 3,
-	std::size_t control_bit_1 = 0, std::size_t control_bit_2 = 1, std::size_t target_bit = 2)
+	std::size_t control_bit_1 = 0, std::size_t control_bit_2 = 1, std::size_t target_bit = 2,
+	bool reverse_state_numbering = true)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
 	//using t_cplx = typename t_mat::value_type;
 	//constexpr t_cplx c(1, 0);
 
-	// numbering of qubits from left-hand side
-	control_bit_1 = num_qbits - control_bit_1 - 1;
-	control_bit_2 = num_qbits - control_bit_2 - 1;
-	target_bit = num_qbits - target_bit - 1;
+	if(reverse_state_numbering)
+	{
+		// numbering of qubits from left-hand side
+		control_bit_1 = num_qbits - control_bit_1 - 1;
+		control_bit_2 = num_qbits - control_bit_2 - 1;
+		target_bit = num_qbits - target_bit - 1;
+	}
 
 	const std::size_t N = (1 << num_qbits);
 	t_mat mat = zero<t_mat>(N, N);
 
-	const std::size_t control_bit_1_mask = (1 <<  control_bit_1);
-	const std::size_t control_bit_2_mask = (1 <<  control_bit_2);
+	const std::size_t control_bit_1_mask = (1 << control_bit_1);
+	const std::size_t control_bit_2_mask = (1 << control_bit_2);
 	const std::size_t target_bit_mask = (1 << target_bit);
 
 	// iterate all qubits
