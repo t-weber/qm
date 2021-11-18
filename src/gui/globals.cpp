@@ -15,3 +15,5 @@ t_int g_prec_gui = 4;
 t_real g_raster_size = 35.;
 bool g_snap_on_move = false;
 bool g_keep_gates_on_states = true;
+
+bool g_reverse_state_numbering = true;

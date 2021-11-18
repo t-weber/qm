@@ -795,6 +795,8 @@ void QmWnd::ShowSettings(bool only_create)
 		connect(m_settings.get(), &Settings::SignalApplySettings,
 			this, &QmWnd::ApplySettings);
 
+		m_settings->AddCheckbox("settings/reverse_state_numbering",
+			"Number qubits from LSB (right) to MSB (left).", g_reverse_state_numbering);
 		m_settings->AddCheckbox("settings/snap_on_move",
 			"Snap to grid while dragging.", g_snap_on_move);
 		m_settings->AddCheckbox("settings/keep_gates_on_states",
@@ -821,6 +823,8 @@ void QmWnd::ApplySettings()
 	if(!m_settings)
 		return;
 
+	g_reverse_state_numbering = m_settings->GetValue("settings/reverse_state_numbering").
+		value<decltype(g_snap_on_move)>();
 	g_snap_on_move = m_settings->GetValue("settings/snap_on_move").
 		value<decltype(g_snap_on_move)>();
 	g_keep_gates_on_states = m_settings->GetValue("settings/keep_gates_on_states").

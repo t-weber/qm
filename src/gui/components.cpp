@@ -63,7 +63,7 @@ QRectF InputStates::boundingRect() const
 }
 
 
-void InputStates::paint(QPainter *painter, 
+void InputStates::paint(QPainter *painter,
 	const QStyleOptionGraphicsItem*, QWidget*)
 {
 	const QColor& colour_fg = get_foreground_colour();
@@ -475,7 +475,8 @@ void SwapGate::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget
 t_mat SwapGate::GetOperator() const
 {
 	return m::swap_nqbits<t_mat>(m_num_qbits,
-		m_source_bit_pos, m_target_bit_pos);
+		m_source_bit_pos, m_target_bit_pos,
+		g_reverse_state_numbering);
 }
 
 
@@ -642,7 +643,8 @@ void CNotGate::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget
 t_mat CNotGate::GetOperator() const
 {
 	return m::cnot_nqbits<t_mat>(m_num_qbits,
-		m_control_bit_pos, m_target_bit_pos);
+		m_control_bit_pos, m_target_bit_pos,
+		g_reverse_state_numbering);
 }
 
 
@@ -833,7 +835,8 @@ t_mat ToffoliGate::GetOperator() const
 {
 	return m::toffoli_nqbits<t_mat>(m_num_qbits,
 		m_control_bit_1_pos, m_control_bit_2_pos,
-		m_target_bit_pos);
+		m_target_bit_pos,
+		g_reverse_state_numbering);
 }
 
 
@@ -918,6 +921,8 @@ QuantumComponentItem* QuantumComponentItem::create(const std::string& id)
 		comp = new HadamardGate();
 	else if(id == "pauli")
 		comp = new PauliGate();
+	else if(id == "swap")
+		comp = new SwapGate();
 	else if(id == "cnot")
 		comp = new CNotGate();
 	else if(id == "toffoli")

@@ -26,5 +26,7 @@ extern bool g_snap_on_move;
 // moving the input states component
 extern bool g_keep_gates_on_states;
 
+// number qubit states from LSB-right to MSB-left (or bottom-to-top in the gui)?
+extern bool g_reverse_state_numbering;
 
 #endif
