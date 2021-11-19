@@ -1070,25 +1070,6 @@ void ToffoliGate::SetConfig(const ComponentConfigs& configs)
 
 
 /**
- * create the component if the id matches
- */
-template<class t_comp>
-static constexpr inline void
-create_matching_comp(QuantumComponentItem*& comp, const std::string& id)
-{
-	// component has already been created
-	if(comp)
-		return;
-
-	std::string_view comp_id = t_comp::GetStaticIdent();
-
-	// create the component with the matching id
-	if(id == comp_id)
-		comp = new t_comp();
-}
-
-
-/**
  * create the component matching the given id
  */
 template<class t_comps, std::size_t ...indices>
@@ -1099,7 +1080,17 @@ create_matching_comp(const std::string& id,
 	QuantumComponentItem *comp = nullptr;
 
 	// loop through all component classes
-	( create_matching_comp<std::tuple_element_t<indices, t_comps>>(comp, id), ... );
+	(
+		[&id, &comp]()
+		{
+			using t_comp = std::tuple_element_t<indices, t_comps>;
+
+			// create the component with the matching id
+			// if the component hasn't already been created
+			if(!comp && id == std::string_view{t_comp::GetStaticIdent()})
+				comp = new t_comp();
+		}(),
+	... ); // call a sequence of lambda functions
 
 	return comp;
 }
