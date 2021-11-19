@@ -457,6 +457,17 @@ requires is_basic_quat<t_quat>
 
 
 /**
+ * tests for zero scalar
+ */
+template<class t_scalar>
+bool equals_0(t_scalar s, t_scalar eps = std::numeric_limits<t_scalar>::epsilon())
+requires is_scalar<t_scalar>
+{
+	return equals<t_scalar>(s, t_scalar{0}, eps);
+}
+
+
+/**
  * tests for zero vector
  */
 template<class t_vec>

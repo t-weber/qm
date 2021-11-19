@@ -12,6 +12,7 @@
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QSpinBox>
+#include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QSpacerItem>
@@ -76,33 +77,72 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 		QLabel *labelDescr = new QLabel(cfg.description.c_str(), this);
 		m_layout->addWidget(labelDescr, m_layout->rowCount(), 0, 1, 1);
 
-		// value
-		QSpinBox *spinVal = new QSpinBox(this);
-		spinVal->setValue(std::get<t_uint>(cfg.value));
-		if(cfg.min_value)
-			spinVal->setMinimum(std::get<t_uint>(*cfg.min_value));
-		if(cfg.max_value)
-			spinVal->setMaximum(std::get<t_uint>(*cfg.max_value));
-
-		connect(spinVal, static_cast<void (QSpinBox::*)(int)>
-			(&QSpinBox::valueChanged), [this, cfg, comp](int val) -> void
+		// uint value
+		if(std::holds_alternative<t_uint>(cfg.value))
 		{
-			ComponentConfigs configs;
+			QSpinBox *spinVal = new QSpinBox(this);
+			spinVal->setValue(std::get<t_uint>(cfg.value));
+			if(cfg.min_value)
+				spinVal->setMinimum(std::get<t_uint>(*cfg.min_value));
+			if(cfg.max_value)
+				spinVal->setMaximum(std::get<t_uint>(*cfg.max_value));
 
-			configs.configs = std::vector<ComponentConfig>
-			{{
-				ComponentConfig{.key = cfg.key, .value = t_uint(val)},
-			}};
+			connect(spinVal, static_cast<void (QSpinBox::*)(int)>
+				(&QSpinBox::valueChanged), [this, cfg, comp](int val) -> void
+			{
+				ComponentConfigs configs;
 
-			// send the changes back to the component
-			emit this->SignalConfigChanged(configs);
+				configs.configs = std::vector<ComponentConfig>
+				{{
+					ComponentConfig{.key = cfg.key, .value = t_uint(val)},
+				}};
 
-			// also update the operator dialog every time the configuration is changed
-			if(m_compOperator)
-				m_compOperator->SetOperator(comp->GetOperator());
-		});
+				// send the changes back to the component
+				emit this->SignalConfigChanged(configs);
 
-		m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, 1);
+				// also update the operator dialog every time the configuration is changed
+				if(m_compOperator)
+					m_compOperator->SetOperator(comp->GetOperator());
+			});
+
+			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, 1);
+		}
+
+		// t_real value
+		else if(std::holds_alternative<t_real>(cfg.value))
+		{
+			t_real scale = t_real(1);
+			if(cfg.is_phase)
+				scale = t_real(180) / m::pi<t_real>;
+
+			QDoubleSpinBox *spinVal = new QDoubleSpinBox(this);
+			spinVal->setDecimals(g_prec_gui);
+			spinVal->setValue(std::get<t_real>(cfg.value) * scale);
+			if(cfg.min_value)
+				spinVal->setMinimum(std::get<t_real>(*cfg.min_value)*scale);
+			if(cfg.max_value)
+				spinVal->setMaximum(std::get<t_real>(*cfg.max_value)*scale);
+
+			connect(spinVal, static_cast<void (QDoubleSpinBox::*)(double)>
+			(&QDoubleSpinBox::valueChanged), [this, cfg, comp, scale](double val) -> void
+			{
+				ComponentConfigs configs;
+
+				configs.configs = std::vector<ComponentConfig>
+				{{
+					ComponentConfig{.key = cfg.key, .value = t_real(val)/scale},
+				}};
+
+				// send the changes back to the component
+				emit this->SignalConfigChanged(configs);
+
+				// also update the operator dialog every time the configuration is changed
+				if(m_compOperator)
+					m_compOperator->SetOperator(comp->GetOperator());
+			});
+
+			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, 1);
+		}
 	}
 
 	if(comp->GetType() == ComponentType::STATE || comp->GetType() == ComponentType::GATE)

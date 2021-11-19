@@ -46,6 +46,8 @@ struct ComponentConfig
 	std::optional<std::variant<
 		t_int, t_uint,
 		t_real, std::string>> max_value{};
+
+	bool is_phase{false};
 };
 
 
@@ -146,7 +148,8 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
-	virtual std::string GetIdent() const override { return "input_states"; }
+	static const char* GetStaticIdent() { return "input_states"; }
+	virtual std::string GetIdent() const override { return InputStates::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Input States"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::STATE; }
@@ -188,7 +191,8 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
-	virtual std::string GetIdent() const override { return "hadamard"; }
+	static const char* GetStaticIdent() { return "hadamard"; }
+	virtual std::string GetIdent() const override { return HadamardGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Hadamard Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
@@ -223,7 +227,8 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
-	virtual std::string GetIdent() const override { return "pauli"; }
+	static const char* GetStaticIdent() { return "pauli"; }
+	virtual std::string GetIdent() const override { return PauliGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Pauli Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
@@ -237,6 +242,47 @@ public:
 private:
 	t_uint m_dir = 0;
 };
+
+
+
+/**
+ * Phase gate
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Phase_shift_gates
+ */
+class PhaseGate : public QuantumComponentItem
+{
+public:
+	PhaseGate();
+	virtual ~PhaseGate();
+
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
+	void SetPhase(t_real phase) { m_phase = phase; }
+
+	// getter
+	t_real GetPhase() const { return m_phase; }
+	virtual t_uint GetNumQBits() const override { return 1; }
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+	static const char* GetStaticIdent() { return "phase"; }
+	virtual std::string GetIdent() const override { return PhaseGate::GetStaticIdent(); }
+	virtual std::string GetName() const override { return "Phase Gate"; }
+
+	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	virtual t_vec GetState() const override;
+	virtual t_mat GetOperator() const override;
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+
+
+private:
+	t_real m_phase = m::pi<t_real> * t_real(0.5);
+};
+
 
 
 /**
@@ -264,7 +310,8 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
-	virtual std::string GetIdent() const override { return "swap"; }
+	static const char* GetStaticIdent() { return "swap"; }
+	virtual std::string GetIdent() const override { return SwapGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "SWAP Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
@@ -280,6 +327,7 @@ private:
 	t_uint m_source_bit_pos = 0;
 	t_uint m_target_bit_pos = 1;
 };
+
 
 
 /**
@@ -307,7 +355,8 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
-	virtual std::string GetIdent() const override { return "cnot"; }
+	static const char* GetStaticIdent() { return "cnot"; }
+	virtual std::string GetIdent() const override { return CNotGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "CNOT Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
@@ -356,7 +405,10 @@ public:
 	virtual QRectF boundingRect() const override;
 	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
-	virtual ComponentType GetType() const override { return ComponentType::GATE; }	virtual std::string GetIdent() const override { return "toffoli"; }
+	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+
+	static const char* GetStaticIdent() { return "toffoli"; }
+	virtual std::string GetIdent() const override { return ToffoliGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Toffoli Gate"; }
 
 	virtual t_vec GetState() const override;

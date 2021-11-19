@@ -14,6 +14,9 @@
 
 #include "lib/qm_algos.h"
 
+#include <string_view>
+#include <tuple>
+
 
 
 // ----------------------------------------------------------------------------
@@ -139,14 +142,20 @@ ComponentConfigs InputStates::GetConfig() const
 
 	cfgs.configs = std::vector<ComponentConfig>
 	{{
-		ComponentConfig{.key = "num_qbits",
+		ComponentConfig
+		{
+			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(1)},
-		ComponentConfig{.key = "width",
+			.min_value = t_uint(1)
+		},
+		ComponentConfig
+		{
+			.key = "width",
 			.value = GetWidth(),
 			.description = "Width",
-			.min_value = t_uint(2)},
+			.min_value = t_uint(2)
+		},
 	}};
 
 	return cfgs;
@@ -175,7 +184,9 @@ void InputStates::SetConfig(const ComponentConfigs& configs)
 
 // ----------------------------------------------------------------------------
 // Hadamard gate
+// @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Hadamard_gate
 // ----------------------------------------------------------------------------
+
 HadamardGate::HadamardGate()
 {
 	setPos(QPointF{0,0});
@@ -264,6 +275,7 @@ void HadamardGate::SetConfig(const ComponentConfigs&)
 
 // ----------------------------------------------------------------------------
 // Pauli X/Y/Z gate
+// @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Pauli_gates_(X,Y,Z)
 // ----------------------------------------------------------------------------
 PauliGate::PauliGate()
 {
@@ -347,11 +359,14 @@ ComponentConfigs PauliGate::GetConfig() const
 
 	cfgs.configs = std::vector<ComponentConfig>
 	{{
-		ComponentConfig{.key = "dir",
+		ComponentConfig
+		{
+			.key = "dir",
 			.value = GetDirection(),
 			.description = "Direction",
 			.min_value = t_uint(0),
-			.max_value = t_uint(2),},
+			.max_value = t_uint(2),
+		},
 	}};
 
 	return cfgs;
@@ -374,7 +389,122 @@ void PauliGate::SetConfig(const ComponentConfigs& configs)
 
 
 // ----------------------------------------------------------------------------
+// Phase gate
+// @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Phase_shift_gates
+// ----------------------------------------------------------------------------
+PhaseGate::PhaseGate()
+{
+	setPos(QPointF{0,0});
+	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+}
+
+
+PhaseGate::~PhaseGate()
+{
+}
+
+
+QuantumComponentItem* PhaseGate::clone() const
+{
+	PhaseGate *item = new PhaseGate{};
+
+	item->SetPhase(this->GetPhase());
+
+	return item;
+}
+
+
+QRectF PhaseGate::boundingRect() const
+{
+	t_real w = g_raster_size;
+	t_real h = g_raster_size;
+
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+}
+
+
+void PhaseGate::paint(QPainter *painter,
+	const QStyleOptionGraphicsItem*, QWidget*)
+{
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
+	QPen pen(colour_fg);
+	pen.setWidthF(1.);
+
+	QBrush brush{Qt::SolidPattern};
+	brush.setColor(colour_bg);
+
+	//QFont font = painter->font();
+	//font.setPointSize(g_raster_size*0.5);
+	//painter->setFont(font);
+
+	painter->setPen(pen);
+	painter->setBrush(brush);
+
+	t_real size = g_raster_size*0.66;
+	QRectF rect{-size*0.5, -size*0.5, size, size};
+
+	painter->drawRect(rect);
+	painter->drawText(rect, Qt::AlignCenter, "P");
+}
+
+
+/**
+ * get gate operator
+ */
+t_mat PhaseGate::GetOperator() const
+{
+	return m::phasegate<t_mat, t_cplx>(m_phase);
+}
+
+
+t_vec PhaseGate::GetState() const
+{
+	return t_vec{};
+};
+
+
+ComponentConfigs PhaseGate::GetConfig() const
+{
+	ComponentConfigs cfgs;
+	cfgs.name = GetName();
+
+	cfgs.configs = std::vector<ComponentConfig>
+	{{
+		ComponentConfig
+		{
+			.key = "phase",
+			.value = GetPhase(),
+			.description = "Phase",
+			.min_value = t_real(0.),
+			.max_value = t_real(2. * m::pi<t_real>),
+			.is_phase = true,
+		},
+	}};
+
+	return cfgs;
+}
+
+
+void PhaseGate::SetConfig(const ComponentConfigs& configs)
+{
+	for(const ComponentConfig& cfg : configs.configs)
+	{
+		if(cfg.key == "phase")
+		{
+			t_real phase = std::get<t_real>(cfg.value);
+			SetPhase(phase);
+		}
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
 // SWAP gate
+// @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Swap_gate
 // ----------------------------------------------------------------------------
 SwapGate::SwapGate()
 {
@@ -493,20 +623,29 @@ ComponentConfigs SwapGate::GetConfig() const
 
 	cfgs.configs = std::vector<ComponentConfig>
 	{{
-		ComponentConfig{.key = "num_qbits",
+		ComponentConfig
+		{
+			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(2)},
-		ComponentConfig{.key = "source_bit_pos",
+			.min_value = t_uint(2)
+		},
+		ComponentConfig
+		{
+			.key = "source_bit_pos",
 			.value = GetSourceBitPos(),
 			.description = "Source qubit position",
 			.min_value = t_uint(0),
-			.max_value = t_uint(GetNumQBits() - 1)},
-		ComponentConfig{.key = "target_bit_pos",
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
+		ComponentConfig
+		{
+			.key = "target_bit_pos",
 			.value = GetTargetBitPos(),
 			.description = "Target qubit position",
 			.min_value = t_uint(0),
-			.max_value = t_uint(GetNumQBits() - 1)},
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
 	}};
 
 	return cfgs;
@@ -540,6 +679,7 @@ void SwapGate::SetConfig(const ComponentConfigs& configs)
 
 // ----------------------------------------------------------------------------
 // CNOT gate
+// @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
 // ----------------------------------------------------------------------------
 CNotGate::CNotGate()
 {
@@ -661,20 +801,29 @@ ComponentConfigs CNotGate::GetConfig() const
 
 	cfgs.configs = std::vector<ComponentConfig>
 	{{
-		ComponentConfig{.key = "num_qbits",
+		ComponentConfig
+		{
+			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(2)},
-		ComponentConfig{.key = "control_bit_pos",
+			.min_value = t_uint(2)
+		},
+		ComponentConfig
+		{
+			.key = "control_bit_pos",
 			.value = GetControlBitPos(),
 			.description = "Control qubit position",
 			.min_value = t_uint(0),
-			.max_value = t_uint(GetNumQBits() - 1)},
-		ComponentConfig{.key = "target_bit_pos",
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
+		ComponentConfig
+		{
+			.key = "target_bit_pos",
 			.value = GetTargetBitPos(),
 			.description = "Target qubit position",
 			.min_value = t_uint(0),
-			.max_value = t_uint(GetNumQBits() - 1)},
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
 	}};
 
 	return cfgs;
@@ -708,6 +857,7 @@ void CNotGate::SetConfig(const ComponentConfigs& configs)
 
 // ----------------------------------------------------------------------------
 // Toffoli gate
+// @see https://en.wikipedia.org/wiki/Toffoli_gate
 // ----------------------------------------------------------------------------
 ToffoliGate::ToffoliGate()
 {
@@ -853,25 +1003,37 @@ ComponentConfigs ToffoliGate::GetConfig() const
 
 	cfgs.configs = std::vector<ComponentConfig>
 	{{
-		ComponentConfig{.key = "num_qbits",
+		ComponentConfig
+		{
+			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(3)},
-		ComponentConfig{.key = "control_bit_1_pos",
+			.min_value = t_uint(3)
+		},
+		ComponentConfig
+		{
+			.key = "control_bit_1_pos",
 			.value = GetControlBit1Pos(),
 			.description = "Control qubit 1 position",
 			.min_value = t_uint(0),
-			.max_value = t_uint(GetNumQBits() - 1)},
-		ComponentConfig{.key = "control_bit_2_pos",
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
+		ComponentConfig
+		{
+			.key = "control_bit_2_pos",
 			.value = GetControlBit2Pos(),
 			.description = "Control qubit 2 position",
 			.min_value = t_uint(0),
-			.max_value = t_uint(GetNumQBits() - 1)},
-		ComponentConfig{.key = "target_bit_pos",
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
+		ComponentConfig
+		{
+			.key = "target_bit_pos",
 			.value = GetTargetBitPos(),
 			.description = "Target qubit position",
 			.min_value = t_uint(0),
-			.max_value = t_uint(GetNumQBits() - 1)},
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
 	}};
 
 	return cfgs;
@@ -907,26 +1069,58 @@ void ToffoliGate::SetConfig(const ComponentConfigs& configs)
 // ----------------------------------------------------------------------------
 
 
+/**
+ * create the component if the id matches
+ */
+template<class t_comp>
+static constexpr inline void
+create_matching_comp(QuantumComponentItem*& comp, const std::string& id)
+{
+	// component has already been created
+	if(comp)
+		return;
+
+	std::string_view comp_id = t_comp::GetStaticIdent();
+
+	// create the component with the matching id
+	if(id == comp_id)
+		comp = new t_comp();
+}
+
+
+/**
+ * create the component matching the given id
+ */
+template<class t_comps, std::size_t ...indices>
+static constexpr inline QuantumComponentItem*
+create_matching_comp(const std::string& id,
+	const std::index_sequence<indices...>&)
+{
+	QuantumComponentItem *comp = nullptr;
+
+	// loop through all component classes
+	( create_matching_comp<std::tuple_element_t<indices, t_comps>>(comp, id), ... );
+
+	return comp;
+}
+
 
 /**
  * factory function to create the component with the given id
  */
 QuantumComponentItem* QuantumComponentItem::create(const std::string& id)
 {
-	QuantumComponentItem *comp = nullptr;
+	// possible component classes to create
+	using t_comps = std::tuple
+	<
+		InputStates,
+		HadamardGate, PauliGate, PhaseGate,
+		SwapGate, CNotGate,
+		ToffoliGate
+	>;
 
-	if(id == "input_states")
-		comp = new InputStates();
-	else if(id == "hadamard")
-		comp = new HadamardGate();
-	else if(id == "pauli")
-		comp = new PauliGate();
-	else if(id == "swap")
-		comp = new SwapGate();
-	else if(id == "cnot")
-		comp = new CNotGate();
-	else if(id == "toffoli")
-		comp = new ToffoliGate();
-
-	return comp;
+	// iterate through all component classes and create the matching one
+	constexpr const std::size_t num_comps = std::tuple_size<t_comps>();
+	constexpr const auto comp_indices = std::make_index_sequence<num_comps>();
+	return create_matching_comp<t_comps>(id, comp_indices);
 }
