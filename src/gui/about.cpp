@@ -39,7 +39,7 @@ static std::string get_compiler_url(const std::string& name)
 }
 
 
-About::About(QWidget *parent)
+About::About(QWidget *parent, const QIcon* progIcon)
 	: QDialog(parent)
 {
 	setWindowTitle("About");
@@ -54,7 +54,7 @@ About::About(QWidget *parent)
 
 	// add description items
 	//AddTitle(QApplication::applicationDisplayName().toStdString().c_str());
-	AddTitle("Quantum Algorithms Editor");
+	AddTitle("Quantum Algorithms Editor", progIcon);
 
 	AddSpacer(15);
 
@@ -119,7 +119,7 @@ About::About(QWidget *parent)
 /**
  * adds the program title to the end of the grid layout
  */
-void About::AddTitle(const char *title)
+void About::AddTitle(const char *title, const QIcon* icon)
 {
 	QLabel *label = new QLabel(title, this);
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -135,8 +135,39 @@ void About::AddTitle(const char *title)
 
 	label->setFont(font);
 
-	m_grid->addWidget(label, m_grid->rowCount(), 0,
-		1, 2, Qt::AlignHCenter);
+	// add an icon and a title
+	if(icon)
+	{
+		QWidget *titleWidget = new QWidget(this);
+
+		// title widget grid layout
+		QGridLayout *titleGrid = new QGridLayout(titleWidget);
+		titleGrid->setSpacing(4);
+		titleGrid->setContentsMargins(0, 0, 0, 0);
+
+		titleWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+		QLabel *labelIcon = new QLabel(titleWidget);
+		QPixmap pixmap = icon->pixmap(48, 48);
+		labelIcon->setPixmap(pixmap);
+		labelIcon->setFrameShape(QFrame::StyledPanel);
+		labelIcon->setFrameShadow(QFrame::Raised);
+		labelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+		QSpacerItem *spacer = new QSpacerItem(16, 1, QSizePolicy::Fixed, QSizePolicy::Fixed);
+		titleGrid->addWidget(labelIcon, 0, 0, 1, 1, Qt::AlignVCenter);
+		titleGrid->addItem(spacer, 0, 1, 1, 1);
+		titleGrid->addWidget(label, 0, 2, 1, 1, Qt::AlignHCenter | Qt::AlignVCenter);
+
+		m_grid->addWidget(titleWidget, m_grid->rowCount(), 0, 1, 2);
+	}
+
+	// only add a title
+	else
+	{
+		m_grid->addWidget(label, m_grid->rowCount(), 0,
+			1, 2, Qt::AlignHCenter);
+	}
 }
 
 

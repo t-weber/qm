@@ -99,6 +99,9 @@ QmWnd::QmWnd(QWidget* pParent)
  */
 void QmWnd::SetupGUI()
 {
+	if(auto optIconFile = m_res.FindFile("main.svg"); optIconFile)
+		setWindowIcon(QIcon{optIconFile->string().c_str()});
+
 	setCentralWidget(m_view.get());
 
 	m_properties = std::make_shared<DockWidgetWrapper<ComponentProperties>>(this);
@@ -878,7 +881,10 @@ void QmWnd::WorkspaceChanged(bool changed)
 void QmWnd::ShowAbout()
 {
 	if(!m_about)
-		m_about = std::make_shared<About>(this);
+	{
+		QIcon icon = windowIcon();
+		m_about = std::make_shared<About>(this, &icon);
+	}
 
 	show_dialog(m_about.get());
 }

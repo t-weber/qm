@@ -170,6 +170,14 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 		{
 			QPushButton *btnStates = new QPushButton("States...", this);
 			btnStates->setToolTip("Show Input and Output State Vectors");
+			connect(btnStates, &QAbstractButton::clicked, [this, comp]()
+			{
+				if(!m_compStates)
+					m_compStates = std::make_shared<ComponentStates>(this);
+
+				m_compStates->SetStates(comp->GetState());
+				show_dialog(m_compStates.get());
+			});
 			m_layout->addWidget(btnStates, m_layout->rowCount(), 0, 1, 1);
 		}
 	}

@@ -13,11 +13,13 @@
 
 #include <memory>
 
+#include "resources.h"
+
 
 class About : public QDialog
 {
 public:
-	About(QWidget *parent=nullptr);
+	About(QWidget *parent=nullptr, const QIcon* progIcon=nullptr);
 	virtual ~About() = default;
 
 	About(const About&) = delete;
@@ -28,7 +30,7 @@ protected:
 	virtual void accept() override;
 	virtual void reject() override;
 
-	void AddTitle(const char *title);
+	void AddTitle(const char *title, const QIcon* progIcon=nullptr);
 	void AddItem(const QString& key, const QString& val, const QString& url="");
 	void AddSpacer(int size_v=-1);
 
