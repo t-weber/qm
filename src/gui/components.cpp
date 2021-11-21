@@ -37,6 +37,9 @@ InputStates::InputStates()
 {
 	setPos(QPointF{0,0});
 	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+
+	// to have some initial values
+	CalculateInputStates();
 }
 
 
@@ -100,39 +103,131 @@ void InputStates::paint(QPainter *painter,
 
 
 /**
- * get total calculated operator
+ * set the number of qubits
  */
-t_mat InputStates::GetOperator() const
+void InputStates::SetNumQBits(t_uint bits)
+{
+	m_num_qbits = bits;
+
+	auto old_qbits = m_qbits_input;
+	m_qbits_input = m::samevalue<t_vec>(GetNumQBits(), 1.);
+
+	// restore old bits
+	for(t_uint bit=0; bit<std::min(m_qbits_input.size(), old_qbits.size()); ++bit)
+		m_qbits_input[bit] = old_qbits[bit];
+
+	CalculateInputStates();
+}
+
+
+/**
+ * set the circuit column operators and calculate the total operator
+ */
+void InputStates::SetOperators(const std::vector<t_columnop>& ops)
+{
+	m_ops = ops;
+	CalculateTotalOperator();
+	CalculateOutputStates();
+}
+
+
+/**
+ * set the circuit column operators and calculate the total operator
+ */
+void InputStates::SetOperators(std::vector<t_columnop>&& ops)
+{
+	m_ops = std::forward<std::vector<t_columnop>>(ops);
+	CalculateTotalOperator();
+	CalculateOutputStates();
+}
+
+
+/**
+ * set the input qubits and calculate their state vector
+ */
+void InputStates::SetInputQBits(const t_vec& vec)
+{
+	m_qbits_input = vec;
+	CalculateInputStates();
+}
+
+
+/**
+ * set the circuit column operators and calculate the total operator
+ */
+bool InputStates::CalculateTotalOperator()
 {
 	using namespace m_ops;
 	const auto& ops = GetOperators();
 
 	if(ops.size())
 	{
-		t_mat op_total;
-
 		auto iter = ops.rbegin();
-		op_total = std::get<t_mat>(*iter);
+		m_totalop = std::get<t_mat>(*iter);
 		std::advance(iter, 1);
 
 		for(; iter!=ops.rend(); std::advance(iter, 1))
-			op_total = op_total * std::get<t_mat>(*iter);
-
-		return op_total;
+			m_totalop = m_totalop * std::get<t_mat>(*iter);
 	}
 	else
 	{
-		// corresponds to identity
-		return t_mat{};
+		m_totalop = m::unit<t_mat>(std::pow(2, GetNumQBits()));
 	}
+
+	return true;
 }
 
 
-t_vec InputStates::GetState() const
+/**
+ * calculate input state vector from qubit configuration
+ */
+bool InputStates::CalculateInputStates()
 {
-	// TODO
-	return t_vec{};
-};
+	using namespace m_ops;
+	m_state_input.clear();
+
+	if(m_qbits_input.size() != m_num_qbits)
+		return false;
+
+	static const t_vec down = m::create<t_vec>({ 1, 0 });
+	static const t_vec up = m::create<t_vec>({ 0, 1 });
+
+	for(t_uint bit=0; bit<m_num_qbits; ++bit)
+	{
+		t_vec comp = m_qbits_input[bit].real()*down + m_qbits_input[bit].imag()*up;
+
+		if(m_state_input.size() == 0)
+			m_state_input = comp;
+		else
+			m_state_input = m::outer_flat<t_vec, t_mat>(m_state_input, comp);
+	}
+
+	return true;
+}
+
+
+/**
+ * apply the operator to the input state vector
+ */
+bool InputStates::CalculateOutputStates()
+{
+	if(m_state_input.size() != m_totalop.size2())
+		return false;
+
+	using namespace m_ops;
+	m_state_output = m_totalop * m_state_input;
+
+	return true;
+}
+
+
+/**
+ * get total calculated operator
+ */
+t_mat InputStates::GetOperator() const
+{
+	return m_totalop;
+}
 
 
 ComponentConfigs InputStates::GetConfig() const
@@ -164,6 +259,7 @@ ComponentConfigs InputStates::GetConfig() const
 
 void InputStates::SetConfig(const ComponentConfigs& configs)
 {
+	// get configuration options
 	for(const ComponentConfig& cfg : configs.configs)
 	{
 		if(cfg.key == "num_qbits")
@@ -176,6 +272,21 @@ void InputStates::SetConfig(const ComponentConfigs& configs)
 			t_uint w = std::get<t_uint>(cfg.value);
 			SetWidth(w);
 		}
+	}
+
+
+	// get qubit setting
+	for(const QBitConfig& bitcfg : configs.qbit_configs)
+	{
+		if(bitcfg.bit < m_num_qbits)
+		{
+			if(bitcfg.component == 0)
+				m_qbits_input[bitcfg.bit].real(bitcfg.value);
+			else if(bitcfg.component == 1)
+				m_qbits_input[bitcfg.bit].imag(bitcfg.value);
+		}
+
+		CalculateInputStates();
 	}
 }
 // ----------------------------------------------------------------------------
@@ -249,12 +360,6 @@ t_mat HadamardGate::GetOperator() const
 {
 	return m::hadamard<t_mat>();
 }
-
-
-t_vec HadamardGate::GetState() const
-{
-	return t_vec{};
-};
 
 
 ComponentConfigs HadamardGate::GetConfig() const
@@ -344,12 +449,6 @@ t_mat PauliGate::GetOperator() const
 {
 	return m::su2_matrix<t_mat>(m_dir);
 }
-
-
-t_vec PauliGate::GetState() const
-{
-	return t_vec{};
-};
 
 
 ComponentConfigs PauliGate::GetConfig() const
@@ -457,12 +556,6 @@ t_mat PhaseGate::GetOperator() const
 {
 	return m::phasegate<t_mat, t_cplx>(m_phase);
 }
-
-
-t_vec PhaseGate::GetState() const
-{
-	return t_vec{};
-};
 
 
 ComponentConfigs PhaseGate::GetConfig() const
@@ -608,12 +701,6 @@ t_mat SwapGate::GetOperator() const
 		m_source_bit_pos, m_target_bit_pos,
 		g_reverse_state_numbering);
 }
-
-
-t_vec SwapGate::GetState() const
-{
-	return t_vec{};
-};
 
 
 ComponentConfigs SwapGate::GetConfig() const
@@ -786,12 +873,6 @@ t_mat CNotGate::GetOperator() const
 		m_control_bit_pos, m_target_bit_pos,
 		g_reverse_state_numbering);
 }
-
-
-t_vec CNotGate::GetState() const
-{
-	return t_vec{};
-};
 
 
 ComponentConfigs CNotGate::GetConfig() const
@@ -988,12 +1069,6 @@ t_mat ToffoliGate::GetOperator() const
 		m_target_bit_pos,
 		g_reverse_state_numbering);
 }
-
-
-t_vec ToffoliGate::GetState() const
-{
-	return t_vec{};
-};
 
 
 ComponentConfigs ToffoliGate::GetConfig() const

@@ -84,7 +84,7 @@ void ComponentOperator::SetOperator(const t_mat& op)
 
 		for(std::size_t col=0; col<op.size2(); ++col)
 		{
-			ostr << "<td style=\"padding-top:4px; padding-bottom:4px; padding-left:4px; padding-right:4px\">";
+			ostr << "<td style=\"padding-top:2px; padding-bottom:2px; padding-left:4px; padding-right:4px\">";
 			ostr << op(row, col);
 			ostr << "</td>";
 		}

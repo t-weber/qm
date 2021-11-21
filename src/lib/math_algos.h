@@ -354,10 +354,10 @@ requires (is_vec<t_obj_dst> || is_mat<t_obj_dst>) && (is_vec<t_obj_src> || is_ma
  * set submatrix to unit
  */
 template<class t_mat>
-void unit(t_mat& mat, 
-	decltype(mat.size1()) rows_begin, 
-	decltype(mat.size2()) cols_begin, 
-	decltype(mat.size1()) rows_end, 
+void unit(t_mat& mat,
+	decltype(mat.size1()) rows_begin,
+	decltype(mat.size2()) cols_begin,
+	decltype(mat.size1()) rows_end,
 	decltype(mat.size2()) cols_end)
 requires is_mat<t_mat>
 {
@@ -395,21 +395,51 @@ requires is_mat<t_mat>
 
 
 /**
+ * vector with all values the same
+ */
+template<class t_vec>
+t_vec samevalue(decltype(t_vec{}.size()) N=0, typename t_vec::value_type val=0)
+requires is_basic_vec<t_vec>
+{
+	using size_t = decltype(t_vec{}.size());
+
+	t_vec vec;
+	if constexpr(is_dyn_vec<t_vec>)
+		vec = t_vec(N);
+
+	for(size_t i=0; i<vec.size(); ++i)
+		vec[i] = val;
+
+	return vec;
+}
+
+
+/**
+ * matrix with all values the same
+ */
+template<class t_mat>
+t_mat samevalue(std::size_t N1, std::size_t N2, typename t_mat::value_type val=0)
+requires is_mat<t_mat>
+{
+	using t_size = decltype(t_mat{}.size1());
+	t_mat mat = create<t_mat>(N1, N2);
+
+	for(t_size i=0; i<mat.size1(); ++i)
+		for(t_size j=0; j<mat.size2(); ++j)
+			mat(i,j) = val;
+
+	return mat;
+}
+
+
+/**
  * zero matrix
  */
 template<class t_mat>
 t_mat zero(std::size_t N1, std::size_t N2)
 requires is_mat<t_mat>
 {
-	using t_size = decltype(t_mat{}.size1());
-	using t_val = typename t_mat::value_type;
-	t_mat mat = create<t_mat>(N1, N2);
-
-	for(t_size i=0; i<mat.size1(); ++i)
-		for(t_size j=0; j<mat.size2(); ++j)
-			mat(i,j) = t_val{};
-
-	return mat;
+	return samevalue<t_mat>(N1, N2, 0);
 }
 
 
@@ -431,17 +461,9 @@ template<class t_vec>
 t_vec zero(decltype(t_vec{}.size()) N=0)
 requires is_basic_vec<t_vec>
 {
-	using size_t = decltype(t_vec{}.size());
-
-	t_vec vec;
-	if constexpr(is_dyn_vec<t_vec>)
-		vec = t_vec(N);
-
-	for(size_t i=0; i<vec.size(); ++i)
-		vec[i] = 0;
-
-	return vec;
+	return samevalue<t_vec>(N, 0);
 }
+
 
 
 /**

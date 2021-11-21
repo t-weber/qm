@@ -278,13 +278,8 @@ bool QmScene::Calculate(QuantumComponentItem* _input_comp) const
 		return false;
 	}
 
-	// calculate the operators
+	// calculate the operators and states
 	input_comp->SetOperators(tab.CalculateCircuitOperators());
-
-	// TODO
-	//t_mat total_op = input_comp->GetOperator();
-	//using namespace m_ops;
-	//std::cout << total_op << std::endl;
 
 	return true;
 }
@@ -523,6 +518,7 @@ bool QmView::Calculate(QuantumComponentItem *input_state)
 		if(selected_input == input_state)
 		{
 			// refresh the operator matrix dialog
+			// TODO: make this into a separate signal
 			emit SignalSelectedItem(m_curItem);
 		}
 	}

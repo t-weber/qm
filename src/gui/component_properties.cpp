@@ -51,6 +51,9 @@ void ComponentProperties::Clear()
 
 	if(m_compOperator)
 		m_compOperator->SetOperator(t_mat{});
+
+	if(m_compStates)
+		m_compStates->SetStates(t_vec{});
 }
 
 
@@ -63,19 +66,40 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 	if(!comp)
 		return;
 
+	auto update_results = [this, comp]()
+	{
+		if(!comp)
+			return;
+
+		// update operator
+		if(m_compOperator)
+			m_compOperator->SetOperator(comp->GetOperator());
+
+		// update states vector
+		if(m_compStates && comp->GetType() == ComponentType::STATE)
+		{
+			const InputStates *input_comp = static_cast<const InputStates*>(comp);
+			m_compStates->SetStates(input_comp->GetOutputState());
+		}
+	};
+
+	const int num_cols = 2;
+
 	// component configuration
 	const ComponentConfigs& cfgs = comp->GetConfig();
 	QLabel *labelName = new QLabel(cfgs.name.c_str(), this);
 	QFont fontName = labelName->font();
 	fontName.setBold(true);
 	labelName->setFont(fontName);
-	m_layout->addWidget(labelName, m_layout->rowCount(), 0, 1, 1);
+	m_layout->addWidget(labelName, m_layout->rowCount(), 0, 1, num_cols);
 
+
+	// add component configuration options
 	for(const ComponentConfig& cfg : cfgs.configs)
 	{
 		// description label
 		QLabel *labelDescr = new QLabel(cfg.description.c_str(), this);
-		m_layout->addWidget(labelDescr, m_layout->rowCount(), 0, 1, 1);
+		m_layout->addWidget(labelDescr, m_layout->rowCount(), 0, 1, num_cols);
 
 		// uint value
 		if(std::holds_alternative<t_uint>(cfg.value))
@@ -88,7 +112,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				spinVal->setMaximum(std::get<t_uint>(*cfg.max_value));
 
 			connect(spinVal, static_cast<void (QSpinBox::*)(int)>
-				(&QSpinBox::valueChanged), [this, cfg, comp](int val) -> void
+				(&QSpinBox::valueChanged), [this, cfg, update_results](int val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -100,12 +124,11 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				// send the changes back to the component
 				emit this->SignalConfigChanged(configs);
 
-				// also update the operator dialog every time the configuration is changed
-				if(m_compOperator)
-					m_compOperator->SetOperator(comp->GetOperator());
+				// update the dialogs every time the configuration is changed
+				update_results();
 			});
 
-			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, 1);
+			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, num_cols);
 		}
 
 		// t_real value
@@ -124,7 +147,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				spinVal->setMaximum(std::get<t_real>(*cfg.max_value)*scale);
 
 			connect(spinVal, static_cast<void (QDoubleSpinBox::*)(double)>
-			(&QDoubleSpinBox::valueChanged), [this, cfg, comp, scale](double val) -> void
+			(&QDoubleSpinBox::valueChanged), [this, cfg, scale, update_results](double val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -136,20 +159,97 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				// send the changes back to the component
 				emit this->SignalConfigChanged(configs);
 
-				// also update the operator dialog every time the configuration is changed
-				if(m_compOperator)
-					m_compOperator->SetOperator(comp->GetOperator());
+				// update the dialogs every time the configuration is changed
+				update_results();
 			});
 
-			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, 1);
+			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, num_cols);
 		}
 	}
 
+
+	// add input qubit states for state components
+	if(comp->GetType() == ComponentType::STATE)
+	{
+		QFrame *line = new QFrame(this);
+		line->setFrameShape(QFrame::HLine);
+		m_layout->addWidget(line, m_layout->rowCount(), 0, 1, num_cols);
+
+		const InputStates *input_comp = static_cast<const InputStates*>(comp);
+		const t_vec& vec = input_comp->GetInputQBits();
+
+		for(t_uint bit=0; bit<input_comp->GetNumQBits(); ++bit)
+		{
+			// description label
+			QString textState = QString{"Qubit |ψ%1> = a⋅|↓> + b⋅|↑>"}.arg(bit+1);
+			QLabel *labelDescr = new QLabel(textState, this);
+			m_layout->addWidget(labelDescr, m_layout->rowCount(), 0, 1, num_cols);
+
+			QDoubleSpinBox *spinDown = new QDoubleSpinBox(this);
+			spinDown->setDecimals(g_prec_gui);
+			spinDown->setValue(bit < vec.size() ? vec[bit].real() : 0);
+			spinDown->setSingleStep(0.1);
+			spinDown->setMinimum(0);
+			spinDown->setMaximum(1);
+
+			QDoubleSpinBox *spinUp = new QDoubleSpinBox(this);
+			spinUp->setDecimals(g_prec_gui);
+			spinUp->setValue(bit < vec.size() ? vec[bit].imag() : 0);
+			spinUp->setSingleStep(0.1);
+			spinUp->setMinimum(0);
+			spinUp->setMaximum(1);
+
+			connect(spinDown, static_cast<void (QDoubleSpinBox::*)(double)>
+			(&QDoubleSpinBox::valueChanged), [this, bit, update_results](double val) -> void
+			{
+				ComponentConfigs configs;
+
+				configs.qbit_configs = std::vector<QBitConfig>
+				{{
+					.bit = bit,
+					.component = 0,
+					.value = val,
+				}};
+
+				// send the changes back to the component
+				emit this->SignalConfigChanged(configs);
+
+				// update the dialogs every time the configuration is changed
+				update_results();
+			});
+
+			connect(spinUp, static_cast<void (QDoubleSpinBox::*)(double)>
+			(&QDoubleSpinBox::valueChanged), [this, bit, update_results](double val) -> void
+			{
+				ComponentConfigs configs;
+
+				configs.qbit_configs = std::vector<QBitConfig>
+				{{
+					.bit = bit,
+					.component = 1,
+					.value = val,
+				}};
+
+				// send the changes back to the component
+				emit this->SignalConfigChanged(configs);
+
+				// update the dialogs every time the configuration is changed
+				update_results();
+			});
+
+			int row = m_layout->rowCount();
+			m_layout->addWidget(spinDown, row, 0, 1, 1);
+			m_layout->addWidget(spinUp, row, 1, 1, 1);
+		}
+	}
+
+
+	// add operator and state dialog buttons
 	if(comp->GetType() == ComponentType::STATE || comp->GetType() == ComponentType::GATE)
 	{
 		QFrame *line = new QFrame(this);
 		line->setFrameShape(QFrame::HLine);
-		m_layout->addWidget(line, m_layout->rowCount(), 0, 1, 1);
+		m_layout->addWidget(line, m_layout->rowCount(), 0, 1, num_cols);
 
 		QPushButton *btnOperator = new QPushButton("Operator...", this);
 		btnOperator->setToolTip("Show Operator of this Component");
@@ -164,28 +264,30 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 			m_compOperator->SetOperator(comp->GetOperator());
 			show_dialog(m_compOperator.get());
 		});
-		m_layout->addWidget(btnOperator, m_layout->rowCount(), 0, 1, 1);
+		m_layout->addWidget(btnOperator, m_layout->rowCount(), 0, 1, num_cols);
 
 		if(comp->GetType() == ComponentType::STATE)
 		{
+			const InputStates *input_comp = static_cast<const InputStates*>(comp);
+
 			QPushButton *btnStates = new QPushButton("States...", this);
 			btnStates->setToolTip("Show Input and Output State Vectors");
-			connect(btnStates, &QAbstractButton::clicked, [this, comp]()
+			connect(btnStates, &QAbstractButton::clicked, [this, input_comp]()
 			{
 				if(!m_compStates)
 					m_compStates = std::make_shared<ComponentStates>(this);
 
-				m_compStates->SetStates(comp->GetState());
+				m_compStates->SetStates(input_comp->GetOutputState());
 				show_dialog(m_compStates.get());
 			});
-			m_layout->addWidget(btnStates, m_layout->rowCount(), 0, 1, 1);
+			m_layout->addWidget(btnStates, m_layout->rowCount(), 0, 1, num_cols);
 		}
 	}
 
-	QSpacerItem *spacer = new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding);
-	m_layout->addItem(spacer, m_layout->rowCount(), 0, 1, 1);
 
-	// also update the operator dialog every time a new item is selected
-	if(m_compOperator)
-		m_compOperator->SetOperator(comp->GetOperator());
+	QSpacerItem *spacer = new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding);
+	m_layout->addItem(spacer, m_layout->rowCount(), 0, 1, num_cols);
+
+	// also update dialogs every time a new item is selected
+	update_results();
 }

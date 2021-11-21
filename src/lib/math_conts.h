@@ -762,7 +762,7 @@ public:
 	using container_type = t_cont<T>;
 
 	vec() = default;
-	vec(std::size_t SIZE) : t_cont<T>(SIZE) {}
+	explicit vec(std::size_t SIZE) : t_cont<T>(SIZE) {}
 	~vec() = default;
 
 	const value_type& operator()(std::size_t i) const { return this->operator[](i); }
@@ -804,7 +804,7 @@ public:
 	using container_type = t_cont<T>;
 
 	mat() = default;
-	mat(std::size_t ROWS, std::size_t COLS) : m_data(ROWS*COLS), m_rowsize{ROWS}, m_colsize{COLS} {}
+	explicit mat(std::size_t ROWS, std::size_t COLS) : m_data(ROWS*COLS), m_rowsize{ROWS}, m_colsize{COLS} {}
 	~mat() = default;
 
 	std::size_t size1() const { return m_rowsize; }

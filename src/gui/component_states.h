@@ -9,6 +9,7 @@
 #define __QM_STATESDLG_H__
 
 #include <QtWidgets/QDialog>
+#include <QtWidgets/QTextEdit>
 
 #include <memory>
 
@@ -33,6 +34,7 @@ protected:
 
 
 private:
+	std::shared_ptr<QTextEdit> m_edit{};
 };
 
 #endif

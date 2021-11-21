@@ -52,12 +52,29 @@ struct ComponentConfig
 
 
 /**
+ * set the configuration of a qubit
+ */
+struct QBitConfig
+{
+	t_uint bit{};
+
+	// 0:down, 1:up
+	t_uint component{};
+
+	// component value
+	t_real value{};
+};
+
+
+/**
  * struct for the exchange of component configuration options
  */
 struct ComponentConfigs
 {
 	std::string name{};
+
 	std::vector<ComponentConfig> configs{};
+	std::vector<QBitConfig> qbit_configs{};
 };
 // ----------------------------------------------------------------------------
 
@@ -86,7 +103,6 @@ public:
 	virtual std::string GetName() const = 0;
 
 	virtual ComponentType GetType() const = 0;
-	virtual t_vec GetState() const = 0;
 	virtual t_mat GetOperator() const = 0;
 
 	virtual ComponentConfigs GetConfig() const = 0;
@@ -134,30 +150,36 @@ public:
 	virtual QuantumComponentItem* clone() const override;
 
 	// setter
-	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
+	void SetNumQBits(t_uint bits);
 	void SetWidth(t_uint w) { m_width = w; }
-	void SetOperators(const std::vector<t_columnop>& ops) { m_ops = ops; }
-	void SetOperators(std::vector<t_columnop>&& ops)
-	{ m_ops = std::forward<std::vector<t_columnop>>(ops); }
+	void SetInputQBits(const t_vec& vec);
+	void SetOperators(const std::vector<t_columnop>& ops);
+	void SetOperators(std::vector<t_columnop>&& ops);
 
 	// getter
 	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
 	t_uint GetWidth() const { return m_width; }
+	const t_vec& GetInputQBits() const { return m_qbits_input; }
 	const std::vector<t_columnop>& GetOperators() const { return m_ops; }
-
-	virtual QRectF boundingRect() const override;
-	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+	const t_vec& GetInputState() const { return m_state_input; }
+	const t_vec& GetOutputState() const { return m_state_output; }
 
 	static const char* GetStaticIdent() { return "input_states"; }
 	virtual std::string GetIdent() const override { return InputStates::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Input States"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::STATE; }
-	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
+
+	bool CalculateTotalOperator();
+	bool CalculateInputStates();
+	bool CalculateOutputStates();
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 
 private:
@@ -166,6 +188,11 @@ private:
 
 	// calculated operators for each column of the grid
 	std::vector<t_columnop> m_ops{};
+	t_mat m_totalop = m::unit<t_mat>(std::pow(2, GetNumQBits()));
+
+	t_vec m_qbits_input = m::samevalue<t_vec>(GetNumQBits(), 1.);
+	t_vec m_state_input = m::zero<t_vec>(std::pow(2, GetNumQBits()));
+	t_vec m_state_output = m::zero<t_vec>(std::pow(2, GetNumQBits()));
 };
 // ----------------------------------------------------------------------------
 
@@ -188,19 +215,18 @@ public:
 
 	virtual t_uint GetNumQBits() const override { return 1; }
 
-	virtual QRectF boundingRect() const override;
-	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
-
 	static const char* GetStaticIdent() { return "hadamard"; }
 	virtual std::string GetIdent() const override { return HadamardGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Hadamard Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
-	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 };
 
 
@@ -224,19 +250,18 @@ public:
 	t_uint GetDirection() const { return m_dir; }
 	virtual t_uint GetNumQBits() const override { return 1; }
 
-	virtual QRectF boundingRect() const override;
-	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
-
 	static const char* GetStaticIdent() { return "pauli"; }
 	virtual std::string GetIdent() const override { return PauliGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Pauli Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
-	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 
 private:
@@ -264,19 +289,18 @@ public:
 	t_real GetPhase() const { return m_phase; }
 	virtual t_uint GetNumQBits() const override { return 1; }
 
-	virtual QRectF boundingRect() const override;
-	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
-
 	static const char* GetStaticIdent() { return "phase"; }
 	virtual std::string GetIdent() const override { return PhaseGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Phase Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
-	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 
 private:
@@ -307,19 +331,18 @@ public:
 	t_uint GetSourceBitPos() const { return m_source_bit_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
-	virtual QRectF boundingRect() const override;
-	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
-
 	static const char* GetStaticIdent() { return "swap"; }
 	virtual std::string GetIdent() const override { return SwapGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "SWAP Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
-	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 
 private:
@@ -352,19 +375,18 @@ public:
 	t_uint GetControlBitPos() const { return m_control_bit_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
-	virtual QRectF boundingRect() const override;
-	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
-
 	static const char* GetStaticIdent() { return "cnot"; }
 	virtual std::string GetIdent() const override { return CNotGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "CNOT Gate"; }
 
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
-	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 
 private:
@@ -402,20 +424,19 @@ public:
 	t_uint GetControlBit2Pos() const { return m_control_bit_2_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
-	virtual QRectF boundingRect() const override;
-	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
-
 	virtual ComponentType GetType() const override { return ComponentType::GATE; }
 
 	static const char* GetStaticIdent() { return "toffoli"; }
 	virtual std::string GetIdent() const override { return ToffoliGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return "Toffoli Gate"; }
 
-	virtual t_vec GetState() const override;
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 
 private:

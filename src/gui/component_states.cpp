@@ -32,7 +32,9 @@ ComponentStates::ComponentStates(QWidget *parent)
 	grid->setContentsMargins(8, 8, 8, 8);
 
 
-	// TODO
+	m_edit = std::make_shared<QTextEdit>(this);
+	m_edit->setReadOnly(true);
+	grid->addWidget(m_edit.get(), grid->rowCount(), 0, 1, 1);
 
 	//QSpacerItem *spacer_end = new QSpacerItem(1, 1, QSizePolicy::Fixed, QSizePolicy::Expanding);
 	//grid->addItem(spacer_end, grid->rowCount(), 0, 1, 2);
@@ -68,10 +70,26 @@ ComponentStates::ComponentStates(QWidget *parent)
 
 
 /**
- * set the operator matrix to display
+ * set the (output) states to display
  */
-void ComponentStates::SetStates(const t_vec& op)
+void ComponentStates::SetStates(const t_vec& vec)
 {
+	std::ostringstream ostr;
+	ostr << "<table style=\"border:0px; border-spacing:2px\">";
+	ostr.precision(g_prec_gui);
+
+	for(std::size_t col=0; col<vec.size(); ++col)
+	{
+		ostr << "<tr>";
+		ostr << "<td style=\"padding-top:2px; padding-bottom:2px; padding-left:4px; padding-right:4px\">";
+		ostr << vec(col);
+		ostr << "</td>";
+		ostr << "</tr>";
+	}
+
+	ostr << "</table>";
+
+	m_edit->setHtml(ostr.str().c_str());
 }
 
 
