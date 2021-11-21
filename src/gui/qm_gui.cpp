@@ -489,6 +489,8 @@ void QmWnd::SetupGUI()
 	// signals to read and write component properties
 	connect(m_view.get(), &QmView::SignalSelectedItem,
 		m_properties->GetWidget(), &ComponentProperties::SelectedItem);
+	connect(m_view.get(), &QmView::SignalNewResults,
+		m_properties->GetWidget(), &ComponentProperties::UpdateResults);
 	connect(m_view.get(), &QmView::SignalWorkspaceChanged,
 		this, &QmWnd::WorkspaceChanged);
 	connect(m_properties->GetWidget(), &ComponentProperties::SignalConfigChanged,

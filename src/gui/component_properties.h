@@ -11,6 +11,7 @@
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QGridLayout>
+#include <QtWidgets/QDoubleSpinBox>
 
 #include <memory>
 
@@ -42,10 +43,15 @@ private:
 	std::shared_ptr<ComponentOperator> m_compOperator{};
 	std::shared_ptr<ComponentStates> m_compStates{};
 
+	std::vector<std::pair<QDoubleSpinBox*, QDoubleSpinBox*>> m_spins_qbit{};
+
 
 public slots:
 	// a component has been selected
-	void SelectedItem(const QuantumComponent* item);
+	void SelectedItem(const QuantumComponent *item);
+
+	// new results are available
+	void UpdateResults(const QuantumComponent *comp, bool ok = true);
 
 
 signals:

@@ -136,6 +136,7 @@ signals:
 	void SignalMouseCoordinates(qreal scene_x, qreal scene_y);
 	void SignalSelectedItem(const QuantumComponent *item);
 	void SignalWorkspaceChanged(bool changed = true);
+	void SignalNewResults(const QuantumComponent *item, bool ok);
 };
 
 

@@ -492,11 +492,8 @@ bool QmView::CalculateCurItem()
 	// delegate call to the scene
 	bool ok = m_scene->Calculate(input_comp);
 
-	if(ok)
-	{
-		// refresh the operator matrix dialog
-		emit SignalSelectedItem(selected_comp);
-	}
+	// refresh the operator matrix dialog
+	emit SignalNewResults(selected_comp, ok);
 
 	return ok;
 }
@@ -510,17 +507,13 @@ bool QmView::Calculate(QuantumComponentItem *input_state)
 	// delegate call to the scene
 	bool ok = m_scene->Calculate(input_state);
 
-	if(ok)
-	{
-		auto *selected_comp = GetCurItem();
-		auto *selected_input = m_scene->GetCorrespondingInputState(selected_comp);
+	auto *selected_comp = GetCurItem();
+	auto *selected_input = m_scene->GetCorrespondingInputState(selected_comp);
 
-		if(selected_input == input_state)
-		{
-			// refresh the operator matrix dialog
-			// TODO: make this into a separate signal
-			emit SignalSelectedItem(m_curItem);
-		}
+	if(selected_input == input_state)
+	{
+		// refresh the operator matrix dialog
+		emit SignalNewResults(selected_comp, ok);
 	}
 
 	return ok;

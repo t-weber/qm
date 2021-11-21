@@ -12,7 +12,6 @@
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QSpinBox>
-#include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QSpacerItem>
@@ -58,6 +57,29 @@ void ComponentProperties::Clear()
 
 
 /**
+ * update the results shown in the operator and states dialogs
+ */
+void ComponentProperties::UpdateResults(const QuantumComponent *comp, bool /*ok*/)
+{
+	if(!comp)
+		return;
+
+	// update operator
+	if(m_compOperator)
+	{
+		m_compOperator->SetOperator(comp->GetOperator());
+	}
+
+	// update states vector
+	if(m_compStates && comp->GetType() == ComponentType::STATE)
+	{
+		const InputStates *input_comp = static_cast<const InputStates*>(comp);
+		m_compStates->SetStates(input_comp->GetOutputState());
+	}
+}
+
+
+/**
  * a component has been selected -> show its properties
  */
 void ComponentProperties::SelectedItem(const QuantumComponent *comp)
@@ -66,21 +88,37 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 	if(!comp)
 		return;
 
-	auto update_results = [this, comp]()
+
+	// get input state and send them to the component
+	auto update_states = [this, comp]()
 	{
-		if(!comp)
-			return;
+		ComponentConfigs configs;
 
-		// update operator
-		if(m_compOperator)
-			m_compOperator->SetOperator(comp->GetOperator());
-
-		// update states vector
-		if(m_compStates && comp->GetType() == ComponentType::STATE)
+		// get all qubit configurations
+		for(t_uint bit=0; bit<m_spins_qbit.size(); ++bit)
 		{
-			const InputStates *input_comp = static_cast<const InputStates*>(comp);
-			m_compStates->SetStates(input_comp->GetOutputState());
+			// down
+			configs.qbit_configs.emplace_back(QBitConfig
+			{
+				.bit = bit,
+				.component = 0,
+				.value = std::get<0>(m_spins_qbit[bit])->value(),
+			});
+
+			// up
+			configs.qbit_configs.emplace_back(QBitConfig
+			{
+				.bit = bit,
+				.component = 1,
+				.value = std::get<1>(m_spins_qbit[bit])->value(),
+			});
 		}
+
+		// send the changes back to the component
+		emit this->SignalConfigChanged(configs);
+
+		// update the dialogs every time the configuration is changed
+		UpdateResults(comp);
 	};
 
 	const int num_cols = 2;
@@ -112,7 +150,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				spinVal->setMaximum(std::get<t_uint>(*cfg.max_value));
 
 			connect(spinVal, static_cast<void (QSpinBox::*)(int)>
-				(&QSpinBox::valueChanged), [this, cfg, update_results](int val) -> void
+				(&QSpinBox::valueChanged), [this, cfg, comp](int val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -125,7 +163,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				emit this->SignalConfigChanged(configs);
 
 				// update the dialogs every time the configuration is changed
-				update_results();
+				UpdateResults(comp);
 			});
 
 			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, num_cols);
@@ -147,7 +185,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				spinVal->setMaximum(std::get<t_real>(*cfg.max_value)*scale);
 
 			connect(spinVal, static_cast<void (QDoubleSpinBox::*)(double)>
-			(&QDoubleSpinBox::valueChanged), [this, cfg, scale, update_results](double val) -> void
+			(&QDoubleSpinBox::valueChanged), [this, cfg, scale, comp](double val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -160,7 +198,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				emit this->SignalConfigChanged(configs);
 
 				// update the dialogs every time the configuration is changed
-				update_results();
+				UpdateResults(comp);
 			});
 
 			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, num_cols);
@@ -169,6 +207,8 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 
 
 	// add input qubit states for state components
+	m_spins_qbit.clear();
+
 	if(comp->GetType() == ComponentType::STATE)
 	{
 		QFrame *line = new QFrame(this);
@@ -199,43 +239,16 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 			spinUp->setMinimum(0);
 			spinUp->setMaximum(1);
 
-			connect(spinDown, static_cast<void (QDoubleSpinBox::*)(double)>
-			(&QDoubleSpinBox::valueChanged), [this, bit, update_results](double val) -> void
+			for(QDoubleSpinBox *spin : {spinDown, spinUp})
 			{
-				ComponentConfigs configs;
+				connect(spin, static_cast<void (QDoubleSpinBox::*)(double)>
+				(&QDoubleSpinBox::valueChanged), [update_states](double)
+				{
+					update_states();
+				});
+			}
 
-				configs.qbit_configs = std::vector<QBitConfig>
-				{{
-					.bit = bit,
-					.component = 0,
-					.value = val,
-				}};
-
-				// send the changes back to the component
-				emit this->SignalConfigChanged(configs);
-
-				// update the dialogs every time the configuration is changed
-				update_results();
-			});
-
-			connect(spinUp, static_cast<void (QDoubleSpinBox::*)(double)>
-			(&QDoubleSpinBox::valueChanged), [this, bit, update_results](double val) -> void
-			{
-				ComponentConfigs configs;
-
-				configs.qbit_configs = std::vector<QBitConfig>
-				{{
-					.bit = bit,
-					.component = 1,
-					.value = val,
-				}};
-
-				// send the changes back to the component
-				emit this->SignalConfigChanged(configs);
-
-				// update the dialogs every time the configuration is changed
-				update_results();
-			});
+			m_spins_qbit.push_back(std::make_pair(spinDown, spinUp));
 
 			int row = m_layout->rowCount();
 			m_layout->addWidget(spinDown, row, 0, 1, 1);
@@ -289,5 +302,5 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 	m_layout->addItem(spacer, m_layout->rowCount(), 0, 1, num_cols);
 
 	// also update dialogs every time a new item is selected
-	update_results();
+	UpdateResults(comp);
 }
