@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!-- see: https://en.wikipedia.org/wiki/Controlled_NOT_gate -->
+
 <qm>
 	<components>
 		<component type="state" ident="input_states">

@@ -16,7 +16,6 @@
 #include <complex>
 #include <vector>
 #include <tuple>
-#include <bitset>
 
 #include <boost/test/included/unit_test.hpp>
 #include <boost/type_index.hpp>
@@ -30,19 +29,6 @@ namespace ty = boost::typeindex;
 template<class t_real> using t_cplx = std::complex<t_real>;
 template<class t_real> using t_vec = m::vec<t_cplx<t_real>, std::vector>;
 template<class t_real> using t_mat = m::mat<t_cplx<t_real>, std::vector>;
-
-
-template<class t_vec, std::size_t num_qbits, class t_int = std::uint64_t>
-std::bitset<num_qbits> get_qbits(const t_vec& vec)
-{
-	for(t_int i=0; i<vec.size(); ++i)
-	{
-		if(vec[i].real() > 0.75)
-			return std::bitset<num_qbits>(i);
-	}
-
-	return std::bitset<num_qbits>(0);
-}
 
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(adder, t_real, decltype(std::tuple<float, double, long double>{}))
@@ -64,7 +50,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(adder, t_real, decltype(std::tuple<float, double, 
 			m::outer_flat<t_vec<t_real>, t_mat<t_real>>(
 				m::outer_flat<t_vec<t_real>, t_mat<t_real>>(up, up), down), down);
 
-	auto inval_bits = get_qbits<t_vec<t_real>, num_qbits, t_int>(inval);
+	auto inval_bits = measure_qbits<t_vec<t_real>, num_qbits, t_int>(inval);
 
 	std::cout << "in =  " << inval << std::endl;
 	std::cout << "in qubits: " << inval_bits << std::endl;
@@ -87,7 +73,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(adder, t_real, decltype(std::tuple<float, double, 
 	BOOST_TEST((inval.size() == adder.size1()));
 
 	t_vec<t_real> sum = adder * inval;
-	auto sum_bits = get_qbits<t_vec<t_real>, num_qbits, t_int>(sum);
+	auto sum_bits = measure_qbits<t_vec<t_real>, num_qbits, t_int>(sum);
 
 	std::cout << "out = " << sum << std::endl;
 	std::cout << "out qubits: " << sum_bits << std::endl;
@@ -128,7 +114,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(two_adders, t_real, decltype(std::tuple<float, dou
 	t_vec<t_real> inval = m::outer_flat<t_vec<t_real>, t_mat<t_real>>({
 		down, digit1_bit0, digit2_bit0, down,
 		digit1_bit1, digit2_bit1, down});
-	auto inval_bits = get_qbits<t_vec<t_real>, num_qbits, t_int>(inval);
+	auto inval_bits = measure_qbits<t_vec<t_real>, num_qbits, t_int>(inval);
 
 	std::cout << "in =  " << inval << std::endl;
 	std::cout << "in qubits: " << inval_bits << std::endl;
@@ -161,7 +147,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(two_adders, t_real, decltype(std::tuple<float, dou
 	BOOST_TEST((inval.size() == adder.size1()));
 
 	t_vec<t_real> sum = adder * inval;
-	auto sum_bits = get_qbits<t_vec<t_real>, num_qbits, t_int>(sum);
+	auto sum_bits = measure_qbits<t_vec<t_real>, num_qbits, t_int>(sum);
 	BOOST_TEST((sum.size() == adder.size1()));
 
 	std::cout << "out = " << sum << std::endl;

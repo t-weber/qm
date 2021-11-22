@@ -75,8 +75,8 @@ ComponentOperator::ComponentOperator(QWidget *parent)
 void ComponentOperator::SetOperator(const t_mat& op)
 {
 	std::ostringstream ostr;
-	ostr << "<table style=\"border:0px; border-spacing:2px\">";
 	ostr.precision(g_prec_gui);
+	ostr << "<table style=\"border:0px; border-spacing:2px\">";
 
 	for(std::size_t row=0; row<op.size1(); ++row)
 	{

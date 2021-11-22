@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- adder, see: https://en.wikipedia.org/wiki/Quantum_logic_gate#/media/File:Quantum_Full_Adder.png -->
+<!-- qubits are: [carry_in/sum, bit 1, bit 2, unused/carry out] -->
+
+<qm>
+	<components>
+		<component type="state" ident="input_states">
+			<pos_x>3</pos_x>
+			<pos_y>2</pos_y>
+			<num_qbits>4</num_qbits>
+			<width>8</width>
+		</component>
+		<component type="gate" ident="toffoli">
+			<pos_x>5</pos_x>
+			<pos_y>2</pos_y>
+			<num_qbits>4</num_qbits>
+			<control_bit_1_pos>1</control_bit_1_pos>
+			<control_bit_2_pos>2</control_bit_2_pos>
+			<target_bit_pos>3</target_bit_pos>
+		</component>
+		<component type="gate" ident="cnot">
+			<pos_x>6</pos_x>
+			<pos_y>3</pos_y>
+			<num_qbits>2</num_qbits>
+			<control_bit_pos>0</control_bit_pos>
+			<target_bit_pos>1</target_bit_pos>
+		</component>
+		<component type="gate" ident="toffoli">
+			<pos_x>7</pos_x>
+			<pos_y>2</pos_y>
+			<num_qbits>4</num_qbits>
+			<control_bit_1_pos>2</control_bit_1_pos>
+			<control_bit_2_pos>0</control_bit_2_pos>
+			<target_bit_pos>3</target_bit_pos>
+		</component>
+		<component type="gate" ident="cnot">
+			<pos_x>8</pos_x>
+			<pos_y>2</pos_y>
+			<num_qbits>3</num_qbits>
+			<control_bit_pos>2</control_bit_pos>
+			<target_bit_pos>0</target_bit_pos>
+		</component>
+		<component type="gate" ident="cnot">
+			<pos_x>9</pos_x>
+			<pos_y>3</pos_y>
+			<num_qbits>2</num_qbits>
+			<control_bit_pos>0</control_bit_pos>
+			<target_bit_pos>1</target_bit_pos>
+		</component>
+	</components>
+</qm>

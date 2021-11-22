@@ -52,7 +52,7 @@ void ComponentProperties::Clear()
 		m_compOperator->SetOperator(t_mat{});
 
 	if(m_compStates)
-		m_compStates->SetStates(t_vec{});
+		m_compStates->SetStates(0, t_vec{}, t_vec{});
 }
 
 
@@ -74,7 +74,8 @@ void ComponentProperties::UpdateResults(const QuantumComponent *comp, bool /*ok*
 	if(m_compStates && comp->GetType() == ComponentType::STATE)
 	{
 		const InputStates *input_comp = static_cast<const InputStates*>(comp);
-		m_compStates->SetStates(input_comp->GetOutputState());
+		m_compStates->SetStates(input_comp->GetNumQBits(),
+			input_comp->GetInputState(), input_comp->GetOutputState());
 	}
 }
 
@@ -290,7 +291,8 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				if(!m_compStates)
 					m_compStates = std::make_shared<ComponentStates>(this);
 
-				m_compStates->SetStates(input_comp->GetOutputState());
+				m_compStates->SetStates(input_comp->GetNumQBits(),
+					input_comp->GetInputState(), input_comp->GetOutputState());
 				show_dialog(m_compStates.get());
 			});
 			m_layout->addWidget(btnStates, m_layout->rowCount(), 0, 1, num_cols);

@@ -20,6 +20,8 @@
 #ifndef __QM_ALGOS_H__
 #define __QM_ALGOS_H__
 
+#include <bitset>
+
 #include "math_algos.h"
 #include "math_conts.h"
 
@@ -478,6 +480,29 @@ t_mat three_qbit_total_op(
 
 	return post * three * pre;
 }
+
+
+/**
+ * try to convert qubit state vector to classical bits
+ */
+template<class t_vec, std::size_t num_qbits,
+	class t_int = std::uint64_t,
+	class t_cplx = typename t_vec::value_type,
+	class t_real = typename t_cplx::value_type>
+requires m::is_vec<t_vec>
+std::bitset<num_qbits> measure_qbits(const t_vec& vec, t_real threshold = 0.75)
+{
+	const t_int N = static_cast<t_int>(vec.size());
+
+	for(t_int i=0; i<N; ++i)
+	{
+		if(vec[i].real() > threshold)
+			return std::bitset<num_qbits>(i);
+	}
+
+	return std::bitset<num_qbits>(0);
+}
+
 
 }
 #endif

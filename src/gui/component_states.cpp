@@ -7,6 +7,7 @@
 
 #include "component_states.h"
 #include "globals.h"
+#include "lib/qm_algos.h"
 
 #include <QtCore/QSettings>
 #include <QtWidgets/QApplication>
@@ -72,24 +73,47 @@ ComponentStates::ComponentStates(QWidget *parent)
 /**
  * set the (output) states to display
  */
-void ComponentStates::SetStates(const t_vec& vec)
+void ComponentStates::SetStates(t_uint num_qbits, const t_vec& vecIn, const t_vec& vecOut)
 {
 	std::ostringstream ostr;
-	ostr << "<table style=\"border:0px; border-spacing:2px\">";
 	ostr.precision(g_prec_gui);
 
-	for(std::size_t col=0; col<vec.size(); ++col)
+
+	// input and output qubit product state vectors
+	ostr << "Input state vector:\n";
+	for(std::size_t col=0; col<vecIn.size(); ++col)
 	{
-		ostr << "<tr>";
-		ostr << "<td style=\"padding-top:2px; padding-bottom:2px; padding-left:4px; padding-right:4px\">";
-		ostr << vec(col);
-		ostr << "</td>";
-		ostr << "</tr>";
+		ostr << std::setw(g_prec_gui*4) << std::left << vecIn(col);
+		//if(col < vecIn.size()-1)
+		//	ostr << ", ";
 	}
+	ostr << "\n";
 
-	ostr << "</table>";
+	ostr << "\nOutput state vector:\n";
+	for(std::size_t col=0; col<vecOut.size(); ++col)
+	{
+		ostr << std::setw(g_prec_gui*4) << std::left << vecOut(col);
+		//if(col < vecOut.size()-1)
+		//	ostr << ", ";
+	}
+	ostr << "\n";
 
-	m_edit->setHtml(ostr.str().c_str());
+
+	// interpretation as classical bits (if possible)
+	constexpr const t_int bitsize = sizeof(t_int)*8;
+
+	auto classical_bits_in = measure_qbits<t_vec, bitsize, t_int>(
+		vecIn, g_classical_threshold).to_string();
+	classical_bits_in = classical_bits_in.substr(bitsize-num_qbits);
+
+	auto classical_bits_out = measure_qbits<t_vec, bitsize, t_int>(
+		vecOut, g_classical_threshold).to_string();
+	classical_bits_out = classical_bits_out.substr(bitsize-num_qbits);
+
+	ostr << "\nInput classical bits:  " << classical_bits_in << "\n";
+	ostr << "\nOutput classical bits: " << classical_bits_out << "\n";
+
+	m_edit->setPlainText(ostr.str().c_str());
 }
 
 

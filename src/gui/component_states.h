@@ -25,7 +25,7 @@ public:
 	ComponentStates(const ComponentStates&) = delete;
 	const ComponentStates& operator=(const ComponentStates&) = delete;
 
-	void SetStates(const t_vec& op);
+	void SetStates(t_uint num_qbits, const t_vec& vecIn, const t_vec& vecOut);
 
 
 protected:

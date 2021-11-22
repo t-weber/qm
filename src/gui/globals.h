@@ -15,6 +15,8 @@
 extern t_real g_eps;
 extern t_int g_prec_gui;
 
+// threshold for interpreting as classical bit states
+extern t_real g_classical_threshold;
 
 // size of the components grid
 extern t_real g_raster_size;
