@@ -37,8 +37,7 @@ protected:
 
 
 private:
-	std::shared_ptr<QGridLayout> m_layout =
-		std::make_shared<QGridLayout>(this);
+	std::shared_ptr<QGridLayout> m_layout{};
 
 	std::shared_ptr<ComponentOperator> m_compOperator{};
 	std::shared_ptr<ComponentStates> m_compStates{};

@@ -102,16 +102,29 @@ void ComponentStates::SetStates(t_uint num_qbits, const t_vec& vecIn, const t_ve
 	// interpretation as classical bits (if possible)
 	constexpr const t_int bitsize = sizeof(t_int)*8;
 
-	auto classical_bits_in = measure_qbits<t_vec, bitsize, t_int>(
-		vecIn, g_classical_threshold).to_string();
-	classical_bits_in = classical_bits_in.substr(bitsize-num_qbits);
+	// input qubits
+	ostr << "\nInput classical bits:\n";
 
-	auto classical_bits_out = measure_qbits<t_vec, bitsize, t_int>(
-		vecOut, g_classical_threshold).to_string();
-	classical_bits_out = classical_bits_out.substr(bitsize-num_qbits);
+	auto all_classical_bits_in = measure_qbits_all<t_vec, bitsize, t_int>(
+		vecIn, g_classical_threshold);
+	for(const auto& classical_bits_in : all_classical_bits_in)
+	{
+		std::string classical_bits_in_str = classical_bits_in.to_string();
+		classical_bits_in_str = classical_bits_in_str.substr(bitsize-num_qbits);
+		ostr << classical_bits_in_str << "\n";
+	}
 
-	ostr << "\nInput classical bits:  " << classical_bits_in << "\n";
-	ostr << "\nOutput classical bits: " << classical_bits_out << "\n";
+	// output qubits
+	ostr << "\nOutput classical bits:\n";
+	auto all_classical_bits_out = measure_qbits_all<t_vec, bitsize, t_int>(
+		vecOut, g_classical_threshold);
+	for(const auto& classical_bits_out : all_classical_bits_out)
+	{
+		std::string classical_bits_out_str = classical_bits_out.to_string();
+		classical_bits_out_str = classical_bits_out_str.substr(bitsize-num_qbits);
+		ostr << classical_bits_out_str << "\n";
+	}
+
 
 	m_edit->setPlainText(ostr.str().c_str());
 }

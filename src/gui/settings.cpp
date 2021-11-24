@@ -13,6 +13,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QSpacerItem>
+#include <QtWidgets/QScrollArea>
 
 
 const QColor& get_foreground_colour()
@@ -39,15 +40,34 @@ const QColor& get_background_colour()
 // settings dialog
 // ----------------------------------------------------------------------------
 
-Settings::Settings(QWidget *parent)
+Settings::Settings(QWidget *parent, bool scrolling)
 	: QDialog(parent)
 {
 	setWindowTitle("Settings");
 	setSizeGripEnabled(true);
 
 
-	// grid layout
-	m_grid = std::make_shared<QGridLayout>(this);
+	// layout
+	if(scrolling)
+	{
+		QScrollArea *scroll = new QScrollArea(this);
+		QWidget *scrollwidget = new QWidget(scroll);
+		scroll->setWidgetResizable(true);
+		scroll->setWidget(scrollwidget);
+		scroll->setFrameStyle(QFrame::NoFrame);
+
+		m_grid = std::make_shared<QGridLayout>(scrollwidget);
+
+		QGridLayout *mainlayout = new QGridLayout(this);
+		mainlayout->setContentsMargins(0, 0, 0, 0);
+		mainlayout->setSpacing(0);
+		mainlayout->addWidget(scroll, 0, 0, 1, 1);
+	}
+	else
+	{
+		m_grid = std::make_shared<QGridLayout>(this);
+	}
+
 	m_grid->setSpacing(4);
 	m_grid->setContentsMargins(8, 8, 8, 8);
 

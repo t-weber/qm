@@ -554,7 +554,12 @@ void PhaseGate::paint(QPainter *painter,
  */
 t_mat PhaseGate::GetOperator() const
 {
-	return m::phasegate<t_mat, t_cplx>(m_phase);
+	t_mat op = m::phasegate<t_mat, t_cplx>(m_phase);
+
+	//using namespace m_ops;
+	//std::cout << m_phase << ", " << op << std::endl;
+
+	return op;
 }
 
 

@@ -395,6 +395,18 @@ requires is_mat<t_mat>
 
 
 /**
+ * unit quaternion
+ */
+template<class t_quat>
+const t_quat& unit()
+requires is_basic_quat<t_quat>
+{
+	static const t_quat quat(1, 0, 0, 0);
+	return quat;
+}
+
+
+/**
  * vector with all values the same
  */
 template<class t_vec>
@@ -2354,16 +2366,12 @@ requires is_vec<t_vec> && is_mat<t_mat>
 
 
 /**
- * matrix to rotate vector vec1 into vec2
+ * rotation axis and angle to rotate vector vec1 into vec2
  */
-template<class t_mat, class t_vec>
-t_mat rotation(const t_vec& vec1, const t_vec& vec2)
-requires is_vec<t_vec> && is_mat<t_mat>
+template<class t_vec, class t_real = typename t_vec::value_type>
+std::tuple<t_vec, t_real> rotation_axis(const t_vec& vec1, const t_vec& vec2)
+requires is_vec<t_vec>
 {
-	using t_real = typename t_vec::value_type;
-	using t_size = decltype(vec1.size());
-	constexpr t_real eps = 1e-6;
-
 	// rotation axis
 	t_vec axis = cross<t_vec>({ vec1, vec2 });
 	const t_real lenaxis = norm<t_vec>(axis);
@@ -2374,10 +2382,27 @@ requires is_vec<t_vec> && is_mat<t_mat>
 	const t_real angle = std::atan2(sin_angle, cos_angle);
 	//std::cout << angle << " " << std::fmod(angle, pi<t_real>) << std::endl;
 
+	axis /= lenaxis;
+	return std::make_tuple(axis, angle);
+}
+
+
+/**
+ * matrix to rotate vector vec1 into vec2
+ */
+template<class t_mat, class t_vec, class t_real = typename t_vec::value_type>
+t_mat rotation(const t_vec& vec1, const t_vec& vec2, t_real eps = std::numeric_limits<t_real>::epsilon())
+requires is_vec<t_vec> && is_mat<t_mat>
+{
+	using t_size = decltype(vec1.size());
+
+	// rotation axis
+	auto [axis, angle] = rotation_axis<t_vec, t_real>(vec1, vec2);
+
 	// collinear vectors?
 	if(equals<t_real>(angle, 0, eps))
 		return unit<t_mat>(vec1.size());
-	// antiparallel vectors?
+	// antiparallel vectors? -> TODO
 	if(equals<t_real>(std::abs(angle), pi<t_real>, eps))
 	{
 		t_mat mat = -unit<t_mat>(vec1.size());
@@ -2387,11 +2412,9 @@ requires is_vec<t_vec> && is_mat<t_mat>
 		return mat;
 	}
 
-	axis /= lenaxis;
 	t_mat mat = rotation<t_mat, t_vec>(axis, angle, true);
 	return mat;
 }
-
 
 
 /**
@@ -4342,6 +4365,17 @@ requires is_quat<t_quat> && is_vec<t_vec>
 
 
 /**
+ * alternate name for the above function
+ */
+template<class t_quat, class t_vec, class t_real = typename t_quat::value_type>
+t_quat rotation(const t_vec& vec, t_real angle)
+requires is_quat<t_quat> && is_vec<t_vec>
+{
+	return from_rotaxis<t_quat, t_vec, t_real>(vec, angle);
+}
+
+
+/**
  * rotation normalised axis and angle from unit quaternion (quaternion version of Euler formula)
  * @see https://en.wikipedia.org/wiki/Quaternion#Exponential,_logarithm,_and_power_functions
  * @see https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
@@ -4467,6 +4501,28 @@ requires is_quat<t_quat>
 	t_quat quat1_conj = conj<t_quat>(quat1);
 	t_quat p = pow<t_quat, t_vec>(quat1_conj * quat2, t);
 	return quat1 * p;
+}
+
+
+/**
+ * quaternion to rotate vector vec1 into vec2
+ */
+template<class t_quat, class t_vec, class t_real = typename t_vec::value_type>
+t_quat rotation(const t_vec& vec1, const t_vec& vec2, t_real eps = std::numeric_limits<t_real>::epsilon())
+requires is_vec<t_vec> && is_quat<t_quat>
+{
+	// rotation axis
+	auto [axis, angle] = rotation_axis<t_vec, t_real>(vec1, vec2);
+
+	// collinear vectors?
+	if(equals<t_real>(angle, 0, eps))
+		return unit<t_quat>();
+	// antiparallel vectors? -> TODO
+	//if(equals<t_real>(std::abs(angle), pi<t_real>, eps))
+	//	return -unit<t_quat>();
+
+	t_quat quat = rotation<t_quat, t_vec, t_real>(axis, angle);
+	return quat;
 }
 
 // ----------------------------------------------------------------------------

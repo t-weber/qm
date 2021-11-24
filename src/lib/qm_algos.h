@@ -118,16 +118,17 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
  * @see (DesktopBronstein08), Ch. 22 (Zusatzkapitel.pdf), p. 25
  */
 template<class t_mat, class t_cplx = typename t_mat::value_type, class t_real = typename t_cplx::value_type>
-const t_mat& phasegate(t_cplx phase = pi<t_real>/t_real(2))
+t_mat phasegate(const t_cplx& phase = pi<t_real>/t_real(2))
 requires is_mat<t_mat> && is_complex<t_cplx>
 {
 	constexpr t_cplx c1(1, 0);
 	constexpr t_cplx cI(0, 1);
 
-	static const t_mat mat = create<t_mat>({
+	const t_mat mat = create<t_mat>({
 		{ c1, 0 },
 		{  0, std::exp(cI * phase) }
 	});
+
 	return mat;
 }
 
@@ -155,7 +156,7 @@ const t_mat& cnot(bool flipped = false)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
 	using t_cplx = typename t_mat::value_type;
-	constexpr t_cplx c(1, 0);
+	constexpr const t_cplx c(1, 0);
 
 	// C_not
 	static const t_mat mat = create<t_mat>({
@@ -190,7 +191,7 @@ const t_mat cnot_nqbits(std::size_t num_qbits = 2,
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
 	//using t_cplx = typename t_mat::value_type;
-	//constexpr t_cplx c(1, 0);
+	//constexpr const t_cplx c(1, 0);
 
 	if(reverse_state_numbering)
 	{
@@ -289,7 +290,7 @@ const t_mat& toffoli()
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
 	using t_cplx = typename t_mat::value_type;
-	constexpr t_cplx c(1, 0);
+	constexpr const t_cplx c(1, 0);
 
 	static const t_mat mat = create<t_mat>({
 		{ c, 0, 0, 0, 0, 0, 0, 0 },
@@ -318,7 +319,7 @@ const t_mat toffoli_nqbits(std::size_t num_qbits = 3,
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
 	//using t_cplx = typename t_mat::value_type;
-	//constexpr t_cplx c(1, 0);
+	//constexpr const t_cplx c(1, 0);
 
 	if(reverse_state_numbering)
 	{
@@ -376,7 +377,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 	if(!flipped)
 	{
 		// C_unitary
-		constexpr t_real c1 = 1;
+		constexpr const t_real c1 = 1;
 
 		return create<t_mat>({
 			{ c1,       0,        0,        0        },
@@ -393,7 +394,7 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 		t_mat M = hadamard_trafo<t_mat>(M_unflipped);
 
 #else
-		constexpr t_real c2 = 2;
+		constexpr const t_real c2 = 2;
 
 		const t_cplx& a = U22(0,0);
 		const t_cplx& b = U22(0,1);
@@ -483,7 +484,33 @@ t_mat three_qbit_total_op(
 
 
 /**
- * try to convert qubit state vector to classical bits
+ * try to convert qubit state vector to all possibilities of classical bits.
+ * TODO: also take care of a phase (and imaginary component)
+ */
+template<class t_vec, std::size_t num_qbits,
+	class t_int = std::uint64_t,
+	class t_cplx = typename t_vec::value_type,
+	class t_real = typename t_cplx::value_type>
+requires m::is_vec<t_vec>
+std::vector<std::bitset<num_qbits>>
+measure_qbits_all(const t_vec& vec, t_real threshold = 0.75)
+{
+	const t_int N = static_cast<t_int>(vec.size());
+	std::vector<std::bitset<num_qbits>> bits;
+
+	for(t_int i=0; i<N; ++i)
+	{
+		if(vec[i].real() > threshold)
+			bits.emplace_back(std::bitset<num_qbits>(i));
+	}
+
+	return bits;
+}
+
+
+/**
+ * try to convert qubit state vector to classical bits,
+ * taking only the first possibility of states
  */
 template<class t_vec, std::size_t num_qbits,
 	class t_int = std::uint64_t,
@@ -492,15 +519,11 @@ template<class t_vec, std::size_t num_qbits,
 requires m::is_vec<t_vec>
 std::bitset<num_qbits> measure_qbits(const t_vec& vec, t_real threshold = 0.75)
 {
-	const t_int N = static_cast<t_int>(vec.size());
+	auto allbits = measure_qbits_all(vec, threshold);
+	if(allbits.size() == 0)
+		return std::bitset<num_qbits>(0);
 
-	for(t_int i=0; i<N; ++i)
-	{
-		if(vec[i].real() > threshold)
-			return std::bitset<num_qbits>(i);
-	}
-
-	return std::bitset<num_qbits>(0);
+	return *allbits.begin();
 }
 
 

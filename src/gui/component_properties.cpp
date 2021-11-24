@@ -15,14 +15,28 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QSpacerItem>
+#include <QtWidgets/QScrollArea>
 
 
 ComponentProperties::ComponentProperties(QWidget* parent)
 	: QWidget(parent)
 {
+	QScrollArea *scroll = new QScrollArea(this);
+	QWidget *scrollwidget = new QWidget(scroll);
+	scroll->setWidgetResizable(true);
+	scroll->setWidget(scrollwidget);
+	scroll->setFrameStyle(QFrame::NoFrame);
+
+	m_layout = std::make_shared<QGridLayout>(scrollwidget);
 	m_layout->setContentsMargins(4, 4, 4, 4);
 	m_layout->setVerticalSpacing(4);
 	m_layout->setHorizontalSpacing(4);
+
+	QGridLayout *mainlayout = new QGridLayout(this);
+	mainlayout->setContentsMargins(4, 4, 4, 4);
+	mainlayout->setVerticalSpacing(4);
+	mainlayout->setHorizontalSpacing(4);
+	mainlayout->addWidget(scroll, 0, 0, 1, 1);
 }
 
 
