@@ -259,7 +259,7 @@ void QmWnd::SetupGUI()
 		m_view->AddQuantumComponent(gate);
 	});
 
-	QAction *actionAddCnot = new QAction{"Add CNOT Gate", this};
+	QAction *actionAddCnot = new QAction{"Add CNOT (CX) Gate", this};
 	if(auto optIconFile = m_res.FindFile("cnot.svg"); optIconFile)
 		actionAddCnot->setIcon(QIcon{optIconFile->string().c_str()});
 	connect(actionAddCnot, &QAction::triggered, [this]()
@@ -268,7 +268,16 @@ void QmWnd::SetupGUI()
 		m_view->AddQuantumComponent(gate);
 	});
 
-	QAction *actionAddToffoli = new QAction{"Add Toffoli Gate", this};
+	QAction *actionAddCZ = new QAction{"Add CZ Gate", this};
+	if(auto optIconFile = m_res.FindFile("cz.svg"); optIconFile)
+		actionAddCZ->setIcon(QIcon{optIconFile->string().c_str()});
+	connect(actionAddCZ, &QAction::triggered, [this]()
+	{
+		QuantumComponentItem *gate = new CZGate();
+		m_view->AddQuantumComponent(gate);
+	});
+
+	QAction *actionAddToffoli = new QAction{"Add Toffoli (CCNOT) Gate", this};
 	if(auto optIconFile = m_res.FindFile("toffoli.svg"); optIconFile)
 		actionAddToffoli->setIcon(QIcon{optIconFile->string().c_str()});
 	connect(actionAddToffoli, &QAction::triggered, [this]()
@@ -283,8 +292,11 @@ void QmWnd::SetupGUI()
 	menuComponents->addAction(actionAddHadamard);
 	menuComponents->addAction(actionAddPauli);
 	menuComponents->addAction(actionAddPhase);
+	menuComponents->addSeparator();
 	menuComponents->addAction(actionAddSwap);
 	menuComponents->addAction(actionAddCnot);
+	menuComponents->addAction(actionAddCZ);
+	menuComponents->addSeparator();
 	menuComponents->addAction(actionAddToffoli);
 	// ------------------------------------------------------------------------
 
@@ -334,6 +346,7 @@ void QmWnd::SetupGUI()
 	toolbarComponents->addAction(actionAddPhase);
 	toolbarComponents->addAction(actionAddSwap);
 	toolbarComponents->addAction(actionAddCnot);
+	toolbarComponents->addAction(actionAddCZ);
 	toolbarComponents->addAction(actionAddToffoli);
 
 	QToolBar *toolbarCalc = new QToolBar{"Calculate", this};

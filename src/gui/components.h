@@ -354,7 +354,7 @@ private:
 
 
 /**
- * Controlled NOT gate
+ * Controlled NOT gate (CNOT / CX)
  * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
  */
 class CNotGate : public QuantumComponentItem
@@ -396,6 +396,53 @@ private:
 
 	t_real m_control_bit_radius = 10.;
 	t_real m_target_bit_radius = 25.;
+};
+
+
+
+/**
+ * Controlled Pauli-Z gate (CZ)
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Controlled_gates
+ */
+class CZGate : public QuantumComponentItem
+{
+public:
+	CZGate();
+	virtual ~CZGate();
+
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
+	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
+	void SetControlBitPos(t_uint pos) { m_control_bit_pos = pos; }
+	void SetTargetBitPos(t_uint pos) { m_target_bit_pos = pos; }
+
+	// getter
+	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
+	t_uint GetControlBitPos() const { return m_control_bit_pos; }
+	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
+
+	static const char* GetStaticIdent() { return "cz"; }
+	virtual std::string GetIdent() const override { return CZGate::GetStaticIdent(); }
+	virtual std::string GetName() const override { return "CZ Gate"; }
+
+	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	virtual t_mat GetOperator() const override;
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+
+private:
+	t_uint m_num_qbits = 2;
+	t_uint m_control_bit_pos = 0;
+	t_uint m_target_bit_pos = 1;
+
+	t_real m_control_bit_radius = 10.;
+	t_real m_target_bit_radius = 10.;
 };
 
 

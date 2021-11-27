@@ -231,6 +231,52 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 
 
 /**
+ * 2-qubit controlled Pauli-Z gate
+ * negates target bit if control bit is set and if it is 1
+ * @see (FUH 2021), p. 9
+ * @see https://en.wikipedia.org/wiki/Controlled_NOT_gate
+ */
+template<class t_mat>
+const t_mat cz_nqbits(std::size_t num_qbits = 2,
+	std::size_t control_bit = 0, std::size_t target_bit = 1,
+	bool reverse_state_numbering = true)
+requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
+{
+	//using t_cplx = typename t_mat::value_type;
+	//constexpr const t_cplx c(1, 0);
+
+	if(reverse_state_numbering)
+	{
+		// numbering of qubits from left-hand side
+		control_bit = num_qbits - control_bit - 1;
+		target_bit = num_qbits - target_bit - 1;
+	}
+
+	const std::size_t N = (1 << num_qbits);
+	t_mat mat = zero<t_mat>(N, N);
+
+	const std::size_t control_bit_mask = (1 << control_bit);
+	const std::size_t target_bit_mask = (1 << target_bit);
+
+	// iterate all qubits
+	for(std::size_t bits=0; bits<N; ++bits)
+	{
+		std::size_t new_bits = bits;
+		t_real elem = 1;
+
+		bool control_bit_set = (bits & control_bit_mask) != 0;
+		bool target_bit_set = (bits & target_bit_mask) != 0;
+		if(control_bit_set && target_bit_set)
+			elem = -1;
+
+		mat(bits, new_bits) = elem;
+	}
+
+	return mat;
+}
+
+
+/**
  * 2-qubit SWAP gate
  * flips source and target qubit
  * https://en.wikipedia.org/wiki/Quantum_logic_gate#Swap_gate
@@ -314,7 +360,8 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
  */
 template<class t_mat>
 const t_mat toffoli_nqbits(std::size_t num_qbits = 3,
-	std::size_t control_bit_1 = 0, std::size_t control_bit_2 = 1, std::size_t target_bit = 2,
+	std::size_t control_bit_1 = 0, std::size_t control_bit_2 = 1,
+	std::size_t target_bit = 2,
 	bool reverse_state_numbering = true)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
