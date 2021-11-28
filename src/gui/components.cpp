@@ -15,7 +15,6 @@
 #include "lib/qm_algos.h"
 
 #include <string_view>
-#include <tuple>
 
 
 
@@ -1331,7 +1330,7 @@ create_matching_comp(const std::string& id,
 			if(!comp && id == std::string_view{t_comp::GetStaticIdent()})
 				comp = new t_comp();
 		}(),
-	... ); // call a sequence of lambda functions
+	...); // call a sequence of lambda functions
 
 	return comp;
 }
@@ -1342,17 +1341,8 @@ create_matching_comp(const std::string& id,
  */
 QuantumComponentItem* QuantumComponentItem::create(const std::string& id)
 {
-	// possible component classes to create
-	using t_comps = std::tuple
-	<
-		InputStates,
-		HadamardGate, PauliGate, PhaseGate,
-		SwapGate, CNotGate, CZGate,
-		ToffoliGate
-	>;
-
 	// iterate through all component classes and create the matching one
-	constexpr const std::size_t num_comps = std::tuple_size<t_comps>();
+	constexpr const std::size_t num_comps = std::tuple_size<t_all_components>();
 	constexpr const auto comp_indices = std::make_index_sequence<num_comps>();
-	return create_matching_comp<t_comps>(id, comp_indices);
+	return create_matching_comp<t_all_components>(id, comp_indices);
 }

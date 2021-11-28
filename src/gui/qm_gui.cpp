@@ -214,90 +214,45 @@ void QmWnd::SetupGUI()
 
 	// ------------------------------------------------------------------------
 	// components menu
-	QAction *actionAddInputStates = new QAction{"Add Input Qubits", this};
-	if(auto optIconFile = m_res.FindFile("input_state.svg"); optIconFile)
-		actionAddInputStates->setIcon(QIcon{optIconFile->string().c_str()});
-	connect(actionAddInputStates, &QAction::triggered, [this]()
-	{
-		QuantumComponentItem *state = new InputStates();
-		m_view->AddQuantumComponent(state);
-	});
+	// iterate through all component classes and create the matching one
+	constexpr const std::size_t num_comps = std::tuple_size<t_all_components>();
 
-	QAction *actionAddHadamard = new QAction{"Add Hadamard Gate", this};
-	if(auto optIconFile = m_res.FindFile("hadamard.svg"); optIconFile)
-		actionAddHadamard->setIcon(QIcon{optIconFile->string().c_str()});
-	connect(actionAddHadamard, &QAction::triggered, [this]()
-	{
-		QuantumComponentItem *gate = new HadamardGate();
-		m_view->AddQuantumComponent(gate);
-	});
+	std::array<QAction*, num_comps> compActions{};
+	std::array<ComponentType, num_comps> compTypes{};
 
-	QAction *actionAddPauli = new QAction{"Add Pauli Gate", this};
-	if(auto optIconFile = m_res.FindFile("pauli_x.svg"); optIconFile)
-		actionAddPauli->setIcon(QIcon{optIconFile->string().c_str()});
-	connect(actionAddPauli, &QAction::triggered, [this]()
+	[&compActions, &compTypes, this]<std::size_t ...idx>
+		(const std::index_sequence<idx...>&)
 	{
-		QuantumComponentItem *gate = new PauliGate();
-		m_view->AddQuantumComponent(gate);
-	});
+		(
+			[&compActions, &compTypes, this]()
+			{
+				using t_comp = std::tuple_element_t<idx, t_all_components>;
 
-	QAction *actionAddPhase = new QAction{"Add Phase Gate", this};
-	if(auto optIconFile = m_res.FindFile("phase.svg"); optIconFile)
-		actionAddPhase->setIcon(QIcon{optIconFile->string().c_str()});
-	connect(actionAddPhase, &QAction::triggered, [this]()
-	{
-		QuantumComponentItem *gate = new PhaseGate();
-		m_view->AddQuantumComponent(gate);
-	});
+				QString menustring = QString("Add %1").arg(t_comp::GetStaticName());
+				QString menuicon = QString("%1.svg").arg(t_comp::GetStaticIdent());
 
-	QAction *actionAddSwap = new QAction{"Add SWAP Gate", this};
-	if(auto optIconFile = m_res.FindFile("swap.svg"); optIconFile)
-		actionAddSwap->setIcon(QIcon{optIconFile->string().c_str()});
-	connect(actionAddSwap, &QAction::triggered, [this]()
-	{
-		QuantumComponentItem *gate = new SwapGate();
-		m_view->AddQuantumComponent(gate);
-	});
+				// action
+				QAction *actionComp = new QAction{menustring, this};
 
-	QAction *actionAddCnot = new QAction{"Add CNOT (CX) Gate", this};
-	if(auto optIconFile = m_res.FindFile("cnot.svg"); optIconFile)
-		actionAddCnot->setIcon(QIcon{optIconFile->string().c_str()});
-	connect(actionAddCnot, &QAction::triggered, [this]()
-	{
-		QuantumComponentItem *gate = new CNotGate();
-		m_view->AddQuantumComponent(gate);
-	});
+				// icon
+				if(auto optIconFile = m_res.FindFile(menuicon.toStdString()); optIconFile)
+					actionComp->setIcon(QIcon{optIconFile->string().c_str()});
 
-	QAction *actionAddCZ = new QAction{"Add CZ Gate", this};
-	if(auto optIconFile = m_res.FindFile("cz.svg"); optIconFile)
-		actionAddCZ->setIcon(QIcon{optIconFile->string().c_str()});
-	connect(actionAddCZ, &QAction::triggered, [this]()
-	{
-		QuantumComponentItem *gate = new CZGate();
-		m_view->AddQuantumComponent(gate);
-	});
+				// item clicked
+				connect(actionComp, &QAction::triggered, [this]()
+				{
+					QuantumComponentItem *state = new t_comp{};
+					m_view->AddQuantumComponent(state);
+				});
 
-	QAction *actionAddToffoli = new QAction{"Add Toffoli (CCNOT) Gate", this};
-	if(auto optIconFile = m_res.FindFile("toffoli.svg"); optIconFile)
-		actionAddToffoli->setIcon(QIcon{optIconFile->string().c_str()});
-	connect(actionAddToffoli, &QAction::triggered, [this]()
-	{
-		QuantumComponentItem *gate = new ToffoliGate();
-		m_view->AddQuantumComponent(gate);
-	});
+				std::get<idx>(compActions) = actionComp;
+				std::get<idx>(compTypes) = t_comp::GetStaticType();
+			}(),
+		...);
+	}(std::make_index_sequence<num_comps>());
 
 	QMenu *menuComponents = new QMenu{"Components", this};
-	menuComponents->addAction(actionAddInputStates);
-	menuComponents->addSeparator();
-	menuComponents->addAction(actionAddHadamard);
-	menuComponents->addAction(actionAddPauli);
-	menuComponents->addAction(actionAddPhase);
-	menuComponents->addSeparator();
-	menuComponents->addAction(actionAddSwap);
-	menuComponents->addAction(actionAddCnot);
-	menuComponents->addAction(actionAddCZ);
-	menuComponents->addSeparator();
-	menuComponents->addAction(actionAddToffoli);
+	// actions added together with toolbar below
 	// ------------------------------------------------------------------------
 
 
@@ -339,15 +294,22 @@ void QmWnd::SetupGUI()
 
 	QToolBar *toolbarComponents = new QToolBar{"Components", this};
 	toolbarComponents->setObjectName("ComponentsToolbar");
-	toolbarComponents->addAction(actionAddInputStates);
-	toolbarComponents->addSeparator();
-	toolbarComponents->addAction(actionAddHadamard);
-	toolbarComponents->addAction(actionAddPauli);
-	toolbarComponents->addAction(actionAddPhase);
-	toolbarComponents->addAction(actionAddSwap);
-	toolbarComponents->addAction(actionAddCnot);
-	toolbarComponents->addAction(actionAddCZ);
-	toolbarComponents->addAction(actionAddToffoli);
+
+	ComponentType lastType{};
+	for(std::size_t i=0; i<compActions.size(); ++i)
+	{
+		QAction* compAction = compActions[i];
+		ComponentType compType = compTypes[i];
+		if(i > 0 && lastType != compType)
+		{
+			menuComponents->addSeparator();
+			toolbarComponents->addSeparator();
+		}
+
+		menuComponents->addAction(compAction);
+		toolbarComponents->addAction(compAction);
+		lastType = compType;
+	}
 
 	QToolBar *toolbarCalc = new QToolBar{"Calculate", this};
 	toolbarCalc->setObjectName("CalculateToolbar");

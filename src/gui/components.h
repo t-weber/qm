@@ -16,6 +16,7 @@
 #include <optional>
 #include <variant>
 #include <vector>
+#include <tuple>
 
 #include "types.h"
 
@@ -165,10 +166,12 @@ public:
 	const t_vec& GetOutputState() const { return m_state_output; }
 
 	static const char* GetStaticIdent() { return "input_states"; }
+	static const char* GetStaticName() { return "Input Qubits"; }
 	virtual std::string GetIdent() const override { return InputStates::GetStaticIdent(); }
-	virtual std::string GetName() const override { return "Input States"; }
+	virtual std::string GetName() const override { return InputStates::GetStaticName(); }
 
-	virtual ComponentType GetType() const override { return ComponentType::STATE; }
+	static ComponentType GetStaticType() { return ComponentType::STATE; }
+	virtual ComponentType GetType() const override { return InputStates::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -216,10 +219,12 @@ public:
 	virtual t_uint GetNumQBits() const override { return 1; }
 
 	static const char* GetStaticIdent() { return "hadamard"; }
+	static const char* GetStaticName() { return "Hadamard Gate"; }
 	virtual std::string GetIdent() const override { return HadamardGate::GetStaticIdent(); }
-	virtual std::string GetName() const override { return "Hadamard Gate"; }
+	virtual std::string GetName() const override { return HadamardGate::GetStaticName(); }
 
-	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return HadamardGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -251,10 +256,12 @@ public:
 	virtual t_uint GetNumQBits() const override { return 1; }
 
 	static const char* GetStaticIdent() { return "pauli"; }
+	static const char* GetStaticName() { return "Pauli Gate"; }
 	virtual std::string GetIdent() const override { return PauliGate::GetStaticIdent(); }
-	virtual std::string GetName() const override { return "Pauli Gate"; }
+	virtual std::string GetName() const override { return PauliGate::GetStaticName(); }
 
-	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return PauliGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -290,10 +297,12 @@ public:
 	virtual t_uint GetNumQBits() const override { return 1; }
 
 	static const char* GetStaticIdent() { return "phase"; }
+	static const char* GetStaticName() { return "Phase Gate"; }
 	virtual std::string GetIdent() const override { return PhaseGate::GetStaticIdent(); }
-	virtual std::string GetName() const override { return "Phase Gate"; }
+	virtual std::string GetName() const override { return PhaseGate::GetStaticName(); }
 
-	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return PhaseGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -332,10 +341,12 @@ public:
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
 	static const char* GetStaticIdent() { return "swap"; }
+	static const char* GetStaticName() { return "SWAP Gate"; }
 	virtual std::string GetIdent() const override { return SwapGate::GetStaticIdent(); }
-	virtual std::string GetName() const override { return "SWAP Gate"; }
+	virtual std::string GetName() const override { return SwapGate::GetStaticName(); }
 
-	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return PhaseGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -376,10 +387,12 @@ public:
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
 	static const char* GetStaticIdent() { return "cnot"; }
+	static const char* GetStaticName() { return "CNOT/CX Gate"; }
 	virtual std::string GetIdent() const override { return CNotGate::GetStaticIdent(); }
-	virtual std::string GetName() const override { return "CNOT Gate"; }
+	virtual std::string GetName() const override { return CNotGate::GetStaticName(); }
 
-	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return CNotGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -423,10 +436,12 @@ public:
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
 	static const char* GetStaticIdent() { return "cz"; }
+	static const char* GetStaticName() { return "CZ Gate"; }
 	virtual std::string GetIdent() const override { return CZGate::GetStaticIdent(); }
-	virtual std::string GetName() const override { return "CZ Gate"; }
+	virtual std::string GetName() const override { return CZGate::GetStaticName(); }
 
-	virtual ComponentType GetType() const override { return ComponentType::GATE; }
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return CZGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
@@ -471,11 +486,13 @@ public:
 	t_uint GetControlBit2Pos() const { return m_control_bit_2_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
-	virtual ComponentType GetType() const override { return ComponentType::GATE; }
-
 	static const char* GetStaticIdent() { return "toffoli"; }
+	static const char* GetStaticName() { return "Toffoli/CCNOT Gate"; }
 	virtual std::string GetIdent() const override { return ToffoliGate::GetStaticIdent(); }
-	virtual std::string GetName() const override { return "Toffoli Gate"; }
+	virtual std::string GetName() const override { return ToffoliGate::GetStaticName(); }
+
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return ToffoliGate::GetStaticType(); }
 
 	virtual t_mat GetOperator() const override;
 
@@ -496,6 +513,16 @@ private:
 	t_real m_target_bit_radius = 25.;
 };
 // ----------------------------------------------------------------------------
+
+
+// list of all internally known components classes
+using t_all_components = std::tuple
+<
+	InputStates,
+	HadamardGate, PauliGate, PhaseGate,
+	SwapGate, CNotGate, CZGate,
+	ToffoliGate
+>;
 
 
 #endif
