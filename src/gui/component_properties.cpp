@@ -73,23 +73,27 @@ void ComponentProperties::Clear()
 /**
  * update the results shown in the operator and states dialogs
  */
-void ComponentProperties::UpdateResults(const QuantumComponent *comp, bool /*ok*/)
+void ComponentProperties::UpdateResults(
+	const QuantumComponent *comp,
+	const InputStates *associated_input_comp,
+	bool /*ok*/)
 {
-	if(!comp)
-		return;
+	if(comp && comp->GetType() == ComponentType::STATE)
+		associated_input_comp = static_cast<const InputStates*>(comp);
 
 	// update operator
-	if(m_compOperator)
+	if(m_compOperator && comp)
 	{
 		m_compOperator->SetOperator(comp->GetOperator());
 	}
 
 	// update states vector
-	if(m_compStates && comp->GetType() == ComponentType::STATE)
+	if(m_compStates && associated_input_comp)
 	{
-		const InputStates *input_comp = static_cast<const InputStates*>(comp);
-		m_compStates->SetStates(input_comp->GetNumQBits(),
-			input_comp->GetInputState(), input_comp->GetOutputState());
+		m_compStates->SetStates(
+			associated_input_comp->GetNumQBits(),
+			associated_input_comp->GetInputState(),
+			associated_input_comp->GetOutputState());
 	}
 }
 
@@ -97,15 +101,18 @@ void ComponentProperties::UpdateResults(const QuantumComponent *comp, bool /*ok*
 /**
  * a component has been selected -> show its properties
  */
-void ComponentProperties::SelectedItem(const QuantumComponent *comp)
+void ComponentProperties::SelectedItem(const QuantumComponent *comp, const InputStates *associated_input_comp)
 {
 	Clear();
 	if(!comp)
 		return;
 
+	if(comp->GetType() == ComponentType::STATE)
+		associated_input_comp = static_cast<const InputStates*>(comp);
+
 
 	// get input state and send them to the component
-	auto update_states = [this, comp]()
+	auto update_states = [this, comp, associated_input_comp]()
 	{
 		ComponentConfigs configs;
 
@@ -133,7 +140,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 		emit this->SignalConfigChanged(configs);
 
 		// update the dialogs every time the configuration is changed
-		UpdateResults(comp);
+		UpdateResults(comp, associated_input_comp);
 	};
 
 	const int num_cols = 2;
@@ -165,7 +172,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				spinVal->setMaximum(std::get<t_uint>(*cfg.max_value));
 
 			connect(spinVal, static_cast<void (QSpinBox::*)(int)>
-				(&QSpinBox::valueChanged), [this, cfg, comp](int val) -> void
+				(&QSpinBox::valueChanged), [this, cfg, comp, associated_input_comp](int val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -178,7 +185,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				emit this->SignalConfigChanged(configs);
 
 				// update the dialogs every time the configuration is changed
-				UpdateResults(comp);
+				UpdateResults(comp, associated_input_comp);
 			});
 
 			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, num_cols);
@@ -200,7 +207,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				spinVal->setMaximum(std::get<t_real>(*cfg.max_value)*scale);
 
 			connect(spinVal, static_cast<void (QDoubleSpinBox::*)(double)>
-			(&QDoubleSpinBox::valueChanged), [this, cfg, scale, comp](double val) -> void
+			(&QDoubleSpinBox::valueChanged), [this, cfg, scale, comp, associated_input_comp](double val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -213,7 +220,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 				emit this->SignalConfigChanged(configs);
 
 				// update the dialogs every time the configuration is changed
-				UpdateResults(comp);
+				UpdateResults(comp, associated_input_comp);
 			});
 
 			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, num_cols);
@@ -236,7 +243,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 		for(t_uint bit=0; bit<input_comp->GetNumQBits(); ++bit)
 		{
 			// description label
-			QString textState = QString{"Qubit |ψ%1> = a⋅|↓> + b⋅|↑>"}.arg(bit+1);
+			QString textState = QString{"Qubit |ψ%1> = a⋅|0> + b⋅|1>"}.arg(bit+1);
 			QLabel *labelDescr = new QLabel(textState, this);
 			m_layout->addWidget(labelDescr, m_layout->rowCount(), 0, 1, num_cols);
 
@@ -318,5 +325,5 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp)
 	m_layout->addItem(spacer, m_layout->rowCount(), 0, 1, num_cols);
 
 	// also update dialogs every time a new item is selected
-	UpdateResults(comp);
+	UpdateResults(comp, associated_input_comp);
 }

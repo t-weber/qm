@@ -47,10 +47,13 @@ private:
 
 public slots:
 	// a component has been selected
-	void SelectedItem(const QuantumComponent *item);
+	void SelectedItem(const QuantumComponent *item,
+		const InputStates *associated_input_comp = nullptr);
 
 	// new results are available
-	void UpdateResults(const QuantumComponent *comp, bool ok = true);
+	void UpdateResults(const QuantumComponent *comp,
+		const InputStates *associated_input_comp = nullptr,
+		bool ok = true);
 
 
 signals:

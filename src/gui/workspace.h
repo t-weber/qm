@@ -39,7 +39,7 @@ public:
 	{ return m_components; }
 
 	bool IsQuantumComponent(const QGraphicsItem *item) const;
-	QuantumComponentItem* GetCorrespondingInputState(QuantumComponentItem* comp) const;
+	InputStates* GetCorrespondingInputState(QuantumComponentItem* comp) const;
 	std::vector<QuantumComponentItem*> GetCorrespondingGates(QuantumComponentItem* input_state) const;
 	std::vector<QuantumComponentItem*> GetCorrespondingGatesApprox(QuantumComponentItem* input_state) const;
 	std::vector<QuantumComponentItem*> GetAllInputStates() const;
@@ -134,9 +134,12 @@ public slots:
 
 signals:
 	void SignalMouseCoordinates(qreal scene_x, qreal scene_y);
-	void SignalSelectedItem(const QuantumComponent *item);
+	void SignalSelectedItem(const QuantumComponent *item,
+		const InputStates *associated_input_comp = nullptr);
 	void SignalWorkspaceChanged(bool changed = true);
-	void SignalNewResults(const QuantumComponent *item, bool ok);
+	void SignalNewResults(const QuantumComponent *item,
+		const InputStates *associated_input_comp = nullptr,
+		bool ok = true);
 };
 
 

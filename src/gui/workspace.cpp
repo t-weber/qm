@@ -98,15 +98,14 @@ void QmScene::Clear()
 /**
  * get the input state component associated with a given gate
  */
-QuantumComponentItem*
-QmScene::GetCorrespondingInputState(QuantumComponentItem* comp) const
+InputStates* QmScene::GetCorrespondingInputState(QuantumComponentItem* comp) const
 {
 	if(!comp)
 		return nullptr;
 
 	// the component already is an input state component
 	if(comp->GetType() == ComponentType::STATE)
-		return comp;
+		return static_cast<InputStates*>(comp);
 
 	// grid position of the selected component
 	auto [col_pos, row_pos] = comp->GetGridPos();
@@ -471,7 +470,7 @@ void QmView::DeleteQuantumComponent(QuantumComponentItem *comp)
 void QmView::Clear()
 {
 	m_curItem = nullptr;
-	emit SignalSelectedItem(nullptr);
+	emit SignalSelectedItem(nullptr, nullptr);
 }
 
 
@@ -493,7 +492,7 @@ bool QmView::CalculateCurItem()
 	bool ok = m_scene->Calculate(input_comp);
 
 	// refresh the operator matrix dialog
-	emit SignalNewResults(selected_comp, ok);
+	emit SignalNewResults(selected_comp, input_comp, ok);
 
 	return ok;
 }
@@ -513,7 +512,7 @@ bool QmView::Calculate(QuantumComponentItem *input_state)
 	if(selected_input == input_state)
 	{
 		// refresh the operator matrix dialog
-		emit SignalNewResults(selected_comp, ok);
+		emit SignalNewResults(selected_comp, selected_input, ok);
 	}
 
 	return ok;
@@ -539,7 +538,8 @@ void QmView::SetCurItemConfig(const ComponentConfigs& cfg)
 	{
 		QMetaObject::invokeMethod(this, [this]() -> void
 		{
-			emit this->SignalSelectedItem(this->m_curItem);
+			emit this->SignalSelectedItem(this->m_curItem,
+				this->m_scene->GetCorrespondingInputState(this->m_curItem));
 		}, Qt::QueuedConnection);
 	}
 
@@ -562,7 +562,7 @@ void QmView::DeleteCurItem()
 	m_curItem = nullptr;
 	DeleteQuantumComponent(item);
 
-	emit SignalSelectedItem(nullptr);
+	emit SignalSelectedItem(nullptr, nullptr);
 }
 
 
@@ -672,7 +672,8 @@ void QmView::mousePressEvent(QMouseEvent *evt)
 	// a new item was selected
 	if(m_curItem != oldItem)
 	{
-		emit SignalSelectedItem(m_curItem);
+		emit SignalSelectedItem(m_curItem,
+			m_scene->GetCorrespondingInputState(m_curItem));
 		viewport()->update();
 	}
 

@@ -532,13 +532,12 @@ t_mat three_qbit_total_op(
 
 /**
  * try to convert qubit state vector to all possibilities of classical bits.
- * TODO: also take care of a phase (and imaginary component)
  */
 template<class t_vec, std::size_t num_qbits,
 	class t_int = std::uint64_t,
 	class t_cplx = typename t_vec::value_type,
 	class t_real = typename t_cplx::value_type>
-requires m::is_vec<t_vec>
+requires m::is_vec<t_vec> && m::is_complex<t_cplx>
 std::vector<std::bitset<num_qbits>>
 measure_qbits_all(const t_vec& vec, t_real threshold = 0.75)
 {
@@ -547,7 +546,7 @@ measure_qbits_all(const t_vec& vec, t_real threshold = 0.75)
 
 	for(t_int i=0; i<N; ++i)
 	{
-		if(vec[i].real() > threshold)
+		if(std::norm(vec[i]) > threshold)
 			bits.emplace_back(std::bitset<num_qbits>(i));
 	}
 
@@ -563,7 +562,7 @@ template<class t_vec, std::size_t num_qbits,
 	class t_int = std::uint64_t,
 	class t_cplx = typename t_vec::value_type,
 	class t_real = typename t_cplx::value_type>
-requires m::is_vec<t_vec>
+requires m::is_vec<t_vec> && m::is_complex<t_cplx>
 std::bitset<num_qbits> measure_qbits(const t_vec& vec, t_real threshold = 0.75)
 {
 	auto allbits = measure_qbits_all(vec, threshold);
