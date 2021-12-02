@@ -414,12 +414,7 @@ QmView::QmView(QmScene *scene, QWidget *parent)
 
 QmView::~QmView()
 {
-	// remove any previous copy
-	if(m_copiedItem)
-	{
-		delete m_copiedItem;
-		m_copiedItem = nullptr;
-	}
+	Clear();
 }
 
 
@@ -470,6 +465,16 @@ void QmView::DeleteQuantumComponent(QuantumComponentItem *comp)
 void QmView::Clear()
 {
 	m_curItem = nullptr;
+
+	// remove any previous copy
+	if(m_copiedItem)
+	{
+		delete m_copiedItem;
+		m_copiedItem = nullptr;
+	}
+
+	m_copiedCorrespondingGates.clear();
+
 	emit SignalSelectedItem(nullptr, nullptr);
 }
 
@@ -562,6 +567,9 @@ void QmView::DeleteCurItem()
 	m_curItem = nullptr;
 	DeleteQuantumComponent(item);
 
+	// to be sure not to leave any dangling pointers
+	m_copiedCorrespondingGates.clear();
+
 	emit SignalSelectedItem(nullptr, nullptr);
 }
 
@@ -576,11 +584,17 @@ void QmView::CopyCurItem()
 	{
 		delete m_copiedItem;
 		m_copiedItem = nullptr;
+		m_copiedCorrespondingGates.clear();
 	}
 
 	// clone the currently selected item
 	if(m_curItem)
+	{
 		m_copiedItem = m_curItem->clone();
+		m_copiedGridPos = m_curItem->GetGridPos();
+		// TODO: need to clone this to avoid possible dangling pointers
+		m_copiedCorrespondingGates = m_scene->GetCorrespondingGates(m_curItem);
+	}
 }
 
 
@@ -595,6 +609,31 @@ void QmView::PasteItem()
 	auto *clonedItem = m_copiedItem->clone();
 	clonedItem->setPos(GetCursorPosition(true));
 	AddQuantumComponent(clonedItem);
+
+	// also copy dependent components
+	if(m_copiedItem->GetType()==ComponentType::STATE && g_keep_gates_on_states)
+	{
+		auto [x_new, y_new] = clonedItem->GetGridPos();
+		t_int x_shift = x_new - std::get<0>(m_copiedGridPos);
+		t_int y_shift = y_new - std::get<1>(m_copiedGridPos);
+
+		// iterate sub-items
+		for(QuantumComponentItem* item : m_copiedCorrespondingGates)
+		{
+			if(!item)
+				continue;
+
+			auto [x_comp, y_comp] = item->GetGridPos();
+			x_comp += x_shift;
+			y_comp += y_shift;
+
+			auto *clonedSubItem = item->clone();
+			QPointF posScene(x_comp*g_raster_size, y_comp*g_raster_size);
+			clonedSubItem->setPos(posScene);
+
+			AddQuantumComponent(clonedSubItem);
+		}
+	}
 }
 
 

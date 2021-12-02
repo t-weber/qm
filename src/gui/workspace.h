@@ -101,6 +101,8 @@ private:
 	// currently selected item
 	QuantumComponentItem *m_curItem = nullptr;
 	QuantumComponentItem *m_copiedItem = nullptr;
+	std::vector<QuantumComponentItem*> m_copiedCorrespondingGates{};
+	std::tuple<t_int, t_int> m_copiedGridPos{0, 0};
 	bool m_curItemIsDragged = false;
 
 	// gates connected to current item

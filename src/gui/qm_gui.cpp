@@ -796,6 +796,8 @@ void QmWnd::ShowSettings(bool only_create)
 			"Components raster size:", (int)g_raster_size, 1, 1000, 1);
 		m_settings->AddSpinbox("settings/precision_gui",
 			"Number precision:", g_prec_gui, 0, 99, 1);
+		m_settings->AddDoubleSpinbox("settings/classical_threshold",
+			"Classical threshold probability:", g_classical_threshold, 0, 1., 1e-2);
 		//m_settings->AddDoubleSpinbox("settings/epsilon",
 		//	"Calculation epsilon:", g_eps, g_eps, 1., 1e-6);
 		m_settings->FinishSetup();
