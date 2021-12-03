@@ -11,6 +11,7 @@
 #include "components.h"
 
 #include <vector>
+#include <tuple>
 
 
 class ComponentsTable
@@ -37,7 +38,7 @@ public:
 
 	// calculate circuit
 	std::vector<t_columnop> CalculateCircuitOperators() const;
-	t_mat CalculateCircuitOperator(std::size_t col) const;
+	std::tuple<bool, t_mat> CalculateCircuitOperator(std::size_t col) const;
 
 	// print table
 	friend std::ostream& operator<<(std::ostream& ostr, const ComponentsTable& tab);

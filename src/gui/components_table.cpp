@@ -21,7 +21,9 @@ ComponentsTable::ComponentsTable(std::size_t ROWS, std::size_t COLS)
  */
 bool ComponentsTable::HasGates(std::size_t col) const
 {
-	for(std::size_t row=0; row<row_size(); ++row)
+	const std::size_t rows = row_size();
+
+	for(std::size_t row=0; row<rows; ++row)
 	{
 		if(operator()(row, col))
 			return true;
@@ -36,9 +38,12 @@ bool ComponentsTable::HasGates(std::size_t col) const
  */
 bool ComponentsTable::CheckCircuit() const
 {
-	for(std::size_t col=0; col<col_size(); ++col)
+	const std::size_t cols = col_size();
+	const std::size_t rows = row_size();
+
+	for(std::size_t col=0; col<cols; ++col)
 	{
-		for(std::size_t row=0; row<row_size(); ++row)
+		for(std::size_t row=0; row<rows; ++row)
 		{
 			const QuantumComponentItem* comp = operator()(row, col);
 			if(!comp)
@@ -46,7 +51,7 @@ bool ComponentsTable::CheckCircuit() const
 
 			// part of gate outside input state component?
 			t_uint h = comp->GetNumQBits();
-			if(row + h > row_size())
+			if(row + h > rows)
 				return false;
 
 			// check for overlapping gates
@@ -70,20 +75,20 @@ bool ComponentsTable::CheckCircuit() const
 std::vector<t_columnop>
 ComponentsTable::CalculateCircuitOperators() const
 {
-	std::size_t N = row_size();
+	const std::size_t cols = col_size();
+	const std::size_t rows = row_size();
 
 	std::vector<t_columnop> ops;
-	ops.reserve(N);
+	ops.reserve(rows);
 
-	for(std::size_t col=0; col<col_size(); ++col)
+	for(std::size_t col=0; col<cols; ++col)
 	{
 		// no gates in this column -> unit matrix
 		if(!HasGates(col))
 			continue;
 
-		t_mat col_op = CalculateCircuitOperator(col);
-
-		ops.emplace_back(std::make_tuple(col, std::move(col_op)));
+		auto [ok, col_op] = CalculateCircuitOperator(col);
+		ops.emplace_back(std::make_tuple(ok, col, std::move(col_op)));
 	}
 
 	return ops;
@@ -93,13 +98,14 @@ ComponentsTable::CalculateCircuitOperators() const
 /**
  * calculate an individual column operator of the circuit
  */
-t_mat ComponentsTable::CalculateCircuitOperator(std::size_t col) const
+std::tuple<bool, t_mat> ComponentsTable::CalculateCircuitOperator(std::size_t col) const
 {
-	const t_mat I = m::unit<t_mat>(2);
+	const std::size_t rows = row_size();
 
+	const t_mat I = m::unit<t_mat>(2);
 	t_mat col_op;
 
-	for(std::size_t row=0; row<row_size(); ++row)
+	for(std::size_t row=0; row<rows; ++row)
 	{
 		const QuantumComponent* gate = operator()(row, col);
 
@@ -115,7 +121,8 @@ t_mat ComponentsTable::CalculateCircuitOperator(std::size_t col) const
 			row += gate->GetNumQBits()-1;
 	}
 
-	return col_op;
+	bool ok = (col_op.size1() == std::pow(2, rows));
+	return std::make_tuple(ok, col_op);
 }
 
 
@@ -124,11 +131,14 @@ t_mat ComponentsTable::CalculateCircuitOperator(std::size_t col) const
  */
 std::ostream& operator<<(std::ostream& ostr, const ComponentsTable& tab)
 {
+	const std::size_t rows = tab.row_size();
+	const std::size_t cols = tab.col_size();
+
 	const t_int width = 12;
 
-	for(std::size_t row=0; row<tab.row_size(); ++row)
+	for(std::size_t row=0; row<rows; ++row)
 	{
-		for(std::size_t col=0; col<tab.col_size(); ++col)
+		for(std::size_t col=0; col<cols; ++col)
 		{
 			const ComponentsTable::value_type entry = tab(row, col);
 

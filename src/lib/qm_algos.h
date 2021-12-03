@@ -190,6 +190,9 @@ const t_mat cnot_nqbits(std::size_t num_qbits = 2,
 	bool reverse_state_numbering = true)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
+	if(control_bit >= num_qbits || target_bit >= num_qbits)
+		return t_mat{};
+
 	//using t_cplx = typename t_mat::value_type;
 	//constexpr const t_cplx c(1, 0);
 
@@ -242,6 +245,9 @@ const t_mat cz_nqbits(std::size_t num_qbits = 2,
 	bool reverse_state_numbering = true)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
+	if(control_bit >= num_qbits || target_bit >= num_qbits)
+		return t_mat{};
+
 	//using t_cplx = typename t_mat::value_type;
 	//constexpr const t_cplx c(1, 0);
 
@@ -287,6 +293,9 @@ const t_mat swap_nqbits(std::size_t num_qbits = 2,
 	bool reverse_state_numbering = true)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
+	if(source_bit >= num_qbits || target_bit >= num_qbits)
+		return t_mat{};
+
 	if(reverse_state_numbering)
 	{
 		// numbering of qubit states from left-hand side,
@@ -365,6 +374,9 @@ const t_mat toffoli_nqbits(std::size_t num_qbits = 3,
 	bool reverse_state_numbering = true)
 requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 {
+	if(control_bit_1 >= num_qbits || control_bit_2 >= num_qbits || target_bit >= num_qbits)
+		return t_mat{};
+
 	//using t_cplx = typename t_mat::value_type;
 	//constexpr const t_cplx c(1, 0);
 

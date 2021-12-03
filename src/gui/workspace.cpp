@@ -14,6 +14,8 @@
 #include <QtWidgets/QMessageBox>
 
 #include <cmath>
+#include <numeric>
+#include <functional>
 
 #include "qm_gui.h"
 #include "helpers.h"
@@ -278,9 +280,26 @@ bool QmScene::Calculate(QuantumComponentItem* _input_comp) const
 	}
 
 	// calculate the operators and states
-	input_comp->SetOperators(tab.CalculateCircuitOperators());
+	auto ops = tab.CalculateCircuitOperators();
+	bool ok = std::all_of(ops.begin(), ops.end(),
+		[](const t_columnop& op) -> bool
+		{
+			return std::get<bool>(op);
+		});
 
-	return true;
+	if(!ok)
+		ops.clear();
+
+	input_comp->SetOperators(ops);
+	input_comp->SetOk(ok);
+
+	if(!ok)
+	{
+		QMessageBox::critical(static_cast<QWidget*>(parent()),
+			"Error", "Calculation failed.");
+		return false;
+	}
+	return ok;
 }
 
 
@@ -628,8 +647,7 @@ void QmView::PasteItem()
 			y_comp += y_shift;
 
 			auto *clonedSubItem = item->clone();
-			QPointF posScene(x_comp*g_raster_size, y_comp*g_raster_size);
-			clonedSubItem->setPos(posScene);
+			clonedSubItem->SetGridPos(x_comp, y_comp);
 
 			AddQuantumComponent(clonedSubItem);
 		}

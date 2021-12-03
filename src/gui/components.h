@@ -105,6 +105,7 @@ public:
 
 	virtual ComponentType GetType() const = 0;
 	virtual t_mat GetOperator() const = 0;
+	virtual bool IsOk() const = 0;
 
 	virtual ComponentConfigs GetConfig() const = 0;
 	virtual void SetConfig(const ComponentConfigs&) = 0;
@@ -128,13 +129,14 @@ public:
 	static QuantumComponentItem* create(const std::string& id);
 
 	std::tuple<t_int, t_int> GetGridPos() const;
+	void SetGridPos(t_int x, t_int y);
 };
 
 
 // shared pointer to a QuantumComponentItem
 using t_gateptr = std::shared_ptr<QuantumComponentItem>;
 // [column index, column operator]
-using t_columnop = std::tuple<std::size_t, t_mat>;
+using t_columnop = std::tuple<bool, std::size_t, t_mat>;
 // ----------------------------------------------------------------------------
 
 
@@ -174,6 +176,9 @@ public:
 	virtual ComponentType GetType() const override { return InputStates::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
+	virtual bool IsOk() const override { return m_ok; }
+	void SetOk(bool ok) { m_ok = ok; }
+
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
 
@@ -188,6 +193,7 @@ public:
 private:
 	t_uint m_num_qbits = 4;
 	t_uint m_width = 8;
+	bool m_ok = true;
 
 	// calculated operators for each column of the grid
 	std::vector<t_columnop> m_ops{};
@@ -227,6 +233,8 @@ public:
 	virtual ComponentType GetType() const override { return HadamardGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
+	virtual bool IsOk() const override { return true; }
+
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
 
@@ -263,6 +271,8 @@ public:
 	static ComponentType GetStaticType() { return ComponentType::GATE; }
 	virtual ComponentType GetType() const override { return PauliGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
+
+	virtual bool IsOk() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
@@ -304,6 +314,8 @@ public:
 	static ComponentType GetStaticType() { return ComponentType::GATE; }
 	virtual ComponentType GetType() const override { return PhaseGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
+
+	virtual bool IsOk() const override { return true; }
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
@@ -348,6 +360,8 @@ public:
 	static ComponentType GetStaticType() { return ComponentType::GATE; }
 	virtual ComponentType GetType() const override { return PhaseGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
+
+	virtual bool IsOk() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
@@ -394,6 +408,8 @@ public:
 	static ComponentType GetStaticType() { return ComponentType::GATE; }
 	virtual ComponentType GetType() const override { return CNotGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
+
+	virtual bool IsOk() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
@@ -444,6 +460,8 @@ public:
 	virtual ComponentType GetType() const override { return CZGate::GetStaticType(); }
 	virtual t_mat GetOperator() const override;
 
+	virtual bool IsOk() const override;
+
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;
 
@@ -493,8 +511,9 @@ public:
 
 	static ComponentType GetStaticType() { return ComponentType::GATE; }
 	virtual ComponentType GetType() const override { return ToffoliGate::GetStaticType(); }
-
 	virtual t_mat GetOperator() const override;
+
+	virtual bool IsOk() const override;
 
 	virtual ComponentConfigs GetConfig() const override;
 	virtual void SetConfig(const ComponentConfigs&) override;

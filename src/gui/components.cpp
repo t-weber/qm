@@ -23,7 +23,14 @@
 // ----------------------------------------------------------------------------
 std::tuple<t_int, t_int> QuantumComponentItem::GetGridPos() const
 {
-	return get_grid_indices(scenePos());
+	return get_grid_indices(scenePos(), g_raster_size, g_raster_size);
+}
+
+
+void QuantumComponentItem::SetGridPos(t_int x, t_int y)
+{
+	QPointF posScene(x*g_raster_size, y*g_raster_size);
+	this->setPos(posScene);
 }
 // ----------------------------------------------------------------------------
 
@@ -159,7 +166,7 @@ bool InputStates::CalculateTotalOperator()
 	using namespace m_ops;
 	const auto& ops = GetOperators();
 
-	if(ops.size())
+	if(ops.size() && IsOk())
 	{
 		auto iter = ops.rbegin();
 		m_totalop = std::get<t_mat>(*iter);
@@ -450,6 +457,13 @@ t_mat PauliGate::GetOperator() const
 }
 
 
+bool PauliGate::IsOk() const
+{
+	return m_dir < 3;
+}
+
+
+
 ComponentConfigs PauliGate::GetConfig() const
 {
 	ComponentConfigs cfgs;
@@ -707,6 +721,14 @@ t_mat SwapGate::GetOperator() const
 }
 
 
+bool SwapGate::IsOk() const
+{
+	return
+		m_source_bit_pos < m_num_qbits &&
+		m_target_bit_pos < m_num_qbits;
+}
+
+
 ComponentConfigs SwapGate::GetConfig() const
 {
 	ComponentConfigs cfgs;
@@ -879,6 +901,14 @@ t_mat CNotGate::GetOperator() const
 }
 
 
+bool CNotGate::IsOk() const
+{
+	return
+		m_control_bit_pos < m_num_qbits &&
+		m_target_bit_pos < m_num_qbits;
+}
+
+
 ComponentConfigs CNotGate::GetConfig() const
 {
 	ComponentConfigs cfgs;
@@ -1037,6 +1067,14 @@ t_mat CZGate::GetOperator() const
 	return m::cz_nqbits<t_mat>(m_num_qbits,
 		m_control_bit_pos, m_target_bit_pos,
 		g_reverse_state_numbering);
+}
+
+
+bool CZGate::IsOk() const
+{
+	return
+		m_control_bit_pos < m_num_qbits &&
+		m_target_bit_pos < m_num_qbits;
 }
 
 
@@ -1233,6 +1271,15 @@ t_mat ToffoliGate::GetOperator() const
 		m_control_bit_1_pos, m_control_bit_2_pos,
 		m_target_bit_pos,
 		g_reverse_state_numbering);
+}
+
+
+bool ToffoliGate::IsOk() const
+{
+	return
+		m_control_bit_1_pos < m_num_qbits &&
+		m_control_bit_2_pos < m_num_qbits &&
+		m_target_bit_pos < m_num_qbits;
 }
 
 

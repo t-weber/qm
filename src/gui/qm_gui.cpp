@@ -453,7 +453,8 @@ void QmWnd::SetupGUI()
 	connect(m_view.get(), &QmView::SignalMouseCoordinates,
 		[this](qreal scene_x, qreal scene_y) -> void
 		{
-			auto [tile_x, tile_y] =  get_grid_indices(scene_x, scene_y);
+			auto [tile_x, tile_y] =  get_grid_indices(
+				scene_x, scene_y, g_raster_size, g_raster_size);
 
 			SetStatusMessage(QString(
 				"Tile: (%1, %2), scene: (%3, %4).")
@@ -504,6 +505,7 @@ void QmWnd::FileNew()
 	Clear();
 
 	QuantumComponentItem *state = new InputStates();
+	state->SetGridPos(3, 2);
 	m_view->AddQuantumComponent(state);
 	WorkspaceChanged(false);
 }
@@ -761,9 +763,7 @@ bool QmWnd::LoadFile(const QString& filename)
 
 				t_int pos_x = propGate.get<t_int>("pos_x", 0);
 				t_int pos_y = propGate.get<t_int>("pos_y", 0);
-
-				QPointF posScene(pos_x*g_raster_size, pos_y*g_raster_size);
-				gate->setPos(posScene);
+				gate->SetGridPos(pos_x, pos_y);
 
 				m_view->AddQuantumComponent(gate);
 			}

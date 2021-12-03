@@ -143,15 +143,39 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 		UpdateResults(comp, associated_input_comp);
 	};
 
+
+	// number of columns in layout
 	const int num_cols = 2;
+
 
 	// component configuration
 	const ComponentConfigs& cfgs = comp->GetConfig();
+
+	// name label
 	QLabel *labelName = new QLabel(cfgs.name.c_str(), this);
 	QFont fontName = labelName->font();
 	fontName.setBold(true);
 	labelName->setFont(fontName);
 	m_layout->addWidget(labelName, m_layout->rowCount(), 0, 1, num_cols);
+
+	// is the component's error flag set
+	if(!comp->IsOk())
+	{
+		// error label
+		QLabel *labelErr = new QLabel("Configuration error!", this);
+
+		// font
+		QFont fontErr = labelErr->font();
+		fontErr.setBold(true);
+		labelErr->setFont(fontErr);
+
+		// palette
+		QPalette paletteErr = labelErr->palette();
+		paletteErr.setColor(labelErr->foregroundRole(), QColor(0xff, 0, 0));
+		labelErr->setPalette(paletteErr);
+
+		m_layout->addWidget(labelErr, m_layout->rowCount(), 0, 1, num_cols);
+	}
 
 
 	// add component configuration options
