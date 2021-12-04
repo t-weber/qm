@@ -36,6 +36,10 @@
 
 #define GUI_THEME_UNSET   "Unset"
 
+// initial position of new component
+#define INIT_COMP_POS_X   3
+#define INIT_COMP_POS_Y   2
+
 
 // ----------------------------------------------------------------------------
 // main window
@@ -245,10 +249,11 @@ void QmWnd::SetupGUI()
 					m_auto_calc = false;
 
 					QuantumComponentItem *comp = new t_comp{};
+					comp->SetGridPos(INIT_COMP_POS_X, INIT_COMP_POS_Y);
 					m_view->AddQuantumComponent(comp);
 
-					QPointF safePos = m_view->GetSafePos(comp, comp->scenePos(), comp->scenePos());
-					comp->setPos(safePos);
+					QPointF safePos = m_view->GetSafePos(comp, comp->scenePos());
+					comp->setPos(snap_to_grid(safePos));
 
 					m_auto_calc = old_auto_calc;
 				});
@@ -513,7 +518,7 @@ void QmWnd::FileNew()
 	Clear();
 
 	QuantumComponentItem *state = new InputStates();
-	state->SetGridPos(3, 2);
+	state->SetGridPos(INIT_COMP_POS_X, INIT_COMP_POS_Y);
 
 	m_view->AddQuantumComponent(state);
 	WorkspaceChanged(false);

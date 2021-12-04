@@ -760,9 +760,13 @@ void QmView::mouseReleaseEvent(QMouseEvent *evt)
 	if(m_curItem)
 		FitAreaToScene();
 
-
 	// get the item being dragged
 	QGraphicsItem* item = m_scene->mouseGrabberItem();
+
+	// original position of the item
+	QPointF posOrig{0, 0};
+	if(item)
+		posOrig = item->scenePos();
 
 	// finish dragging the item
 	QGraphicsView::mouseReleaseEvent(evt);
@@ -770,7 +774,9 @@ void QmView::mouseReleaseEvent(QMouseEvent *evt)
 	// snap the item to the grid
 	if(item)
 	{
-		item->setPos(snap_to_grid(item->scenePos()));
+		//QPointF scenePos = item->scenePos();
+		QPointF scenePos = GetSafePos(item, posOrig);
+		item->setPos(snap_to_grid(scenePos));
 
 		if(item == m_curItem)
 		{
@@ -814,7 +820,7 @@ void QmView::mouseMoveEvent(QMouseEvent *evt)
 		m_curItemIsDragged = (item == m_curItem);
 
 		// field already occupied?
-		QPointF safePos = GetSafePos(item, posOrig, item->scenePos());
+		QPointF safePos = GetSafePos(item, posOrig);
 		item->setPos(safePos);
 
 		// snap the item to the grid
@@ -850,43 +856,40 @@ void QmView::mouseMoveEvent(QMouseEvent *evt)
 /**
  * get a safe position that is not already occupied by another item of the same type
  */
-QPointF QmView::GetSafePos(QGraphicsItem* _item, const QPointF& posOrg, const QPointF& posNew) const
+QPointF QmView::GetSafePos(QGraphicsItem* _item, const QPointF& posOrg) const
 {
+	QPointF posNew = _item->scenePos();
 	if(!m_scene->IsQuantumComponent(_item))
 		return posNew;
 
 	QuantumComponentItem *item = static_cast<QuantumComponentItem *>(_item);
-	auto [x, y] = item->GetGridPos();
-	QPointF itemGridPos{qreal(x), qreal(y)};
 
-	t_uint item_height = item->GetNumQBits();
-	t_uint item_width = 1;
+	t_real item_height = item->GetNumQBits();
+	t_real item_width = 1.;
 	if(item->GetType() == ComponentType::STATE)
 		item_width = static_cast<InputStates*>(item)->GetWidth();
 
-
 	t_real x_dir = posNew.x() - posOrg.x();
 	t_real y_dir = posNew.y() - posOrg.y();
+	QPointF posSafe = posNew;
 
 	if(x_dir == 0 && y_dir == 0)
-		x_dir = y_dir = -1;
-
-
-	QPointF posSafe = posNew;
+		y_dir = -1;
 
 	while(true)
 	{
 		bool occupied = false;
 
 		// check the entire extent of the item
-		for(t_uint height=0; height<item_height; ++height)
+		for(t_real height=0.; height<item_height-0.5; height+=0.5)
 		{
-			for(t_uint width=0; width<item_width; ++width)
+			for(t_real width=0.; width<item_width-0.5; width+=0.5)
 			{
 				// look for other items of the same type at the same position
 				QPointF posItem = posSafe;
-				posItem.rx() += g_raster_size * t_real(width);
-				posItem.ry() += g_raster_size * t_real(height);
+				posItem.rx() += g_raster_size * width;
+				posItem.ry() += g_raster_size * height;
+
 				QPointF posGrid = snap_to_grid(posItem);
 				QPoint posVP = mapFromScene(posGrid);
 

@@ -13,11 +13,11 @@
 		</component>
 		<component type="gate" ident="toffoli">
 			<pos_x>5</pos_x>
-			<pos_y>2</pos_y>
-			<num_qbits>4</num_qbits>
-			<control_bit_1_pos>1</control_bit_1_pos>
-			<control_bit_2_pos>2</control_bit_2_pos>
-			<target_bit_pos>3</target_bit_pos>
+			<pos_y>3</pos_y>
+			<num_qbits>3</num_qbits>
+			<control_bit_1_pos>0</control_bit_1_pos>
+			<control_bit_2_pos>1</control_bit_2_pos>
+			<target_bit_pos>2</target_bit_pos>
 		</component>
 		<component type="gate" ident="cnot">
 			<pos_x>6</pos_x>

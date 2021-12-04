@@ -80,7 +80,7 @@ public:
 	const QPointF& GetCursorPosition(bool on_grid = true) const
 	{ return on_grid ? m_curRasterScenePos : m_curScenePos; }
 
-	QPointF GetSafePos(QGraphicsItem* item, const QPointF& posOrg, const QPointF& posNew) const;
+	QPointF GetSafePos(QGraphicsItem* item, const QPointF& posOrg) const;
 
 
 protected:
