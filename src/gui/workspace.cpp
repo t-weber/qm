@@ -902,7 +902,13 @@ QPointF QmView::GetSafePos(QGraphicsItem* _item, const QPointF& posOrg, const QP
 						break;
 					}
 				}
+
+				if(occupied)
+					break;
 			}
+
+			if(occupied)
+				break;
 		}
 
 		if(!occupied)
