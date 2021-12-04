@@ -134,6 +134,63 @@ requires is_mat<t_mat> && is_complex<t_cplx>
 
 
 /**
+ * SU(2) rotation matrices, exp(-iG*phi/2), with generators G: pauli matrices
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Rotation_operator_gates
+ */
+template<class t_mat,
+	typename t_cplx = typename t_mat::value_type,
+	typename t_real = typename t_cplx::value_type>
+t_mat su2_rot(std::size_t which, t_real phi)
+requires is_mat<t_mat> && is_complex<t_cplx>
+{
+	t_mat mat;
+	constexpr t_cplx cI(0, 1);
+
+	// x
+	if(which == 0)
+	{
+		t_cplx c = std::cos(phi * 0.5);
+		t_cplx s = std::sin(phi * 0.5);
+
+		mat = create<t_mat>(
+		{
+			{     c, -cI*s },
+			{ -cI*s,     c },
+		});
+	}
+
+	// y
+	else if(which == 1)
+	{
+		t_cplx c = std::cos(phi * 0.5);
+		t_cplx s = std::sin(phi * 0.5);
+
+		mat = create<t_mat>(
+		{
+			{  c, s },
+			{ -s, c },
+		});
+	}
+
+	// z
+	else if(which == 2)
+	{
+		t_cplx e1 = std::exp(-cI * phi * 0.5);
+		t_cplx e2 = std::exp(+cI * phi * 0.5);
+
+		mat = create<t_mat>(
+		{
+			{ e1,  0 },
+			{  0, e2 },
+		});
+	}
+
+	return mat;
+}
+
+
+
+/**
  * discrete phase gate
  * @see (DesktopBronstein08), Ch. 22 (Zusatzkapitel.pdf), p. 25
  */

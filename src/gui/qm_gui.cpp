@@ -245,17 +245,14 @@ void QmWnd::SetupGUI()
 				// item clicked -> add a new component
 				connect(actionComp, &QAction::triggered, [this]()
 				{
-					bool old_auto_calc = m_auto_calc;
-					m_auto_calc = false;
-
 					QuantumComponentItem *comp = new t_comp{};
 					comp->SetGridPos(INIT_COMP_POS_X, INIT_COMP_POS_Y);
-					m_view->AddQuantumComponent(comp);
+					m_view->AddQuantumComponent(comp, true);
 
 					QPointF safePos = m_view->GetSafePos(comp, comp->scenePos());
 					comp->setPos(snap_to_grid(safePos));
 
-					m_auto_calc = old_auto_calc;
+					WorkspaceChanged(true);
 				});
 
 				std::get<idx>(compActions) = actionComp;
@@ -515,6 +512,9 @@ void QmWnd::Clear()
 
 void QmWnd::FileNew()
 {
+	if(!AskUnsaved())
+		return;
+
 	Clear();
 
 	QuantumComponentItem *state = new InputStates();
@@ -527,6 +527,9 @@ void QmWnd::FileNew()
 
 bool QmWnd::FileLoad()
 {
+	if(!AskUnsaved())
+		return false;
+
 	auto filedlg = std::make_shared<QFileDialog>(
 		this, "Load Data", m_recent.GetRecentDir(),
 		"XML Files (*.xml);;All Files (* *.*)");
@@ -572,6 +575,9 @@ bool QmWnd::FileLoad()
  */
 bool QmWnd::FileLoadRecent(const QString& filename)
 {
+	if(!AskUnsaved())
+		return false;
+
 	this->Clear();
 
 	if(this->LoadFile(filename))
@@ -698,6 +704,12 @@ bool QmWnd::SaveFile(const QString& filename) const
 				propGate.put<t_real>(
 					key, std::get<t_real>(config.value));
 			}
+			else if(std::holds_alternative<t_cplx>(config.value))
+			{
+				std::string key = "component." + config.key;
+				propGate.put<t_cplx>(
+					key, std::get<t_cplx>(config.value));
+			}
 			else if(std::holds_alternative<t_int>(config.value))
 			{
 				std::string key = "component." + config.key;
@@ -766,6 +778,8 @@ bool QmWnd::LoadFile(const QString& filename)
 					// and set the new value with the same type
 					if(std::holds_alternative<t_real>(config.value))
 						config.value = propGate.get<t_real>(config.key, 0);
+					else if(std::holds_alternative<t_cplx>(config.value))
+						config.value = propGate.get<t_cplx>(config.key, 0);
 					else if(std::holds_alternative<t_int>(config.value))
 						config.value = propGate.get<t_int>(config.key, 0);
 					else if(std::holds_alternative<t_uint>(config.value))
@@ -779,9 +793,11 @@ bool QmWnd::LoadFile(const QString& filename)
 				t_int pos_y = propGate.get<t_int>("pos_y", 0);
 				gate->SetGridPos(pos_x, pos_y);
 
-				m_view->AddQuantumComponent(gate);
+				m_view->AddQuantumComponent(gate, true);
 			}
 		}
+
+		WorkspaceChanged(true);
 	}
 
 	m_view->FitAreaToScene();
@@ -883,7 +899,11 @@ void QmWnd::ShowAbout()
 }
 
 
-void QmWnd::closeEvent(QCloseEvent *evt)
+/**
+ * ask to save unsaved changes
+ * @return ok to continue?
+ */
+bool QmWnd::AskUnsaved()
 {
 	// unsaved changes?
 	if(isWindowModified())
@@ -897,17 +917,24 @@ void QmWnd::closeEvent(QCloseEvent *evt)
 		if(btn == QMessageBox::Yes)
 		{
 			if(!FileSave())
-			{
-				evt->ignore();
-				return;
-			}
+				return false;
 		}
 		else if(btn == QMessageBox::Cancel)
-		{
-			evt->ignore();
-			return;
-		}
+			return false;
 	}
+
+	return true;
+}
+
+
+void QmWnd::closeEvent(QCloseEvent *evt)
+{
+	if(!AskUnsaved())
+	{
+		evt->ignore();
+		return;
+	}
+
 
 	// ------------------------------------------------------------------------
 	// save settings

@@ -64,6 +64,8 @@ protected:
 	virtual void dragEnterEvent(QDragEnterEvent *) override;
 	virtual void dropEvent(QDropEvent *) override;
 
+	bool AskUnsaved();
+
 
 private:
 	QString m_gui_theme{};

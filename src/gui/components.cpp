@@ -501,6 +501,137 @@ void PauliGate::SetConfig(const ComponentConfigs& configs)
 
 
 // ----------------------------------------------------------------------------
+// SU(2) rotation gate
+// @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Rotation_operator_gates
+// ----------------------------------------------------------------------------
+RotationGate::RotationGate()
+{
+	setPos(QPointF{0,0});
+	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+}
+
+
+RotationGate::~RotationGate()
+{
+}
+
+
+QuantumComponentItem* RotationGate::clone() const
+{
+	RotationGate *item = new RotationGate{};
+
+	item->SetDirection(this->GetDirection());
+	item->SetAngle(this->GetAngle());
+
+	return item;
+}
+
+
+QRectF RotationGate::boundingRect() const
+{
+	t_real w = g_raster_size;
+	t_real h = g_raster_size;
+
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+}
+
+
+void RotationGate::paint(QPainter *painter,
+	const QStyleOptionGraphicsItem*, QWidget*)
+{
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
+	QPen pen(colour_fg);
+	pen.setWidthF(1.);
+
+	QBrush brush{Qt::SolidPattern};
+	brush.setColor(colour_bg);
+
+	//QFont font = painter->font();
+	//font.setPointSize(g_raster_size*0.5);
+	//painter->setFont(font);
+
+	painter->setPen(pen);
+	painter->setBrush(brush);
+
+	t_real size = g_raster_size*0.66;
+	QRectF rect{-size*0.5, -size*0.5, size, size};
+
+	painter->drawRect(rect);
+	QString texts[]{"Rx", "Ry", "Rz"};
+	if(m_dir <= 2)
+		painter->drawText(rect, Qt::AlignCenter, texts[m_dir]);
+}
+
+
+/**
+ * get gate operator
+ */
+t_mat RotationGate::GetOperator() const
+{
+	return m::su2_rot<t_mat, t_cplx, t_real>(m_dir, m_angle);
+}
+
+
+bool RotationGate::IsOk() const
+{
+	return m_dir < 3;
+}
+
+
+
+ComponentConfigs RotationGate::GetConfig() const
+{
+	ComponentConfigs cfgs;
+	cfgs.name = GetName();
+
+	cfgs.configs = std::vector<ComponentConfig>
+	{{
+		ComponentConfig
+		{
+			.key = "dir",
+			.value = GetDirection(),
+			.description = "Direction",
+			.min_value = t_uint(0),
+			.max_value = t_uint(2),
+		},
+		ComponentConfig
+		{
+			.key = "angle",
+			.value = GetAngle(),
+			.description = "Angle",
+			.min_value = t_real(0.),
+			.max_value = t_real(4. * m::pi<t_real>),
+			.is_phase = true,
+		},
+	}};
+
+	return cfgs;
+}
+
+
+void RotationGate::SetConfig(const ComponentConfigs& configs)
+{
+	for(const ComponentConfig& cfg : configs.configs)
+	{
+		if(cfg.key == "dir")
+		{
+			t_uint dir = std::get<t_uint>(cfg.value);
+			SetDirection(dir);
+		}
+		if(cfg.key == "angle")
+		{
+			t_real angle = std::get<t_real>(cfg.value);
+			SetAngle(angle);
+		}
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
 // Phase gate
 // @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Phase_shift_gates
 // ----------------------------------------------------------------------------
@@ -606,6 +737,144 @@ void PhaseGate::SetConfig(const ComponentConfigs& configs)
 		{
 			t_real phase = std::get<t_real>(cfg.value);
 			SetPhase(phase);
+		}
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// Unitary gate
+// @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Controlled_gates
+// ----------------------------------------------------------------------------
+UnitaryGate::UnitaryGate()
+{
+	setPos(QPointF{0,0});
+	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+}
+
+
+UnitaryGate::~UnitaryGate()
+{
+}
+
+
+QuantumComponentItem* UnitaryGate::clone() const
+{
+	UnitaryGate *item = new UnitaryGate{};
+
+	item->SetMatrix(this->GetMatrix());
+
+	return item;
+}
+
+
+QRectF UnitaryGate::boundingRect() const
+{
+	t_real w = g_raster_size;
+	t_real h = g_raster_size;
+
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+}
+
+
+void UnitaryGate::paint(QPainter *painter,
+	const QStyleOptionGraphicsItem*, QWidget*)
+{
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
+	QPen pen(colour_fg);
+	pen.setWidthF(1.);
+
+	QBrush brush{Qt::SolidPattern};
+	brush.setColor(colour_bg);
+
+	//QFont font = painter->font();
+	//font.setPointSize(g_raster_size*0.5);
+	//painter->setFont(font);
+
+	painter->setPen(pen);
+	painter->setBrush(brush);
+
+	t_real size = g_raster_size*0.66;
+	QRectF rect{-size*0.5, -size*0.5, size, size};
+
+	painter->drawRect(rect);
+	painter->drawText(rect, Qt::AlignCenter, "U");
+}
+
+
+/**
+ * get gate operator
+ */
+t_mat UnitaryGate::GetOperator() const
+{
+	return m_mat;
+}
+
+
+ComponentConfigs UnitaryGate::GetConfig() const
+{
+	ComponentConfigs cfgs;
+	cfgs.name = GetName();
+
+	cfgs.configs = std::vector<ComponentConfig>
+	{{
+		ComponentConfig
+		{
+			.key = "m00",
+			.value = GetComponent00(),
+			.description = "Matrix element (0,0)",
+		},
+		ComponentConfig
+		{
+			.key = "m01",
+			.value = GetComponent01(),
+			.description = "Matrix element (0,1)",
+		},
+		ComponentConfig
+		{
+			.key = "m10",
+			.value = GetComponent10(),
+			.description = "Matrix element (1,0)",
+		},
+		ComponentConfig
+		{
+			.key = "m11",
+			.value = GetComponent11(),
+			.description = "Matrix element (1,1)",
+		},
+	}};
+
+	return cfgs;
+}
+
+
+void UnitaryGate::SetConfig(const ComponentConfigs& configs)
+{
+	for(const ComponentConfig& cfg : configs.configs)
+	{
+		if(cfg.key == "m00")
+		{
+			t_cplx m00 = std::get<t_cplx>(cfg.value);
+			SetComponent00(m00);
+		}
+		else if(cfg.key == "m01")
+		{
+			t_cplx m01 = std::get<t_cplx>(cfg.value);
+			SetComponent01(m01);
+		}
+		else if(cfg.key == "m10")
+		{
+			t_cplx m10 = std::get<t_cplx>(cfg.value);
+			SetComponent10(m10);
+		}
+		else if(cfg.key == "m11")
+		{
+			t_cplx m11 = std::get<t_cplx>(cfg.value);
+			SetComponent11(m11);
 		}
 	}
 }

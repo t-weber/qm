@@ -12,6 +12,7 @@
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QSpinBox>
+#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QSpacerItem>
@@ -202,7 +203,11 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 
 				configs.configs = std::vector<ComponentConfig>
 				{{
-					ComponentConfig{.key = cfg.key, .value = t_uint(val)},
+					ComponentConfig
+					{
+						.key = cfg.key,
+						.value = t_uint(val)
+					},
 				}};
 
 				// send the changes back to the component
@@ -237,7 +242,11 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 
 				configs.configs = std::vector<ComponentConfig>
 				{{
-					ComponentConfig{.key = cfg.key, .value = t_real(val)/scale},
+					ComponentConfig
+					{
+						.key = cfg.key,
+						.value = t_real(val)/scale
+					},
 				}};
 
 				// send the changes back to the component
@@ -248,6 +257,43 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 			});
 
 			m_layout->addWidget(spinVal, m_layout->rowCount(), 0, 1, num_cols);
+		}
+
+		// t_cplx value
+		else if(std::holds_alternative<t_cplx>(cfg.value))
+		{
+			QLineEdit *editVal = new QLineEdit(this);
+			std::ostringstream ostrVal;
+			ostrVal.precision(g_prec_gui);
+			ostrVal << std::get<t_cplx>(cfg.value);
+			editVal->setText(ostrVal.str().c_str());
+
+			connect(editVal, static_cast<void (QLineEdit::*)(const QString&)>
+			(&QLineEdit::textChanged), [this, cfg, comp, associated_input_comp](const QString& val) -> void
+			{
+				ComponentConfigs configs;
+
+				std::istringstream istrVal(val.toStdString());
+				t_cplx cplx_val{0, 0};
+				istrVal >> cplx_val;
+
+				configs.configs = std::vector<ComponentConfig>
+				{{
+					ComponentConfig
+					{
+						.key = cfg.key,
+						.value = cplx_val
+					},
+				}};
+
+				// send the changes back to the component
+				emit this->SignalConfigChanged(configs);
+
+				// update the dialogs every time the configuration is changed
+				UpdateResults(comp, associated_input_comp);
+			});
+
+			m_layout->addWidget(editVal, m_layout->rowCount(), 0, 1, num_cols);
 		}
 	}
 

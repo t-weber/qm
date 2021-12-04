@@ -440,7 +440,7 @@ QmView::~QmView()
 /**
  * insert a quantum gate into the scene
  */
-void QmView::AddQuantumComponent(QuantumComponentItem *comp)
+void QmView::AddQuantumComponent(QuantumComponentItem *comp, bool no_signals)
 {
 	if(!m_scene || !comp)
 		return;
@@ -448,7 +448,8 @@ void QmView::AddQuantumComponent(QuantumComponentItem *comp)
 	// delegate call to the scene
 	m_scene->AddQuantumComponent(comp);
 
-	emit SignalWorkspaceChanged(true);
+	if(!no_signals)
+		emit SignalWorkspaceChanged(true);
 }
 
 
@@ -626,8 +627,10 @@ void QmView::PasteItem()
 		return;
 
 	auto *clonedItem = m_copiedItem->clone();
-	clonedItem->setPos(GetCursorPosition(true));
-	AddQuantumComponent(clonedItem);
+	AddQuantumComponent(clonedItem, true);
+
+	QPointF safePos = GetSafePos(clonedItem, GetCursorPosition(true));
+	clonedItem->setPos(snap_to_grid(safePos));
 
 	// also copy dependent components
 	if(m_copiedItem->GetType()==ComponentType::STATE && g_keep_gates_on_states)
@@ -649,9 +652,11 @@ void QmView::PasteItem()
 			auto *clonedSubItem = item->clone();
 			clonedSubItem->SetGridPos(x_comp, y_comp);
 
-			AddQuantumComponent(clonedSubItem);
+			AddQuantumComponent(clonedSubItem, true);
 		}
 	}
+
+	emit SignalWorkspaceChanged(true);
 }
 
 

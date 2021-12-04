@@ -132,7 +132,7 @@ public slots:
 	// functions to delegate to the scene
 	bool CalculateCurItem();
 	bool Calculate(QuantumComponentItem *input_state);
-	void AddQuantumComponent(QuantumComponentItem *comp);
+	void AddQuantumComponent(QuantumComponentItem *comp, bool no_signals=false);
 	void DeleteQuantumComponent(QuantumComponentItem *comp);
 
 

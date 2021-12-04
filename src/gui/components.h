@@ -35,7 +35,8 @@ struct ComponentConfig
 	// value
 	std::variant<
 		t_int, t_uint,
-		t_real, std::string> value{};
+		t_real, t_cplx,
+		std::string> value{};
 
 	// description of the entry
 	std::string description{};
@@ -288,6 +289,52 @@ private:
 
 
 /**
+ * SU(2) rotation gate
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Rotation_operator_gates
+ */
+class RotationGate : public QuantumComponentItem
+{
+public:
+	RotationGate();
+	virtual ~RotationGate();
+
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
+	void SetDirection(t_uint dir) { m_dir = dir; }
+	void SetAngle(t_real angle) { m_angle = angle; }
+
+	// getter
+	t_uint GetDirection() const { return m_dir; }
+	t_real GetAngle() const { return m_angle; }
+	virtual t_uint GetNumQBits() const override { return 1; }
+
+	static const char* GetStaticIdent() { return "rotation"; }
+	static const char* GetStaticName() { return "SU(2) Rotation Gate"; }
+	virtual std::string GetIdent() const override { return RotationGate::GetStaticIdent(); }
+	virtual std::string GetName() const override { return RotationGate::GetStaticName(); }
+
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return RotationGate::GetStaticType(); }
+	virtual t_mat GetOperator() const override;
+
+	virtual bool IsOk() const override;
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+
+private:
+	t_uint m_dir = 0;
+	t_real m_angle = 0;
+};
+
+
+
+/**
  * Phase gate
  * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Phase_shift_gates
  */
@@ -326,6 +373,57 @@ public:
 
 private:
 	t_real m_phase = m::pi<t_real> * t_real(0.5);
+};
+
+
+
+/**
+ * Unitary gate
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Controlled_gates
+ */
+class UnitaryGate : public QuantumComponentItem
+{
+public:
+	UnitaryGate();
+	virtual ~UnitaryGate();
+
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
+	void SetComponent00(const t_cplx& m00) { m_mat(0,0) = m00; }
+	void SetComponent01(const t_cplx& m01) { m_mat(0,1) = m01; }
+	void SetComponent10(const t_cplx& m10) { m_mat(1,0) = m10; }
+	void SetComponent11(const t_cplx& m11) { m_mat(1,1) = m11; }
+	void SetMatrix(const t_mat& mat) { m_mat = mat; }
+
+	// getter
+	const t_cplx& GetComponent00() const { return m_mat(0,0); }
+	const t_cplx& GetComponent01() const { return m_mat(0,1); }
+	const t_cplx& GetComponent10() const { return m_mat(1,0); }
+	const t_cplx& GetComponent11() const { return m_mat(1,1); }
+	const t_mat& GetMatrix() const { return m_mat; }
+	virtual t_uint GetNumQBits() const override { return 1; }
+
+	static const char* GetStaticIdent() { return "unitary"; }
+	static const char* GetStaticName() { return "Unitary Gate"; }
+	virtual std::string GetIdent() const override { return UnitaryGate::GetStaticIdent(); }
+	virtual std::string GetName() const override { return UnitaryGate::GetStaticName(); }
+
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return UnitaryGate::GetStaticType(); }
+	virtual t_mat GetOperator() const override;
+
+	virtual bool IsOk() const override { return true; }
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+
+private:
+	t_mat m_mat = m::unit<t_mat>(2);
 };
 
 
@@ -538,7 +636,8 @@ private:
 using t_all_components = std::tuple
 <
 	InputStates,
-	HadamardGate, PauliGate, PhaseGate,
+	HadamardGate, PauliGate,
+	PhaseGate, RotationGate, UnitaryGate,
 	SwapGate, CNotGate, CZGate,
 	ToffoliGate
 >;

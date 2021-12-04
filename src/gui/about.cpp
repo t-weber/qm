@@ -24,15 +24,19 @@
 /**
  * identify the compiler and return its website url
  */
-static std::string get_compiler_url(const std::string& name)
+static std::string get_compiler_url(
+	[[maybe_unused]] const std::string& name)
 {
-	namespace alg = boost::algorithm;
+	//namespace alg = boost::algorithm;
 
-	if(alg::contains(name, "clang", alg::is_iequal{}))
+#if defined(BOOST_CLANG)
+	//if(alg::contains(name, "clang", alg::is_iequal{}))
 		return "https://clang.llvm.org";
-	else if(alg::contains(name, "gcc", alg::is_iequal{}) ||
-		alg::contains(name, "gnu", alg::is_iequal{}))
+#elif defined(BOOST_GCC)
+	//else if(alg::contains(name, "gcc", alg::is_iequal{}) ||
+	//	alg::contains(name, "gnu", alg::is_iequal{}))
 		return "https://gcc.gnu.org";
+#endif
 
 	// unknown compiler
 	return "";
@@ -42,6 +46,8 @@ static std::string get_compiler_url(const std::string& name)
 About::About(QWidget *parent, const QIcon* progIcon)
 	: QDialog(parent)
 {
+	namespace alg = boost::algorithm;
+
 	setWindowTitle("About");
 	setSizeGripEnabled(true);
 
@@ -61,13 +67,17 @@ About::About(QWidget *parent, const QIcon* progIcon)
 	AddItem("Author", "Tobias Weber");
 	AddItem("Version", QApplication::applicationVersion(),
 		"https://doi.org/10.5281/zenodo.5653804");
+	AddItem("Repository", "https://github.com/t-weber/qm",
+		"https://github.com/t-weber/qm");
 
 	AddSpacer(10);
 
 	AddItem("Compiled with", BOOST_COMPILER,
 		get_compiler_url(BOOST_COMPILER).c_str());
 	AddItem("Standard library", BOOST_STDLIB);
-	AddItem("Boost version", BOOST_LIB_VERSION, "https://www.boost.org");
+	AddItem("Boost version",
+		alg::replace_all_copy<std::string>(BOOST_LIB_VERSION, "_", ".").c_str(),
+		"https://www.boost.org");
 	AddItem("Qt version", QT_VERSION_STR, "https://www.qt.io");
 
 	AddSpacer(10);
