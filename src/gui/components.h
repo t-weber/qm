@@ -579,6 +579,68 @@ private:
 
 
 /**
+ * Controlled unitary gate
+ * @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Controlled_gates
+ */
+class CUnitaryGate : public QuantumComponentItem
+{
+public:
+	CUnitaryGate();
+	virtual ~CUnitaryGate();
+
+	virtual QuantumComponentItem* clone() const override;
+
+	// setter
+	void SetNumQBits(t_uint bits) { m_num_qbits = bits; }
+	void SetControlBitPos(t_uint pos) { m_control_bit_pos = pos; }
+	void SetTargetBitPos(t_uint pos) { m_target_bit_pos = pos; }
+	void SetComponent00(const t_cplx& m00) { m_mat(0,0) = m00; }
+	void SetComponent01(const t_cplx& m01) { m_mat(0,1) = m01; }
+	void SetComponent10(const t_cplx& m10) { m_mat(1,0) = m10; }
+	void SetComponent11(const t_cplx& m11) { m_mat(1,1) = m11; }
+	void SetMatrix(const t_mat& mat) { m_mat = mat; }
+
+	// getter
+	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
+	t_uint GetControlBitPos() const { return m_control_bit_pos; }
+	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
+	const t_cplx& GetComponent00() const { return m_mat(0,0); }
+	const t_cplx& GetComponent01() const { return m_mat(0,1); }
+	const t_cplx& GetComponent10() const { return m_mat(1,0); }
+	const t_cplx& GetComponent11() const { return m_mat(1,1); }
+	const t_mat& GetMatrix() const { return m_mat; }
+
+	static const char* GetStaticIdent() { return "cunitary"; }
+	static const char* GetStaticName() { return "CUnitary Gate"; }
+	virtual std::string GetIdent() const override { return CUnitaryGate::GetStaticIdent(); }
+	virtual std::string GetName() const override { return CUnitaryGate::GetStaticName(); }
+
+	static ComponentType GetStaticType() { return ComponentType::GATE; }
+	virtual ComponentType GetType() const override { return CUnitaryGate::GetStaticType(); }
+	virtual t_mat GetOperator() const override;
+
+	virtual bool IsOk() const override { return true; }
+
+	virtual ComponentConfigs GetConfig() const override;
+	virtual void SetConfig(const ComponentConfigs&) override;
+
+	virtual QRectF boundingRect() const override;
+	virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
+
+
+private:
+	t_mat m_mat = m::unit<t_mat>(2);
+
+	t_uint m_num_qbits = 2;
+	t_uint m_control_bit_pos = 0;
+	t_uint m_target_bit_pos = 1;
+
+	t_real m_control_bit_radius = 10.;
+};
+
+
+
+/**
  * Toffoli gate
  * @see https://en.wikipedia.org/wiki/Toffoli_gate
  */
@@ -638,7 +700,7 @@ using t_all_components = std::tuple
 	InputStates,
 	HadamardGate, PauliGate,
 	PhaseGate, RotationGate, UnitaryGate,
-	SwapGate, CNotGate, CZGate,
+	SwapGate, CNotGate, CZGate, CUnitaryGate,
 	ToffoliGate
 >;
 

@@ -1409,6 +1409,225 @@ void CZGate::SetConfig(const ComponentConfigs& configs)
 
 
 // ----------------------------------------------------------------------------
+// Controlled unitary gate
+// @see https://en.wikipedia.org/wiki/Quantum_logic_gate#Controlled_gates
+// ----------------------------------------------------------------------------
+CUnitaryGate::CUnitaryGate()
+{
+	setPos(QPointF{0,0});
+	setFlags(flags() | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+}
+
+
+CUnitaryGate::~CUnitaryGate()
+{
+}
+
+
+QuantumComponentItem* CUnitaryGate::clone() const
+{
+	CUnitaryGate *item = new CUnitaryGate{};
+
+	item->SetNumQBits(this->GetNumQBits());
+	item->SetControlBitPos(this->GetControlBitPos());
+	item->SetTargetBitPos(this->GetTargetBitPos());
+	item->SetMatrix(this->GetMatrix());
+
+	return item;
+}
+
+
+QRectF CUnitaryGate::boundingRect() const
+{
+	t_real w = g_raster_size;
+	t_real h = t_real(m_num_qbits) * g_raster_size;
+
+	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+}
+
+
+void CUnitaryGate::paint(QPainter *painter,
+	const QStyleOptionGraphicsItem*, QWidget*)
+{
+	const QColor& colour_fg = get_foreground_colour();
+	const QColor& colour_bg = get_background_colour();
+
+	std::array<QColor, 2> colours =
+	{
+		colour_fg,
+		lerp(colour_fg, colour_bg, 0.2),
+	};
+
+	QRadialGradient grad{};
+	grad.setCenter(0., 0.);
+	grad.setRadius(m_control_bit_radius);
+
+	for(std::size_t col=0; col<colours.size(); ++col)
+		grad.setColorAt(col/double(colours.size()-1), colours[col]);
+
+
+	QPen penLine(colour_fg);
+	QPen penGrad(*colours.rbegin());
+	penLine.setWidthF(1.);
+	penGrad.setWidthF(1.);
+
+
+	// control bit
+	painter->setBrush(grad);
+	painter->setPen(penGrad);
+
+	QTransform trafo_orig = painter->worldTransform();
+	painter->translate(0., m_control_bit_pos*g_raster_size);
+	painter->drawEllipse(
+		-m_control_bit_radius/2., -m_control_bit_radius/2.,
+		m_control_bit_radius, m_control_bit_radius);
+	painter->setWorldTransform(trafo_orig);
+
+
+	// connecting vertical line
+	painter->drawLine(
+		QPointF(0., m_control_bit_pos*g_raster_size),
+		QPointF(0., m_target_bit_pos*g_raster_size));
+
+
+	// target bit
+	painter->translate(0., m_target_bit_pos*g_raster_size);
+	QPen pen(colour_fg);
+	pen.setWidthF(1.);
+
+	QBrush brush{Qt::SolidPattern};
+	brush.setColor(colour_bg);
+
+	painter->setPen(pen);
+	painter->setBrush(brush);
+
+	t_real size = g_raster_size*0.66;
+	QRectF rect{-size*0.5, -size*0.5, size, size};
+
+	painter->drawRect(rect);
+	painter->drawText(rect, Qt::AlignCenter, "U");
+	painter->setWorldTransform(trafo_orig);
+}
+
+
+/**
+ * get gate operator
+ */
+t_mat CUnitaryGate::GetOperator() const
+{
+	return m::cunitary_nqbits<t_mat>(m_mat,
+		m_num_qbits,
+		m_control_bit_pos, m_target_bit_pos,
+		g_reverse_state_numbering);
+}
+
+
+ComponentConfigs CUnitaryGate::GetConfig() const
+{
+	ComponentConfigs cfgs;
+	cfgs.name = GetName();
+
+	cfgs.configs = std::vector<ComponentConfig>
+	{{
+		ComponentConfig
+		{
+			.key = "num_qbits",
+			.value = GetNumQBits(),
+			.description = "Number of qubits",
+			.min_value = t_uint(2)
+		},
+		ComponentConfig
+		{
+			.key = "control_bit_pos",
+			.value = GetControlBitPos(),
+			.description = "Control qubit position",
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
+		ComponentConfig
+		{
+			.key = "target_bit_pos",
+			.value = GetTargetBitPos(),
+			.description = "Target qubit position",
+			.min_value = t_uint(0),
+			.max_value = t_uint(GetNumQBits() - 1)
+		},
+		ComponentConfig
+		{
+			.key = "m00",
+			.value = GetComponent00(),
+			.description = "Matrix element (0,0)",
+		},
+		ComponentConfig
+		{
+			.key = "m01",
+			.value = GetComponent01(),
+			.description = "Matrix element (0,1)",
+		},
+		ComponentConfig
+		{
+			.key = "m10",
+			.value = GetComponent10(),
+			.description = "Matrix element (1,0)",
+		},
+		ComponentConfig
+		{
+			.key = "m11",
+			.value = GetComponent11(),
+			.description = "Matrix element (1,1)",
+		},
+	}};
+
+	return cfgs;
+}
+
+
+void CUnitaryGate::SetConfig(const ComponentConfigs& configs)
+{
+	for(const ComponentConfig& cfg : configs.configs)
+	{
+		if(cfg.key == "num_qbits")
+		{
+			t_uint bits = std::get<t_uint>(cfg.value);
+			SetNumQBits(bits);
+		}
+		else if(cfg.key == "control_bit_pos")
+		{
+			t_uint bits = std::get<t_uint>(cfg.value);
+			SetControlBitPos(bits);
+		}
+		else if(cfg.key == "target_bit_pos")
+		{
+			t_uint bits = std::get<t_uint>(cfg.value);
+			SetTargetBitPos(bits);
+		}
+		else if(cfg.key == "m00")
+		{
+			t_cplx m00 = std::get<t_cplx>(cfg.value);
+			SetComponent00(m00);
+		}
+		else if(cfg.key == "m01")
+		{
+			t_cplx m01 = std::get<t_cplx>(cfg.value);
+			SetComponent01(m01);
+		}
+		else if(cfg.key == "m10")
+		{
+			t_cplx m10 = std::get<t_cplx>(cfg.value);
+			SetComponent10(m10);
+		}
+		else if(cfg.key == "m11")
+		{
+			t_cplx m11 = std::get<t_cplx>(cfg.value);
+			SetComponent11(m11);
+		}
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
 // Toffoli gate
 // @see https://en.wikipedia.org/wiki/Toffoli_gate
 // ----------------------------------------------------------------------------
