@@ -238,11 +238,19 @@ void QmWnd::SetupGUI()
 				if(auto optIconFile = m_res.FindFile(menuicon.toStdString()); optIconFile)
 					actionComp->setIcon(QIcon{optIconFile->string().c_str()});
 
-				// item clicked
+				// item clicked -> add a new component
 				connect(actionComp, &QAction::triggered, [this]()
 				{
-					QuantumComponentItem *state = new t_comp{};
-					m_view->AddQuantumComponent(state);
+					bool old_auto_calc = m_auto_calc;
+					m_auto_calc = false;
+
+					QuantumComponentItem *comp = new t_comp{};
+					m_view->AddQuantumComponent(comp);
+
+					QPointF safePos = m_view->GetSafePos(comp, comp->scenePos(), comp->scenePos());
+					comp->setPos(safePos);
+
+					m_auto_calc = old_auto_calc;
 				});
 
 				std::get<idx>(compActions) = actionComp;
@@ -506,6 +514,7 @@ void QmWnd::FileNew()
 
 	QuantumComponentItem *state = new InputStates();
 	state->SetGridPos(3, 2);
+
 	m_view->AddQuantumComponent(state);
 	WorkspaceChanged(false);
 }

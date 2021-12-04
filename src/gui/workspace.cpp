@@ -813,6 +813,10 @@ void QmView::mouseMoveEvent(QMouseEvent *evt)
 	{
 		m_curItemIsDragged = (item == m_curItem);
 
+		// field already occupied?
+		QPointF safePos = GetSafePos(item, posOrig, item->scenePos());
+		item->setPos(safePos);
+
 		// snap the item to the grid
 		if(g_snap_on_move)
 			item->setPos(snap_to_grid(item->scenePos()));
@@ -840,6 +844,75 @@ void QmView::mouseMoveEvent(QMouseEvent *evt)
 
 
 	emit SignalMouseCoordinates(m_curScenePos.x(), m_curScenePos.y());
+}
+
+
+/**
+ * get a safe position that is not already occupied by another item of the same type
+ */
+QPointF QmView::GetSafePos(QGraphicsItem* _item, const QPointF& posOrg, const QPointF& posNew) const
+{
+	if(!m_scene->IsQuantumComponent(_item))
+		return posNew;
+
+	QuantumComponentItem *item = static_cast<QuantumComponentItem *>(_item);
+	auto [x, y] = item->GetGridPos();
+	QPointF itemGridPos{qreal(x), qreal(y)};
+
+	t_uint item_height = item->GetNumQBits();
+	t_uint item_width = 1;
+	if(item->GetType() == ComponentType::STATE)
+		item_width = static_cast<InputStates*>(item)->GetWidth();
+
+
+	t_real x_dir = posNew.x() - posOrg.x();
+	t_real y_dir = posNew.y() - posOrg.y();
+
+	if(x_dir == 0 && y_dir == 0)
+		x_dir = y_dir = -1;
+
+
+	QPointF posSafe = posNew;
+
+	while(true)
+	{
+		bool occupied = false;
+
+		// check the entire extent of the item
+		for(t_uint height=0; height<item_height; ++height)
+		{
+			for(t_uint width=0; width<item_width; ++width)
+			{
+				// look for other items of the same type at the same position
+				QPointF posItem = posSafe;
+				posItem.rx() += g_raster_size * t_real(width);
+				posItem.ry() += g_raster_size * t_real(height);
+				QPointF posGrid = snap_to_grid(posItem);
+				QPoint posVP = mapFromScene(posGrid);
+
+				for(QGraphicsItem *_otheritem : this->items(posVP))
+				{
+					if(!m_scene->IsQuantumComponent(_otheritem) || _otheritem == _item)
+						continue;
+
+					QuantumComponentItem *otheritem = static_cast<QuantumComponentItem *>(_otheritem);
+					if(otheritem->GetType() == item->GetType())
+					{
+						occupied = true;
+						break;
+					}
+				}
+			}
+		}
+
+		if(!occupied)
+			break;
+
+		posSafe.rx() -= x_dir;
+		posSafe.ry() -= y_dir;
+	}
+
+	return posSafe;
 }
 
 
