@@ -55,46 +55,7 @@ QmWnd::QmWnd(QWidget* pParent)
 	// allow dropping of files onto the main window
 	setAcceptDrops(true);
 
-
-	// ------------------------------------------------------------------------
-	// restore settings
-	QSettings settings{this};
-
-	if(settings.contains("wnd_geo"))
-	{
-		QByteArray arr{settings.value("wnd_geo").toByteArray()};
-		this->restoreGeometry(arr);
-	}
-	else
-	{
-		resize(1024, 768);
-	}
-
-	if(settings.contains("wnd_state"))
-	{
-		QByteArray arr{settings.value("wnd_state").toByteArray()};
-		this->restoreState(arr);
-	}
-
-	if(settings.contains("wnd_theme"))
-		m_gui_theme = settings.value("wnd_theme").toString();
-
-	if(settings.contains("wnd_native"))
-		m_gui_native = settings.value("wnd_native").toBool();
-
-	if(settings.contains("calc_auto"))
-		m_auto_calc = settings.value("calc_auto").toBool();
-
-	if(settings.contains("file_recent"))
-		m_recent.SetRecentFiles(settings.value("file_recent").toStringList());
-
-	if(settings.contains("file_recent_dir"))
-		m_recent.SetRecentDir(settings.value("file_recent_dir").toString());
-	// ------------------------------------------------------------------------
-
-
-	// restore settings from settings dialog
-	ShowSettings(true);
+	RestoreSettings();
 }
 
 
@@ -223,12 +184,13 @@ void QmWnd::SetupGUI()
 
 	std::array<QAction*, num_comps> compActions{};
 	std::array<ComponentType, num_comps> compTypes{};
+	std::array<t_uint, num_comps> compMinQBits{};
 
-	[&compActions, &compTypes, this]<std::size_t ...idx>
+	[&compActions, &compTypes, &compMinQBits, this]<std::size_t ...idx>
 		(const std::index_sequence<idx...>&)
 	{
 		(
-			[&compActions, &compTypes, this]()
+			[&compActions, &compTypes, &compMinQBits, this]()
 			{
 				using t_comp = std::tuple_element_t<idx, t_all_components>;
 
@@ -257,6 +219,7 @@ void QmWnd::SetupGUI()
 
 				std::get<idx>(compActions) = actionComp;
 				std::get<idx>(compTypes) = t_comp::GetStaticType();
+				std::get<idx>(compMinQBits) = t_comp::GetMinNumQBits();
 			}(),
 		...);
 	}(std::make_index_sequence<num_comps>());
@@ -306,11 +269,14 @@ void QmWnd::SetupGUI()
 	toolbarComponents->setObjectName("ComponentsToolbar");
 
 	ComponentType lastType{};
+	t_uint lastQBits{1};
 	for(std::size_t i=0; i<compActions.size(); ++i)
 	{
 		QAction* compAction = compActions[i];
 		ComponentType compType = compTypes[i];
-		if(i > 0 && lastType != compType)
+		t_uint compQBits = compMinQBits[i];
+
+		if(i > 0 && (lastType != compType || lastQBits != compQBits))
 		{
 			menuComponents->addSeparator();
 			toolbarComponents->addSeparator();
@@ -319,6 +285,7 @@ void QmWnd::SetupGUI()
 		menuComponents->addAction(compAction);
 		toolbarComponents->addAction(compAction);
 		lastType = compType;
+		lastQBits = compQBits;
 	}
 
 	QToolBar *toolbarCalc = new QToolBar{"Calculate", this};
@@ -398,6 +365,15 @@ void QmWnd::SetupGUI()
 		set_gui_native(checked);
 	});
 
+	QIcon iconRestoreLayout = QIcon::fromTheme("view-restore");
+	QAction *actionRestoreLayout = new QAction{iconRestoreLayout, "Restore GUI Layout", this};
+	connect(actionRestoreLayout, &QAction::triggered, [this]()
+	{
+		if(m_default_window_state.size())
+			this->restoreState(m_default_window_state);
+	});
+
+
 	// tool menu
 	QIcon iconTools = QIcon::fromTheme("applications-system");
 	QMenu *menuTools = new QMenu{"Tools", this};
@@ -414,6 +390,7 @@ void QmWnd::SetupGUI()
 	menuSettings->addSeparator();
 	menuSettings->addMenu(menuGuiTheme);
 	menuSettings->addAction(actionGuiNative);
+	menuSettings->addAction(actionRestoreLayout);
 	// ------------------------------------------------------------------------
 
 
@@ -483,13 +460,84 @@ void QmWnd::SetupGUI()
 		m_view.get(), &QmView::SetCurItemConfig);
 
 
+	// restore recent files menu
 	m_recent.CreateRecentFileMenu(
 		[this](const QString& filename) -> bool
 	{
 		return this->FileLoadRecent(filename);
 	});
 
+	// save initial default window state
+	m_default_window_state = saveState();
+
+	// restore saved window state and geometry
+	if(m_saved_window_geometry.size())
+		restoreGeometry(m_saved_window_geometry);
+	if(m_saved_window_state.size())
+		restoreState(m_saved_window_state);
+
 	SetStatusMessage("Ready.");
+}
+
+
+/**
+ * restore saved settings
+ */
+void QmWnd::RestoreSettings()
+{
+	QSettings settings{this};
+
+	if(settings.contains("wnd_geo"))
+	{
+		m_saved_window_geometry = 
+			settings.value("wnd_geo").toByteArray();
+	}
+	else
+	{
+		resize(1024, 768);
+	}
+
+	if(settings.contains("wnd_state"))
+	{
+		m_saved_window_state =
+			settings.value("wnd_state").toByteArray();
+	}
+
+	if(settings.contains("wnd_theme"))
+		m_gui_theme = settings.value("wnd_theme").toString();
+
+	if(settings.contains("wnd_native"))
+		m_gui_native = settings.value("wnd_native").toBool();
+
+	if(settings.contains("calc_auto"))
+		m_auto_calc = settings.value("calc_auto").toBool();
+
+	if(settings.contains("file_recent"))
+		m_recent.SetRecentFiles(settings.value("file_recent").toStringList());
+
+	if(settings.contains("file_recent_dir"))
+		m_recent.SetRecentDir(settings.value("file_recent_dir").toString());
+
+
+	// restore settings from settings dialog
+	ShowSettings(true);
+}
+
+
+void QmWnd::SaveSettings()
+{
+	QSettings settings{this};
+
+	QByteArray geo{this->saveGeometry()},
+		state{this->saveState()};
+
+	settings.setValue("wnd_geo", geo);
+	settings.setValue("wnd_state", state);
+	settings.setValue("wnd_theme", m_gui_theme);
+	settings.setValue("wnd_native", m_gui_native);
+	settings.setValue("calc_auto", m_auto_calc);
+	settings.setValue("file_recent", m_recent.GetRecentFiles());
+	settings.setValue("file_recent_dir", m_recent.GetRecentDir());
 }
 
 
@@ -935,21 +983,7 @@ void QmWnd::closeEvent(QCloseEvent *evt)
 		return;
 	}
 
-
-	// ------------------------------------------------------------------------
-	// save settings
-	QSettings settings{this};
-
-	QByteArray geo{this->saveGeometry()}, state{this->saveState()};
-	settings.setValue("wnd_geo", geo);
-	settings.setValue("wnd_state", state);
-	settings.setValue("wnd_theme", m_gui_theme);
-	settings.setValue("wnd_native", m_gui_native);
-	settings.setValue("calc_auto", m_auto_calc);
-	settings.setValue("file_recent", m_recent.GetRecentFiles());
-	settings.setValue("file_recent_dir", m_recent.GetRecentDir());
-	// ------------------------------------------------------------------------
-
+	SaveSettings();
 	QMainWindow::closeEvent(evt);
 }
 

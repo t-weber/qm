@@ -23,12 +23,14 @@ ComponentProperties::ComponentProperties(QWidget* parent)
 	: QWidget(parent)
 {
 	QScrollArea *scroll = new QScrollArea(this);
-	QWidget *scrollwidget = new QWidget(scroll);
 	scroll->setWidgetResizable(true);
-	scroll->setWidget(scrollwidget);
+	//scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	scroll->setFrameStyle(QFrame::NoFrame);
 
-	m_layout = std::make_shared<QGridLayout>(scrollwidget);
+	m_scrollwidget = std::make_shared<QWidget>(scroll);
+	scroll->setWidget(m_scrollwidget.get());
+
+	m_layout = std::make_shared<QGridLayout>(m_scrollwidget.get());
 	m_layout->setContentsMargins(4, 4, 4, 4);
 	m_layout->setVerticalSpacing(4);
 	m_layout->setHorizontalSpacing(4);
@@ -396,4 +398,8 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 
 	// also update dialogs every time a new item is selected
 	UpdateResults(comp, associated_input_comp);
+
+	// TODO: find minimum width
+	//m_scrollwidget->adjustSize();
+	//m_scrollwidget->setMinimumWidth(m_layout->sizeHint().width());
 }

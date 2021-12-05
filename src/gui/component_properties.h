@@ -28,8 +28,14 @@ class ComponentProperties : public QWidget
 { Q_OBJECT
 public:
 	ComponentProperties(QWidget *parent=nullptr);
-
 	virtual ~ComponentProperties();
+
+	virtual QSize sizeHint() const override
+	{
+		QSize size = QWidget::sizeHint();
+		size.rwidth() += 128;
+		return size;
+	}
 
 
 protected:
@@ -37,6 +43,7 @@ protected:
 
 
 private:
+	std::shared_ptr<QWidget> m_scrollwidget{};
 	std::shared_ptr<QGridLayout> m_layout{};
 
 	std::shared_ptr<ComponentOperator> m_compOperator{};

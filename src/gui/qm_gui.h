@@ -8,6 +8,7 @@
 #ifndef __QM_GUI_H__
 #define __QM_GUI_H__
 
+#include <QtCore/QByteArray>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QLabel>
@@ -36,6 +37,9 @@ public:
 
 	QmWnd(const QmWnd&) = delete;
 	const QmWnd& operator=(const QmWnd&) = delete;
+
+	void RestoreSettings();
+	void SaveSettings();
 
 	void SetupGUI();
 	void SetStatusMessage(const QString& msg);
@@ -70,6 +74,10 @@ protected:
 private:
 	QString m_gui_theme{};
 	bool m_gui_native{false};
+
+	QByteArray m_default_window_state{};
+	QByteArray m_saved_window_state{};
+	QByteArray m_saved_window_geometry{};
 
 	Resources m_res{};
 	RecentFiles m_recent{this, 16};

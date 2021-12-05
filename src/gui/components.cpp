@@ -248,7 +248,7 @@ ComponentConfigs InputStates::GetConfig() const
 			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(1)
+			.min_value = GetMinNumQBits(),
 		},
 		ComponentConfig
 		{
@@ -1010,7 +1010,7 @@ ComponentConfigs SwapGate::GetConfig() const
 			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(2)
+			.min_value = GetMinNumQBits(),
 		},
 		ComponentConfig
 		{
@@ -1190,7 +1190,7 @@ ComponentConfigs CNotGate::GetConfig() const
 			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(2)
+			.min_value = GetMinNumQBits(),
 		},
 		ComponentConfig
 		{
@@ -1359,7 +1359,7 @@ ComponentConfigs CZGate::GetConfig() const
 			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(2)
+			.min_value = GetMinNumQBits(),
 		},
 		ComponentConfig
 		{
@@ -1534,7 +1534,7 @@ ComponentConfigs CUnitaryGate::GetConfig() const
 			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(2)
+			.min_value = GetMinNumQBits(),
 		},
 		ComponentConfig
 		{
@@ -1783,7 +1783,7 @@ ComponentConfigs ToffoliGate::GetConfig() const
 			.key = "num_qbits",
 			.value = GetNumQBits(),
 			.description = "Number of qubits",
-			.min_value = t_uint(3)
+			.min_value = GetMinNumQBits(),
 		},
 		ComponentConfig
 		{

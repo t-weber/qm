@@ -168,6 +168,7 @@ public:
 	const t_vec& GetInputState() const { return m_state_input; }
 	const t_vec& GetOutputState() const { return m_state_output; }
 
+	static t_uint GetMinNumQBits() { return 1; }
 	static const char* GetStaticIdent() { return "input_states"; }
 	static const char* GetStaticName() { return "Input Qubits"; }
 	virtual std::string GetIdent() const override { return InputStates::GetStaticIdent(); }
@@ -223,10 +224,12 @@ public:
 
 	virtual QuantumComponentItem* clone() const override;
 
-	virtual t_uint GetNumQBits() const override { return 1; }
+	virtual t_uint GetNumQBits() const override { return HadamardGate::GetMinNumQBits(); }
 
+	static t_uint GetMinNumQBits() { return 1; }
 	static const char* GetStaticIdent() { return "hadamard"; }
 	static const char* GetStaticName() { return "Hadamard Gate"; }
+
 	virtual std::string GetIdent() const override { return HadamardGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return HadamardGate::GetStaticName(); }
 
@@ -262,10 +265,12 @@ public:
 
 	// getter
 	t_uint GetDirection() const { return m_dir; }
-	virtual t_uint GetNumQBits() const override { return 1; }
+	virtual t_uint GetNumQBits() const override { return PauliGate::GetMinNumQBits(); }
 
+	static t_uint GetMinNumQBits() { return 1; }
 	static const char* GetStaticIdent() { return "pauli"; }
 	static const char* GetStaticName() { return "Pauli Gate"; }
+
 	virtual std::string GetIdent() const override { return PauliGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return PauliGate::GetStaticName(); }
 
@@ -307,10 +312,12 @@ public:
 	// getter
 	t_uint GetDirection() const { return m_dir; }
 	t_real GetAngle() const { return m_angle; }
-	virtual t_uint GetNumQBits() const override { return 1; }
+	virtual t_uint GetNumQBits() const override { return RotationGate::GetMinNumQBits(); }
 
+	static t_uint GetMinNumQBits() { return 1; }
 	static const char* GetStaticIdent() { return "rotation"; }
 	static const char* GetStaticName() { return "SU(2) Rotation Gate"; }
+
 	virtual std::string GetIdent() const override { return RotationGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return RotationGate::GetStaticName(); }
 
@@ -351,10 +358,12 @@ public:
 
 	// getter
 	t_real GetPhase() const { return m_phase; }
-	virtual t_uint GetNumQBits() const override { return 1; }
+	virtual t_uint GetNumQBits() const override { return PhaseGate::GetMinNumQBits(); }
 
+	static t_uint GetMinNumQBits() { return 1; }
 	static const char* GetStaticIdent() { return "phase"; }
 	static const char* GetStaticName() { return "Phase Gate"; }
+
 	virtual std::string GetIdent() const override { return PhaseGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return PhaseGate::GetStaticName(); }
 
@@ -402,10 +411,12 @@ public:
 	const t_cplx& GetComponent10() const { return m_mat(1,0); }
 	const t_cplx& GetComponent11() const { return m_mat(1,1); }
 	const t_mat& GetMatrix() const { return m_mat; }
-	virtual t_uint GetNumQBits() const override { return 1; }
+	virtual t_uint GetNumQBits() const override { return UnitaryGate::GetMinNumQBits(); }
 
+	static t_uint GetMinNumQBits() { return 1; }
 	static const char* GetStaticIdent() { return "unitary"; }
 	static const char* GetStaticName() { return "Unitary Gate"; }
+
 	virtual std::string GetIdent() const override { return UnitaryGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return UnitaryGate::GetStaticName(); }
 
@@ -450,8 +461,10 @@ public:
 	t_uint GetSourceBitPos() const { return m_source_bit_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
+	static t_uint GetMinNumQBits() { return 2; }
 	static const char* GetStaticIdent() { return "swap"; }
 	static const char* GetStaticName() { return "SWAP Gate"; }
+
 	virtual std::string GetIdent() const override { return SwapGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return SwapGate::GetStaticName(); }
 
@@ -469,7 +482,7 @@ public:
 
 
 private:
-	t_uint m_num_qbits = 2;
+	t_uint m_num_qbits = SwapGate::GetMinNumQBits();
 	t_uint m_source_bit_pos = 0;
 	t_uint m_target_bit_pos = 1;
 };
@@ -498,8 +511,10 @@ public:
 	t_uint GetControlBitPos() const { return m_control_bit_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
+	static t_uint GetMinNumQBits() { return 2; }
 	static const char* GetStaticIdent() { return "cnot"; }
 	static const char* GetStaticName() { return "CNOT/CX Gate"; }
+
 	virtual std::string GetIdent() const override { return CNotGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return CNotGate::GetStaticName(); }
 
@@ -517,7 +532,7 @@ public:
 
 
 private:
-	t_uint m_num_qbits = 2;
+	t_uint m_num_qbits = CNotGate::GetMinNumQBits();
 	t_uint m_control_bit_pos = 0;
 	t_uint m_target_bit_pos = 1;
 
@@ -549,8 +564,10 @@ public:
 	t_uint GetControlBitPos() const { return m_control_bit_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
+	static t_uint GetMinNumQBits() { return 2; }
 	static const char* GetStaticIdent() { return "cz"; }
 	static const char* GetStaticName() { return "CZ Gate"; }
+
 	virtual std::string GetIdent() const override { return CZGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return CZGate::GetStaticName(); }
 
@@ -568,7 +585,7 @@ public:
 
 
 private:
-	t_uint m_num_qbits = 2;
+	t_uint m_num_qbits = CZGate::GetMinNumQBits();
 	t_uint m_control_bit_pos = 0;
 	t_uint m_target_bit_pos = 1;
 
@@ -610,8 +627,10 @@ public:
 	const t_cplx& GetComponent11() const { return m_mat(1,1); }
 	const t_mat& GetMatrix() const { return m_mat; }
 
+	static t_uint GetMinNumQBits() { return 2; }
 	static const char* GetStaticIdent() { return "cunitary"; }
 	static const char* GetStaticName() { return "CUnitary Gate"; }
+
 	virtual std::string GetIdent() const override { return CUnitaryGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return CUnitaryGate::GetStaticName(); }
 
@@ -631,7 +650,7 @@ public:
 private:
 	t_mat m_mat = m::unit<t_mat>(2);
 
-	t_uint m_num_qbits = 2;
+	t_uint m_num_qbits = CUnitaryGate::GetMinNumQBits();
 	t_uint m_control_bit_pos = 0;
 	t_uint m_target_bit_pos = 1;
 
@@ -664,8 +683,10 @@ public:
 	t_uint GetControlBit2Pos() const { return m_control_bit_2_pos; }
 	t_uint GetTargetBitPos() const { return m_target_bit_pos; }
 
+	static t_uint GetMinNumQBits() { return 3; }
 	static const char* GetStaticIdent() { return "toffoli"; }
 	static const char* GetStaticName() { return "Toffoli/CCNOT Gate"; }
+
 	virtual std::string GetIdent() const override { return ToffoliGate::GetStaticIdent(); }
 	virtual std::string GetName() const override { return ToffoliGate::GetStaticName(); }
 
@@ -683,7 +704,7 @@ public:
 
 
 private:
-	t_uint m_num_qbits = 3;
+	t_uint m_num_qbits = ToffoliGate::GetMinNumQBits();
 	t_uint m_control_bit_1_pos = 0;
 	t_uint m_control_bit_2_pos = 1;
 	t_uint m_target_bit_pos = 2;
