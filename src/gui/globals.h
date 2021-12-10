@@ -31,4 +31,7 @@ extern bool g_keep_gates_on_states;
 // number qubit states from LSB-right to MSB-left (or bottom-to-top in the gui)?
 extern bool g_reverse_state_numbering;
 
+// use recently used directory or a special document folder
+extern bool g_use_recent_dir;
+
 #endif

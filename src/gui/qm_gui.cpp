@@ -9,6 +9,8 @@
 
 #include <QtCore/QSettings>
 #include <QtCore/QMimeData>
+#include <QtCore/QStandardPaths>
+#include <QtCore/QDir>
 #include <QtGui/QMouseEvent>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMenuBar>
@@ -109,7 +111,7 @@ void QmWnd::SetupGUI()
 	connect(actionExportSvg, &QAction::triggered, [this]()
 	{
 		auto filedlg = std::make_shared<QFileDialog>(
-			this, "Export SVG image", m_recent.GetRecentDir(),
+			this, "Export SVG image", GetDocDir(),
 			"SVG Files (*.svg)");
 		filedlg->setAcceptMode(QFileDialog::AcceptSave);
 		filedlg->setDefaultSuffix("svg");
@@ -579,7 +581,7 @@ bool QmWnd::FileLoad()
 		return false;
 
 	auto filedlg = std::make_shared<QFileDialog>(
-		this, "Load Data", m_recent.GetRecentDir(),
+		this, "Load Data", GetDocDir(),
 		"XML Files (*.xml);;All Files (* *.*)");
 	filedlg->setAcceptMode(QFileDialog::AcceptOpen);
 	filedlg->setDefaultSuffix("xml");
@@ -666,7 +668,7 @@ bool QmWnd::FileSave()
 bool QmWnd::FileSaveAs()
 {
 	auto filedlg = std::make_shared<QFileDialog>(
-		this, "Save Data", m_recent.GetRecentDir(),
+		this, "Save Data", GetDocDir(),
 		"XML Files (*.xml)");
 	filedlg->setAcceptMode(QFileDialog::AcceptSave);
 	filedlg->setDefaultSuffix("xml");
@@ -972,6 +974,50 @@ bool QmWnd::AskUnsaved()
 	}
 
 	return true;
+}
+
+
+/**
+ * get the directory to save documents in
+ */
+QString QmWnd::GetDocDir()
+{
+	if(g_use_recent_dir)
+		return m_recent.GetRecentDir();
+
+	// use either the documents or the home dir
+	QString path;
+	QStringList dirs = QStandardPaths::standardLocations(
+		QStandardPaths::DocumentsLocation);
+	if(dirs.size())
+		path = dirs[0];
+	else
+		path = QDir::homePath();
+
+	QString subdir = "qm_files";
+	QDir dir(path);
+	if(!dir.exists(subdir))
+	{
+		QMessageBox::StandardButton btn = 
+			QMessageBox::question(this, "Create document directory",
+				QString("Create the directory \"%1\" under \"%2\"?").
+					arg(subdir).
+					arg(dir.absolutePath()),
+				QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel,
+				QMessageBox::Yes);
+
+		if(btn == QMessageBox::Yes)
+		{
+			dir.mkdir(subdir);
+			dir.cd(subdir);
+		}
+	}
+	else
+	{
+		dir.cd(subdir);
+	}
+
+	return dir.absolutePath();
 }
 
 

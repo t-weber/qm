@@ -69,6 +69,7 @@ protected:
 	virtual void dropEvent(QDropEvent *) override;
 
 	bool AskUnsaved();
+	QString GetDocDir();
 
 
 private:

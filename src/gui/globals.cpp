@@ -19,3 +19,5 @@ bool g_snap_on_move = false;
 bool g_keep_gates_on_states = true;
 
 bool g_reverse_state_numbering = true;
+
+bool g_use_recent_dir = true;
