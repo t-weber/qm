@@ -57,6 +57,7 @@ QmWnd::QmWnd(QWidget* pParent)
 	// allow dropping of files onto the main window
 	setAcceptDrops(true);
 
+	//m_recent.AddForbiddenDir("/home/tw/Documents");
 	RestoreSettings();
 }
 

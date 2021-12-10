@@ -12,6 +12,8 @@
 #include <QtCore/QStringList>
 #include <QtCore/QDir>
 
+#include <vector>
+#include <algorithm>
 #include <memory>
 
 #if __has_include(<filesystem>)
@@ -55,6 +57,8 @@ public:
 	const QString& GetOpenFile() const { return m_openFile; }
 	void SetOpenFile(const QString& file) { m_openFile = file; }
 
+	void AddForbiddenDir(const QString& dir) { m_forbidden_dirs.emplace_back(dir.toStdString()); }
+
 
 	/**
 	 * create a menu with the recent files
@@ -69,7 +73,7 @@ public:
 			const QString& filename = *iter;
 
 			fs::path file{filename.toStdString()};
-			if(!fs::exists(file))
+			if(!fs::exists(file) || IsInForbiddenDir(file))
 			{
 				iter = m_recentFiles.erase(iter);
 				continue;
@@ -107,6 +111,48 @@ public:
 	}
 
 
+protected:
+	/**
+	 * is the file under the list of forbidden directories
+	 */
+	bool IsInForbiddenDir(const fs::path& file) const
+	{
+		// count number of elements in a path (or, generally, in an iterator range)
+		auto num_elems = [](auto begin, auto end) -> std::size_t
+		{
+			auto iter = begin;
+			std::size_t cnt = 0;
+
+			while(iter++ != end)
+				++cnt;
+
+			return cnt;
+		};
+
+
+		fs::path file_abs = fs::absolute(file);
+		std::size_t file_elems = num_elems(file_abs.begin(), file_abs.end());
+
+		for(const fs::path& dir : m_forbidden_dirs)
+		{
+			fs::path dir_abs = fs::absolute(dir);
+			std::size_t dir_elems = num_elems(dir_abs.begin(), dir_abs.end());
+			//std::cout << "dir: " << dir_abs.string() << " (elems: " << dir_elems << ")"
+			//	<< ", file: " << file_abs.string() << " (elems: " << file_elems << ")"
+			//	<< std::endl;
+
+			// file path is shorter than directory?
+			if(file_elems < dir_elems)
+				continue;
+
+			if(std::equal(dir_abs.begin(), dir_abs.end(), file_abs.begin()))
+				return true;
+		}
+
+		return false;
+	}
+
+
 private:
 	// recent directory
 	QString m_recentDir{QDir::homePath()};
@@ -123,6 +169,9 @@ private:
 
 	// maximum number of recent files in the list
 	std::size_t m_recent_file_capacity{16};
+
+	// list of directories for which recent files shouldn't be saved
+	std::vector<fs::path> m_forbidden_dirs{};
 };
 
 
