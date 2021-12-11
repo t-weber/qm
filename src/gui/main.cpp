@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 		app->setOrganizationName("tw");
 		app->setApplicationName("qm");
 		//app->setApplicationDisplayName("Quantum Algorithms Editor");
-		app->setApplicationVersion("0.5");
+		app->setApplicationVersion("0.5.5");
 		set_locales();
 
 		// main window
