@@ -44,11 +44,13 @@ int main(int argc, char** argv)
 		// ressources
 		Resources& res = qm->GetResources();
 		fs::path appdir = app->applicationDirPath().toStdString();
+		res.SetBinPath(appdir);
 		res.AddPath(appdir);
 		res.AddPath(appdir / "res");
 		res.AddPath(appdir / ".." / "res");
 
 		// setup main window gui
+		qm->LoadPlugins();
 		qm->SetupGUI();
 		qm->FileNew();
 

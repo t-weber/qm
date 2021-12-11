@@ -9,11 +9,13 @@ cmake_minimum_required(VERSION 3.0)
 
 enable_language(CXX)
 set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_VERBOSE_MAKEFILE True)
+#set(CMAKE_POSITION_INDEPENDENT_CODE True)
 
 add_compile_options(-std=c++20)
 add_compile_options(-Wall -Wextra -Weffc++)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 add_compile_options(${Boost_CXX_FLAGS})
 
 find_package(Qt5Core REQUIRED)
@@ -35,7 +37,9 @@ add_executable(qm
 	src/gui/main.cpp
 	src/gui/qm_gui.cpp src/gui/qm_gui.h
 	src/gui/workspace.cpp src/gui/workspace.h
+	src/gui/component_interface.h
 	src/gui/components.cpp src/gui/components.h
+	src/gui/components_plugin.cpp src/gui/components_plugin.h
 	src/gui/components_table.cpp src/gui/components_table.h
 	src/gui/component_properties.cpp src/gui/component_properties.h
 	src/gui/component_operator.cpp src/gui/component_operator.h

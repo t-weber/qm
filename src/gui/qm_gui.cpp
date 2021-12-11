@@ -62,6 +62,18 @@ QmWnd::QmWnd(QWidget* pParent)
 }
 
 
+QmWnd::~QmWnd()
+{
+	Clear();
+}
+
+
+void QmWnd::LoadPlugins()
+{
+	m_plugins.LoadPlugins(filesystem::absolute(m_res.GetBinPath()).string());
+}
+
+
 /**
  * create all gui elements
  */
@@ -229,6 +241,51 @@ void QmWnd::SetupGUI()
 
 	QMenu *menuComponents = new QMenu{"Components", this};
 	// actions added together with toolbar below
+	// ------------------------------------------------------------------------
+
+
+	// ------------------------------------------------------------------------
+	// plugin components menu
+	std::vector<QAction*> plugincompActions{};
+
+	for(const auto& [comp_ident, comp_name] : m_plugins.GetComponentNames())
+	{
+		QString menustring = QString("Add %1").arg(comp_name.c_str());
+		QString menuicon = QString("%1.svg").arg(comp_ident.c_str());
+
+		// action
+		QAction *actionComp = new QAction{menustring, this};
+
+		// icon
+		if(auto optIconFile = m_res.FindFile(menuicon.toStdString()); optIconFile)
+			actionComp->setIcon(QIcon{optIconFile->string().c_str()});
+
+		// item clicked -> add a new component
+		std::string comp_ident_local = comp_ident;
+		connect(actionComp, &QAction::triggered, [this, comp_ident_local]()
+		{
+			QuantumComponentItem *comp = m_plugins.CreateComponent(comp_ident_local);
+			comp->SetGridPos(INIT_COMP_POS_X, INIT_COMP_POS_Y);
+			m_view->AddQuantumComponent(comp, true);
+
+			QPointF safePos = m_view->GetSafePos(comp, comp->scenePos());
+			comp->setPos(snap_to_grid(safePos));
+
+			WorkspaceChanged(true);
+		});
+
+		plugincompActions.emplace_back(actionComp);
+	}
+
+	QMenu *menuPluginComponents = nullptr;
+	if(plugincompActions.size())
+	{
+		menuPluginComponents = new QMenu("Plugin Components", this);
+
+		for(QAction *action : plugincompActions)
+			menuPluginComponents->addAction(action);
+	}
+
 	// ------------------------------------------------------------------------
 
 
@@ -433,6 +490,8 @@ void QmWnd::SetupGUI()
 	menuBar->addMenu(menuFile);
 	menuBar->addMenu(menuEdit);
 	menuBar->addMenu(menuComponents);
+	if(menuPluginComponents)
+		menuBar->addMenu(menuPluginComponents);
 	menuBar->addMenu(menuCalculate);
 	menuBar->addMenu(menuSettings);
 	menuBar->addMenu(menuHelp);
@@ -816,36 +875,50 @@ bool QmWnd::LoadFile(const QString& filename)
 			if(tagGate != "component")
 				continue;
 
+			// component identifier
 			std::string id = propGate.get<std::string>("<xmlattr>.ident", "");
+
+			// try to create a built-in component
 			QuantumComponentItem *gate = QuantumComponentItem::create(id);
 
-			if(gate)
+			// try to create a plug-in component
+			if(!gate)
+				gate = m_plugins.CreateComponent(id);
+
+			if(!gate)
 			{
-				// get configuration settings
-				ComponentConfigs configs = gate->GetConfig();
-				for(ComponentConfig& config : configs.configs)
-				{
-					// test for all possible types of the variant
-					// and set the new value with the same type
-					if(std::holds_alternative<t_real>(config.value))
-						config.value = propGate.get<t_real>(config.key, 0);
-					else if(std::holds_alternative<t_cplx>(config.value))
-						config.value = propGate.get<t_cplx>(config.key, 0);
-					else if(std::holds_alternative<t_int>(config.value))
-						config.value = propGate.get<t_int>(config.key, 0);
-					else if(std::holds_alternative<t_uint>(config.value))
-						config.value = propGate.get<t_uint>(config.key, 0);
-					else if(std::holds_alternative<std::string>(config.value))
-						config.value = propGate.get<std::string>(config.key, "");
-				}
-				gate->SetConfig(configs);
+				QMessageBox::critical(this, "Error",
+					QString("Component \"%1\" could not be created.").arg(id.c_str()));
 
-				t_int pos_x = propGate.get<t_int>("pos_x", 0);
-				t_int pos_y = propGate.get<t_int>("pos_y", 0);
-				gate->SetGridPos(pos_x, pos_y);
-
-				m_view->AddQuantumComponent(gate, true);
+				continue;
 			}
+
+			// get configuration settings
+			ComponentConfigs configs = gate->GetConfig();
+
+			for(ComponentConfig& config : configs.configs)
+			{
+				// test for all possible types of the variant
+				// and set the new value with the same type
+				if(std::holds_alternative<t_real>(config.value))
+					config.value = propGate.get<t_real>(config.key, 0);
+				else if(std::holds_alternative<t_cplx>(config.value))
+					config.value = propGate.get<t_cplx>(config.key, 0);
+				else if(std::holds_alternative<t_int>(config.value))
+					config.value = propGate.get<t_int>(config.key, 0);
+				else if(std::holds_alternative<t_uint>(config.value))
+					config.value = propGate.get<t_uint>(config.key, 0);
+				else if(std::holds_alternative<std::string>(config.value))
+					config.value = propGate.get<std::string>(config.key, "");
+			}
+
+			gate->SetConfig(configs);
+
+			t_int pos_x = propGate.get<t_int>("pos_x", 0);
+			t_int pos_y = propGate.get<t_int>("pos_y", 0);
+			gate->SetGridPos(pos_x, pos_y);
+
+			m_view->AddQuantumComponent(gate, true);
 		}
 
 		WorkspaceChanged(true);
@@ -1099,8 +1172,4 @@ void QmWnd::dropEvent(QDropEvent *evt)
 	QMainWindow::dropEvent(evt);
 }
 
-
-QmWnd::~QmWnd()
-{
-}
 // ----------------------------------------------------------------------------

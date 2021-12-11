@@ -7,6 +7,8 @@
 
 #include "resources.h"
 
+namespace fs = filesystem;
+
 
 /**
  * add a resource search path entry

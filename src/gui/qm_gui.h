@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "components.h"
+#include "components_plugin.h"
 #include "component_properties.h"
 #include "workspace.h"
 #include "recent.h"
@@ -43,6 +44,8 @@ public:
 
 	void SetupGUI();
 	void SetStatusMessage(const QString& msg);
+
+	void LoadPlugins();
 
 	void Clear();
 	void FileNew();
@@ -92,6 +95,8 @@ private:
 
 	std::shared_ptr<Settings> m_settings{};
 	std::shared_ptr<About> m_about{};
+
+	ComponentsPlugin m_plugins{};
 
 
 protected slots:

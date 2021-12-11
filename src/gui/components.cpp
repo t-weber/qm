@@ -1,5 +1,5 @@
 /**
- * circuit components
+ * built-in circuit components
  * @author Tobias Weber (orcid: 0000-0002-7230-1932)
  * @date Nov-2021
  * @license see 'LICENSE' file
@@ -8,31 +8,11 @@
 #include <QtGui/QRadialGradient>
 
 #include "components.h"
-#include "helpers.h"
 #include "globals.h"
 #include "settings.h"
-
 #include "lib/qm_algos.h"
 
 #include <string_view>
-
-
-
-// ----------------------------------------------------------------------------
-// graphical representation of a quantum component
-// ----------------------------------------------------------------------------
-std::tuple<t_int, t_int> QuantumComponentItem::GetGridPos() const
-{
-	return get_grid_indices(scenePos(), g_raster_size, g_raster_size);
-}
-
-
-void QuantumComponentItem::SetGridPos(t_int x, t_int y)
-{
-	QPointF posScene(x*g_raster_size, y*g_raster_size);
-	this->setPos(posScene);
-}
-// ----------------------------------------------------------------------------
 
 
 
@@ -1879,5 +1859,6 @@ QuantumComponentItem* QuantumComponentItem::create(const std::string& id)
 	// iterate through all component classes and create the matching one
 	constexpr const std::size_t num_comps = std::tuple_size<t_all_components>();
 	constexpr const auto comp_indices = std::make_index_sequence<num_comps>();
+
 	return create_matching_comp<t_all_components>(id, comp_indices);
 }
