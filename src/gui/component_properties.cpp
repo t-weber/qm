@@ -14,6 +14,7 @@
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QToolButton>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QScrollArea>
@@ -148,7 +149,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 
 
 	// number of columns in layout
-	const int num_cols = 2;
+	const int num_cols = 3;
 
 
 	// component configuration
@@ -184,14 +185,11 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 	// add component configuration options
 	for(const ComponentConfig& cfg : cfgs.configs)
 	{
-		// description label
-		QLabel *labelDescr = new QLabel(cfg.description.c_str(), this);
-		m_layout->addWidget(labelDescr, m_layout->rowCount(), 0, 1, num_cols);
-
 		// uint value
 		if(std::holds_alternative<t_uint>(cfg.value))
 		{
 			QSpinBox *spinVal = new QSpinBox(this);
+			spinVal->setPrefix((cfg.description + ": ").c_str());
 			spinVal->setValue(std::get<t_uint>(cfg.value));
 			if(cfg.min_value)
 				spinVal->setMinimum(std::get<t_uint>(*cfg.min_value));
@@ -230,6 +228,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 				scale = t_real(180) / m::pi<t_real>;
 
 			QDoubleSpinBox *spinVal = new QDoubleSpinBox(this);
+			spinVal->setPrefix((cfg.description + ": ").c_str());
 			spinVal->setDecimals(g_prec_gui);
 			spinVal->setValue(std::get<t_real>(cfg.value) * scale);
 			if(cfg.min_value)
@@ -264,6 +263,10 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 		// t_cplx value
 		else if(std::holds_alternative<t_cplx>(cfg.value))
 		{
+			// description label
+			QLabel *labelDescr = new QLabel(cfg.description.c_str(), this);
+			m_layout->addWidget(labelDescr, m_layout->rowCount(), 0, 1, num_cols);
+
 			QLineEdit *editVal = new QLineEdit(this);
 			std::ostringstream ostrVal;
 			ostrVal.precision(g_prec_gui);
@@ -325,6 +328,17 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 			spinDown->setSingleStep(0.1);
 			spinDown->setMinimum(0);
 			spinDown->setMaximum(1);
+			spinDown->setToolTip(QString("Component a of qubit %1.").arg(bit+1));
+			spinDown->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+			QToolButton *btnSwap = new QToolButton(this);
+			btnSwap->setText("↔");
+			btnSwap->setToolTip(QString("Swap the a and b components of qubit %1.").arg(bit+1));
+			QSizePolicy policySwap = btnSwap->sizePolicy();
+			policySwap.setHorizontalStretch(0);
+			policySwap.setHeightForWidth(false);
+			policySwap.setHorizontalPolicy(QSizePolicy::Fixed);
+			btnSwap->setSizePolicy(policySwap);
 
 			QDoubleSpinBox *spinUp = new QDoubleSpinBox(this);
 			spinUp->setDecimals(g_prec_gui);
@@ -332,21 +346,31 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 			spinUp->setSingleStep(0.1);
 			spinUp->setMinimum(0);
 			spinUp->setMaximum(1);
+			spinUp->setToolTip(QString("Component b of qubit %1.").arg(bit+1));
+			spinUp->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
 			for(QDoubleSpinBox *spin : {spinDown, spinUp})
 			{
 				connect(spin, static_cast<void (QDoubleSpinBox::*)(double)>
-				(&QDoubleSpinBox::valueChanged), [update_states](double)
-				{
-					update_states();
-				});
+					(&QDoubleSpinBox::valueChanged), [update_states](double)
+					{
+						update_states();
+					});
 			}
+
+			connect(btnSwap, &QAbstractButton::clicked, [spinDown, spinUp]
+			{
+				qreal val = spinDown->value();
+				spinDown->setValue(spinUp->value());
+				spinUp->setValue(val);
+			});
 
 			m_spins_qbit.push_back(std::make_pair(spinDown, spinUp));
 
 			int row = m_layout->rowCount();
 			m_layout->addWidget(spinDown, row, 0, 1, 1);
-			m_layout->addWidget(spinUp, row, 1, 1, 1);
+			m_layout->addWidget(btnSwap, row, 1, 1, 1);
+			m_layout->addWidget(spinUp, row, 2, 1, 1);
 		}
 	}
 
@@ -359,7 +383,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 		m_layout->addWidget(line, m_layout->rowCount(), 0, 1, num_cols);
 
 		QPushButton *btnOperator = new QPushButton("Operator...", this);
-		btnOperator->setToolTip("Show Operator of this Component");
+		btnOperator->setToolTip("Show the operator of this component.");
 		connect(btnOperator, &QAbstractButton::clicked, [this, comp]()
 		{
 			if(!m_compOperator)
@@ -378,7 +402,7 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 			const InputStates *input_comp = static_cast<const InputStates*>(comp);
 
 			QPushButton *btnStates = new QPushButton("States...", this);
-			btnStates->setToolTip("Show Input and Output State Vectors");
+			btnStates->setToolTip("Show the input and output state vectors");
 			connect(btnStates, &QAbstractButton::clicked, [this, input_comp]()
 			{
 				if(!m_compStates)
