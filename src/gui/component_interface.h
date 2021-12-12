@@ -163,11 +163,18 @@ struct PluginComponentDescriptor
 	t_uint min_qbits{0};
 };
 
+struct PluginSettings
+{
+	t_real *raster_size = &::g_raster_size;
+};
+
 // plugin api functions
+using t_plugin_func_setup = void(*)(const PluginSettings&);
 using t_plugin_func_get_comp_descr = std::vector<PluginComponentDescriptor>(*)();
 using t_plugin_func_create_comp = QuantumComponentItem*(*)(const std::string& ident);
 
 // plugin api function names
+#define QM_PLUGIN_FUNC_SETUP           setup
 #define QM_PLUGIN_FUNC_GET_COMP_DESCR  get_component_descriptors
 #define QM_PLUGIN_FUNC_CREATE_COMP     create_component
 

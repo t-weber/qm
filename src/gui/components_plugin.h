@@ -28,7 +28,8 @@ struct PluginDescriptor
 	std::shared_ptr<boost::dll::shared_library> lib{};
 
 	// api functions
-	t_plugin_func_get_comp_descr func_get_comp_descr{nullptr};
+	t_plugin_func_setup setup{nullptr};
+	t_plugin_func_get_comp_descr get_comp_descr{nullptr};
 	t_plugin_func_create_comp create_comp{nullptr};
 
 	// descriptors for the actual plugin components

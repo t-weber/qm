@@ -100,12 +100,18 @@ void ComponentsPlugin::LoadPlugins(const std::string& _path)
 			}
 
 			// get api functions
+			const char* get_setup = QM_ADD_QUOTES(QM_PLUGIN_FUNC_SETUP);
 			const char* get_comp_descr_name = QM_ADD_QUOTES(QM_PLUGIN_FUNC_GET_COMP_DESCR);
 			const char* get_create_comp_name = QM_ADD_QUOTES(QM_PLUGIN_FUNC_CREATE_COMP);
 
+			if(plugin.lib->has(get_setup))
+			{
+				plugin.setup =
+					plugin.lib->get<t_plugin_func_setup>(get_setup);
+			}
 			if(plugin.lib->has(get_comp_descr_name))
 			{
-				plugin.func_get_comp_descr =
+				plugin.get_comp_descr =
 					plugin.lib->get<t_plugin_func_get_comp_descr>(get_comp_descr_name);
 			}
 			if(plugin.lib->has(get_create_comp_name))
@@ -114,7 +120,7 @@ void ComponentsPlugin::LoadPlugins(const std::string& _path)
 					plugin.lib->get<t_plugin_func_create_comp>(get_create_comp_name);
 			}
 
-			if(!plugin.func_get_comp_descr || !plugin.create_comp)
+			if(!plugin.setup || !plugin.get_comp_descr || !plugin.create_comp)
 			{
 				std::cerr << "Required API functions could not be found in plugin "
 					<< plugin.lib->location() << "." << std::endl;
@@ -122,8 +128,15 @@ void ComponentsPlugin::LoadPlugins(const std::string& _path)
 				continue;
 			}
 
+			// setup the plugin
+			PluginSettings sett
+			{
+				.raster_size = &::g_raster_size,
+			};
+			(*plugin.setup)(sett);
+
 			// get info from the plugin
-			plugin.descr = (*plugin.func_get_comp_descr)();
+			plugin.descr = (*plugin.get_comp_descr)();
 
 			m_plugins.emplace_back(std::move(plugin));
 		}

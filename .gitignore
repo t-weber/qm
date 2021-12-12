@@ -29,3 +29,4 @@
 
 # CMake files
 build/**
+src/plugins/build/**

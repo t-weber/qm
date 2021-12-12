@@ -15,6 +15,10 @@
 #include <vector>
 
 
+static t_real g_int_raster_size = 35;
+static t_real *g_ext_raster_size = &g_int_raster_size;
+
+
 // ----------------------------------------------------------------------------
 // component
 // ----------------------------------------------------------------------------
@@ -39,11 +43,10 @@ QuantumComponentItem* IdentityGate::clone() const
 
 QRectF IdentityGate::boundingRect() const
 {
-	// TODO: test if the global variables bind to the correct symbols
-	t_real w = g_raster_size;
-	t_real h = g_raster_size;
+	t_real w = *g_ext_raster_size;
+	t_real h = *g_ext_raster_size;
 
-	return QRectF{-g_raster_size*0.5, -g_raster_size*0.5, w, h};
+	return QRectF{-*g_ext_raster_size*0.5, -*g_ext_raster_size*0.5, w, h};
 }
 
 
@@ -60,13 +63,13 @@ void IdentityGate::paint(QPainter *painter,
 	brush.setColor(colour_bg);
 
 	//QFont font = painter->font();
-	//font.setPointSize(g_raster_size*0.5);
+	//font.setPointSize(*g_ext_raster_size*0.5);
 	//painter->setFont(font);
 
 	painter->setPen(pen);
 	painter->setBrush(brush);
 
-	t_real size = g_raster_size*0.66;
+	t_real size = *g_ext_raster_size*0.66;
 	QRectF rect{-size*0.5, -size*0.5, size, size};
 
 	painter->drawRect(rect);
@@ -106,6 +109,15 @@ void IdentityGate::SetConfig(const ComponentConfigs&)
 // ----------------------------------------------------------------------------
 
 /**
+ * setup plugin
+ */
+extern void plugin_setup(const PluginSettings& sett)
+{
+	g_ext_raster_size = sett.raster_size;
+}
+
+
+/**
  * list of component descriptors
  */
 extern std::vector<PluginComponentDescriptor> plugin_get_component_descriptors()
@@ -137,6 +149,7 @@ extern QuantumComponentItem* plugin_create_component(const std::string& ident)
 
 #include <boost/dll/alias.hpp>
 
+BOOST_DLL_ALIAS_SECTIONED(plugin_setup, QM_PLUGIN_FUNC_SETUP, qm);
 BOOST_DLL_ALIAS_SECTIONED(plugin_get_component_descriptors, QM_PLUGIN_FUNC_GET_COMP_DESCR, qm);
 BOOST_DLL_ALIAS_SECTIONED(plugin_create_component, QM_PLUGIN_FUNC_CREATE_COMP, qm);
 // ----------------------------------------------------------------------------
