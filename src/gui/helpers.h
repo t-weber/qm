@@ -41,10 +41,10 @@ template<class t_real = qreal> requires m::is_scalar<t_real>
 QColor lerp(const QColor& col1, const QColor& col2, t_real t)
 {
 	return QColor::fromRgbF(
-		std::lerp(col1.redF(), col2.redF(), t),
-		std::lerp(col1.greenF(), col2.greenF(), t),
-		std::lerp(col1.blueF(), col2.blueF(), t),
-		std::lerp(col1.alphaF(), col2.alphaF(), t)
+		std::lerp(col1.redF(), col2.redF(), static_cast<qreal>(t)),
+		std::lerp(col1.greenF(), col2.greenF(), static_cast<qreal>(t)),
+		std::lerp(col1.blueF(), col2.blueF(), static_cast<qreal>(t)),
+		std::lerp(col1.alphaF(), col2.alphaF(), static_cast<qreal>(t))
 	);
 }
 
