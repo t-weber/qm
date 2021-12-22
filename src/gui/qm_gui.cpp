@@ -36,6 +36,7 @@
 #include "helpers.h"
 
 
+#define QM_WND_TITLE      "Quantum Algorithms Editor"
 #define GUI_THEME_UNSET   "Unset"
 
 // initial position of new component
@@ -52,7 +53,8 @@ QmWnd::QmWnd(QWidget* pParent)
 		m_view{new QmView{m_scene.get(), this}},
 		m_statusLabel{std::make_shared<QLabel>(this)}
 {
-	setWindowTitle("Quantum Algorithms Editor[*]");
+	m_recent.SetOpenFile("");
+	SetActiveFile();
 
 	// allow dropping of files onto the main window
 	setAcceptDrops(true);
@@ -128,6 +130,7 @@ void QmWnd::SetupGUI()
 			"SVG Files (*.svg)");
 		filedlg->setAcceptMode(QFileDialog::AcceptSave);
 		filedlg->setDefaultSuffix("svg");
+		filedlg->selectFile("untitled");
 		filedlg->setFileMode(QFileDialog::AnyFile);
 
 		if(filedlg->exec())
@@ -146,7 +149,7 @@ void QmWnd::SetupGUI()
 	});
 
 	QIcon iconExit = QIcon::fromTheme("application-exit");
-	QAction *actionExit = new QAction{iconExit, "Exit", this};
+	QAction *actionExit = new QAction{iconExit, "Quit", this};
 	actionExit->setMenuRole(QAction::QuitRole);
 	connect(actionExit, &QAction::triggered, [this]()
 	{
@@ -416,6 +419,7 @@ void QmWnd::SetupGUI()
 			menuGuiTheme->addSeparator();
 	}
 
+	// set native gui
 	QIcon iconGuiNative = QIcon::fromTheme("preferences-desktop");
 	QAction *actionGuiNative = new QAction{iconGuiNative, "Native GUI", this};
 	actionGuiNative->setCheckable(true);
@@ -425,8 +429,19 @@ void QmWnd::SetupGUI()
 		set_gui_native(checked);
 	});
 
+	// clear settings
+	QIcon iconClearSettings = QIcon::fromTheme("edit-clear");
+	QAction *actionClearSettings = new QAction{iconClearSettings,
+		"Clear All Settings", this};
+	connect(actionClearSettings, &QAction::triggered, [this]()
+	{
+		QSettings{this}.clear();
+	});
+
+	// restore layout
 	QIcon iconRestoreLayout = QIcon::fromTheme("view-restore");
-	QAction *actionRestoreLayout = new QAction{iconRestoreLayout, "Restore GUI Layout", this};
+	QAction *actionRestoreLayout = new QAction{iconRestoreLayout,
+		"Restore GUI Layout", this};
 	connect(actionRestoreLayout, &QAction::triggered, [this]()
 	{
 		if(m_default_window_state.size())
@@ -445,6 +460,7 @@ void QmWnd::SetupGUI()
 	menuTools->addAction(m_properties->toggleViewAction());
 
 	menuSettings->addAction(actionSettings);
+	menuSettings->addAction(actionClearSettings);
 	menuSettings->addSeparator();
 	menuSettings->addMenu(menuTools);
 	menuSettings->addSeparator();
@@ -615,7 +631,6 @@ void QmWnd::Clear()
 	m_scene->Clear();
 
 	m_recent.SetOpenFile("");
-	setWindowFilePath("");
 	WorkspaceChanged(false);
 }
 
@@ -657,9 +672,6 @@ bool QmWnd::FileLoad()
 	Clear();
 	if(LoadFile(files[0]))
 	{
-		m_recent.SetOpenFile(files[0]);
-		setWindowFilePath(m_recent.GetOpenFile());
-
 		m_recent.AddRecentFile(m_recent.GetOpenFile(),
 			[this](const QString& filename) -> bool
 		{
@@ -668,6 +680,8 @@ bool QmWnd::FileLoad()
 
 		fs::path file{files[0].toStdString()};
 		m_recent.SetRecentDir(file.parent_path().string().c_str());
+		m_recent.SetOpenFile(files[0]);
+
 		WorkspaceChanged(false);
 		return true;
 	}
@@ -690,11 +704,11 @@ bool QmWnd::FileLoadRecent(const QString& filename)
 
 	this->Clear();
 
-	if(this->LoadFile(filename))
+	if(LoadFile(filename))
 	{
 		m_recent.SetOpenFile(filename);
-		this->setWindowFilePath(m_recent.GetOpenFile());
 		WorkspaceChanged(false);
+
 		return true;
 	}
 	else
@@ -732,6 +746,7 @@ bool QmWnd::FileSaveAs()
 		"XML Files (*.xml)");
 	filedlg->setAcceptMode(QFileDialog::AcceptSave);
 	filedlg->setDefaultSuffix("xml");
+	filedlg->selectFile("untitled");
 	filedlg->setFileMode(QFileDialog::AnyFile);
 
 	if(!filedlg->exec())
@@ -743,9 +758,6 @@ bool QmWnd::FileSaveAs()
 
 	if(SaveFile(files[0]))
 	{
-		m_recent.SetOpenFile(files[0]);
-		setWindowFilePath(m_recent.GetOpenFile());
-
 		m_recent.AddRecentFile(m_recent.GetOpenFile(),
 			[this](const QString& filename) -> bool
 		{
@@ -754,6 +766,8 @@ bool QmWnd::FileSaveAs()
 
 		fs::path file{files[0].toStdString()};
 		m_recent.SetRecentDir(file.parent_path().string().c_str());
+		m_recent.SetOpenFile(files[0]);
+
 		WorkspaceChanged(false);
 		return true;
 	}
@@ -1005,6 +1019,7 @@ void QmWnd::WorkspaceChanged(bool changed)
 		CalculateAllCircuits();
 
 	setWindowModified(changed);
+	SetActiveFile();
 }
 
 
@@ -1020,6 +1035,28 @@ void QmWnd::ShowAbout()
 	}
 
 	show_dialog(m_about.get());
+}
+
+
+/**
+ * show the active file in the window title
+ */
+void QmWnd::SetActiveFile()
+{
+	const QString& filename = m_recent.GetOpenFile();
+	setWindowFilePath(filename);
+
+	QString mod{isWindowModified() ? " *" : ""};
+	if(filename == "")
+	{
+		setWindowTitle(QString(QM_WND_TITLE "%1").arg(mod));
+	}
+	else
+	{
+		setWindowTitle(QString(QM_WND_TITLE " \u2014 %1%2")
+			.arg(QFileInfo{filename}.fileName())
+			.arg(mod));
+	}
 }
 
 
@@ -1148,9 +1185,6 @@ void QmWnd::dropEvent(QDropEvent *evt)
 			Clear();
 			if(LoadFile(filename))
 			{
-				m_recent.SetOpenFile(filename);
-				setWindowFilePath(m_recent.GetOpenFile());
-
 				m_recent.AddRecentFile(m_recent.GetOpenFile(),
 				[this](const QString& filename) -> bool
 				{
@@ -1159,6 +1193,7 @@ void QmWnd::dropEvent(QDropEvent *evt)
 
 				fs::path file{filename.toStdString()};
 				m_recent.SetRecentDir(file.parent_path().string().c_str());
+				m_recent.SetOpenFile(filename);
 				WorkspaceChanged(false);
 			}
 			else

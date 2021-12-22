@@ -71,6 +71,7 @@ protected:
 	virtual void dragEnterEvent(QDragEnterEvent *) override;
 	virtual void dropEvent(QDropEvent *) override;
 
+	void SetActiveFile();
 	bool AskUnsaved();
 	QString GetDocDir();
 
