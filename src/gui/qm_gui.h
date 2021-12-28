@@ -75,10 +75,15 @@ protected:
 	bool AskUnsaved();
 	QString GetDocDir();
 
+	bool IsWindowModified() const { return m_window_modified; }
+	void SetWindowModified(bool b) { m_window_modified = b; }
+
 
 private:
 	QString m_gui_theme{};
 	bool m_gui_native{false};
+
+	bool m_window_modified{false};
 
 	QByteArray m_default_window_state{};
 	QByteArray m_saved_window_state{};

@@ -672,15 +672,15 @@ bool QmWnd::FileLoad()
 	Clear();
 	if(LoadFile(files[0]))
 	{
+		fs::path file{files[0].toStdString()};
+		m_recent.SetRecentDir(file.parent_path().string().c_str());
+		m_recent.SetOpenFile(files[0]);
+
 		m_recent.AddRecentFile(m_recent.GetOpenFile(),
 			[this](const QString& filename) -> bool
 		{
 			return this->FileLoadRecent(filename);
 		});
-
-		fs::path file{files[0].toStdString()};
-		m_recent.SetRecentDir(file.parent_path().string().c_str());
-		m_recent.SetOpenFile(files[0]);
 
 		WorkspaceChanged(false);
 		return true;
@@ -758,15 +758,15 @@ bool QmWnd::FileSaveAs()
 
 	if(SaveFile(files[0]))
 	{
+		fs::path file{files[0].toStdString()};
+		m_recent.SetRecentDir(file.parent_path().string().c_str());
+		m_recent.SetOpenFile(files[0]);
+
 		m_recent.AddRecentFile(m_recent.GetOpenFile(),
 			[this](const QString& filename) -> bool
 		{
 			return this->FileLoadRecent(filename);
 		});
-
-		fs::path file{files[0].toStdString()};
-		m_recent.SetRecentDir(file.parent_path().string().c_str());
-		m_recent.SetOpenFile(files[0]);
 
 		WorkspaceChanged(false);
 		return true;
@@ -1018,7 +1018,7 @@ void QmWnd::WorkspaceChanged(bool changed)
 	if(m_auto_calc)
 		CalculateAllCircuits();
 
-	setWindowModified(changed);
+	SetWindowModified(changed);
 	SetActiveFile();
 }
 
@@ -1046,7 +1046,7 @@ void QmWnd::SetActiveFile()
 	const QString& filename = m_recent.GetOpenFile();
 	setWindowFilePath(filename);
 
-	QString mod{isWindowModified() ? " *" : ""};
+	QString mod{IsWindowModified() ? " *" : ""};
 	if(filename == "")
 	{
 		setWindowTitle(QString(QM_WND_TITLE "%1").arg(mod));
@@ -1067,7 +1067,7 @@ void QmWnd::SetActiveFile()
 bool QmWnd::AskUnsaved()
 {
 	// unsaved changes?
-	if(isWindowModified())
+	if(IsWindowModified())
 	{
 		QMessageBox::StandardButton btn = QMessageBox::question(
 			this, "Save Changes?",
@@ -1185,15 +1185,16 @@ void QmWnd::dropEvent(QDropEvent *evt)
 			Clear();
 			if(LoadFile(filename))
 			{
+				fs::path file{filename.toStdString()};
+				m_recent.SetRecentDir(file.parent_path().string().c_str());
+				m_recent.SetOpenFile(filename);
+
 				m_recent.AddRecentFile(m_recent.GetOpenFile(),
 				[this](const QString& filename) -> bool
 				{
 					return this->FileLoadRecent(filename);
 				});
 
-				fs::path file{filename.toStdString()};
-				m_recent.SetRecentDir(file.parent_path().string().c_str());
-				m_recent.SetOpenFile(filename);
 				WorkspaceChanged(false);
 			}
 			else
