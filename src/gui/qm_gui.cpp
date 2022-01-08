@@ -225,14 +225,22 @@ void QmWnd::SetupGUI()
 				// item clicked -> add a new component
 				connect(actionComp, &QAction::triggered, [this]()
 				{
-					QuantumComponentItem *comp = new t_comp{};
-					comp->SetGridPos(INIT_COMP_POS_X, INIT_COMP_POS_Y);
-					m_view->AddQuantumComponent(comp, true);
+					if(QuantumComponentItem *comp = new(std::nothrow) t_comp{}; comp)
+					{
+						comp->SetGridPos(INIT_COMP_POS_X, INIT_COMP_POS_Y);
+						m_view->AddQuantumComponent(comp, true);
 
-					QPointF safePos = m_view->GetSafePos(comp, comp->scenePos());
-					comp->setPos(snap_to_grid(safePos));
+						QPointF safePos = m_view->GetSafePos(comp, comp->scenePos());
+						comp->setPos(snap_to_grid(safePos));
 
-					WorkspaceChanged(true);
+						WorkspaceChanged(true);
+					}
+					else
+					{
+						QMessageBox::critical(this, "Error",
+							QString("Component \"%1\" could not be created.")
+								.arg(t_comp::GetStaticName()));
+					}
 				});
 
 				std::get<idx>(compActions) = actionComp;
@@ -642,10 +650,12 @@ void QmWnd::FileNew()
 
 	Clear();
 
-	QuantumComponentItem *state = new InputStates();
-	state->SetGridPos(INIT_COMP_POS_X, INIT_COMP_POS_Y);
+	if(QuantumComponentItem *state = new(std::nothrow) InputStates(); state)
+	{
+		state->SetGridPos(INIT_COMP_POS_X, INIT_COMP_POS_Y);
+		m_view->AddQuantumComponent(state);
+	}
 
-	m_view->AddQuantumComponent(state);
 	WorkspaceChanged(false);
 }
 
