@@ -10,6 +10,7 @@
 			<pos_y>2</pos_y>
 			<num_qbits>4</num_qbits>
 			<width>8</width>
+			<qbit_names>3=|Co&gt;#2=|2&gt;#1=|1&gt;#0=|Ci/S&gt;#</qbit_names>
 		</component>
 		<component type="gate" ident="toffoli">
 			<pos_x>5</pos_x>

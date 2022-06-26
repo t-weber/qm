@@ -138,8 +138,8 @@ public slots:
 
 signals:
 	void SignalMouseCoordinates(qreal scene_x, qreal scene_y);
-	void SignalSelectedItem(const QuantumComponent *item,
-		const InputStates *associated_input_comp = nullptr);
+	void SignalSelectedItem(QuantumComponent *item,
+		InputStates *associated_input_comp = nullptr);
 	void SignalWorkspaceChanged(bool changed = true);
 	void SignalNewResults(const QuantumComponent *item,
 		const InputStates *associated_input_comp = nullptr,

@@ -13,6 +13,7 @@
 #include "lib/qm_algos.h"
 
 #include <string_view>
+#include <boost/algorithm/string.hpp>
 
 
 
@@ -40,6 +41,8 @@ QuantumComponentItem* InputStates::clone() const
 
 	item->SetNumQBits(this->GetNumQBits());
 	item->SetWidth(this->GetWidth());
+	item->m_qbit_names = this->m_qbit_names;
+
 	//*static_cast<QGraphicsItem*>(item) = *this;
 
 	return item;
@@ -71,18 +74,30 @@ void InputStates::paint(QPainter *painter,
 	painter->setBrush(Qt::NoBrush);
 
 	// iterate qubits
-	for(t_uint bit=0; bit<m_num_qbits; ++bit)
+	for(t_uint bit=0; bit<GetNumQBits(); ++bit)
 	{
-		// write qubit state numbers
+		// write qubit names
+		QString name = GetQBitName(bit).c_str();
+		QRect rectName = painter->fontMetrics().boundingRect(name);
+
+		qreal x = -g_raster_size*0.5;
+		qreal w = g_raster_size;
+
+		// qubit name too long?
+		if(rectName.width() > w)
+		{
+			w = rectName.width();
+			//x = g_raster_size*0.5 - w;
+		}
+
 		QRectF rectText{
-			-g_raster_size*0.5, bit*g_raster_size-g_raster_size*0.5,
-			g_raster_size, g_raster_size};
-		QString textState = QString{"|ψ%1>"}.arg(bit+1);
-		painter->drawText(rectText, Qt::AlignCenter, textState);
+			x, bit*g_raster_size-g_raster_size*0.5,
+			w, g_raster_size};
+		painter->drawText(rectText, Qt::AlignCenter, name);
 
 		// draw qubit connection lines
 		painter->drawLine(
-			QPointF(0.5*g_raster_size, bit*g_raster_size),
+			QPointF(x+w, bit*g_raster_size),
 			QPointF((m_width-0.5)*g_raster_size, bit*g_raster_size));
 	}
 }
@@ -103,6 +118,32 @@ void InputStates::SetNumQBits(t_uint bits)
 		m_qbits_input[bit] = old_qbits[bit];
 
 	CalculateInputStates();
+}
+
+
+/**
+ * set the name of a qbit
+ */
+void InputStates::SetQBitName(t_uint bit, const std::string& name)
+{
+	//std::cout << bit << " -> " << name << std::endl;
+	m_qbit_names.insert_or_assign(bit, name);
+	update();
+}
+
+
+/**
+ * get the name of a qbit
+ */
+std::string InputStates::GetQBitName(t_uint bit) const
+{
+	if(auto iter = m_qbit_names.find(bit); iter != m_qbit_names.end())
+		return iter->second;
+
+	// return a default name if none is set
+	std::ostringstream ostr;
+	ostr << "|ψ" << (bit+1) << ">";
+	return ostr.str();
 }
 
 
@@ -216,6 +257,79 @@ t_mat InputStates::GetOperator() const
 }
 
 
+template<class t_map>
+static std::string serialise_map(const t_map& map)
+{
+	std::ostringstream ostr;
+
+	// TODO: ensure there's no collision with the separator symbols
+	for(const auto& pair : map)
+		ostr << pair.first << "=" << pair.second << "#";
+
+	return ostr.str();
+}
+
+
+template<class t_map>
+static t_map deserialise_map(const std::string& str)
+{
+	t_map map;
+	using t_key = typename t_map::key_type;
+	using t_val = typename t_map::mapped_type;
+
+	// TODO: ensure there's no collision with the separator symbols
+	std::vector<std::string> keyvals;
+	boost::split(keyvals, str,
+		[](auto ch) -> bool
+		{
+			return ch == '#';
+		}, boost::token_compress_on);
+
+	for(const std::string& keyvalstr : keyvals)
+	{
+		std::vector<std::string> keyval;
+		boost::split(keyval, keyvalstr,
+			[](auto ch) -> bool
+			{
+				return ch == '=';
+			}, boost::token_compress_on);
+
+		if(keyval.size() != 2)
+			continue;
+
+		// convert to correct key/value types
+		t_key key{};
+		t_val val{};
+
+		if constexpr(std::is_same_v<t_key, std::string>)
+		{
+			// key is already a string
+			key = boost::trim_copy(keyval[0]);
+		}
+		else
+		{
+			std::istringstream istr(keyval[0]);
+			istr >> key;
+		}
+
+		if constexpr(std::is_same_v<t_val, std::string>)
+		{
+			// value is already a string
+			val = boost::trim_copy(keyval[1]);
+		}
+		else
+		{
+			std::istringstream istr(keyval[1]);
+			istr >> val;
+		}
+
+		map.emplace(std::make_pair(key, val));
+	}
+
+	return map;
+}
+
+
 ComponentConfigs InputStates::GetConfig() const
 {
 	ComponentConfigs cfgs;
@@ -230,6 +344,7 @@ ComponentConfigs InputStates::GetConfig() const
 			.description = "Number of qubits",
 			.min_value = GetMinNumQBits(),
 		},
+
 		ComponentConfig
 		{
 			.key = "width",
@@ -237,16 +352,38 @@ ComponentConfigs InputStates::GetConfig() const
 			.description = "Width",
 			.min_value = t_uint(2)
 		},
+
+		ComponentConfig
+		{
+			.key = "qbit_names",
+			.value = serialise_map(m_qbit_names),
+			.description = "Qubit names",
+		},
 	}};
+
+	// get individual qubit names
+	/*for(t_uint qbit=0; qbit<GetNumQBits(); ++qbit)
+	{
+		std::ostringstream ostrKey;
+		ostrKey << "qbit_" << qbit << "_name";
+
+		ComponentConfig cfg
+		{
+			.key = ostrKey.str(),
+			.value = GetQBitName(qbit),
+		};
+
+		cfgs.configs.emplace_back(std::move(cfg));
+	}*/
 
 	return cfgs;
 }
 
 
-void InputStates::SetConfig(const ComponentConfigs& configs)
+void InputStates::SetConfig(const ComponentConfigs& cfgs)
 {
 	// get configuration options
-	for(const ComponentConfig& cfg : configs.configs)
+	for(const ComponentConfig& cfg : cfgs.configs)
 	{
 		if(cfg.key == "num_qbits")
 		{
@@ -258,11 +395,40 @@ void InputStates::SetConfig(const ComponentConfigs& configs)
 			t_uint w = std::get<t_uint>(cfg.value);
 			SetWidth(w);
 		}
+		else if(cfg.key == "qbit_names")
+		{
+			if(std::holds_alternative<std::string>(cfg.value))
+			{
+				m_qbit_names = deserialise_map<decltype(m_qbit_names)>(
+					std::get<std::string>(cfg.value));
+				//for(const auto& [qbit, name] : m_qbit_names)
+				//	std::cout << qbit << " -> " << name << std::endl;
+			}
+		}
 	}
 
+	// write qubit names individually
+	/*for(t_uint qbit=0; qbit<GetNumQBits(); ++qbit)
+	{
+		std::ostringstream ostrKey;
+		ostrKey << "qbit_" << qbit << "_name";
+		std::string qbitkey = ostrKey.str();
+
+		auto iterCfg = std::find_if(cfgs.configs.begin(), cfgs.configs.end(),
+			[&qbitkey](const ComponentConfig& cfg) -> bool
+		{
+			return cfg.key == qbitkey;
+		});
+
+		if(iterCfg != cfgs.configs.end())
+		{
+			if(std::holds_alternative<std::string>(iterCfg->value))
+				SetQBitName(qbit, std::get<std::string>(iterCfg->value));
+		}
+	}*/
 
 	// get qubit setting
-	for(const QBitConfig& bitcfg : configs.qbit_configs)
+	for(const QBitConfig& bitcfg : cfgs.qbit_configs)
 	{
 		if(bitcfg.bit < m_num_qbits)
 		{
@@ -271,9 +437,9 @@ void InputStates::SetConfig(const ComponentConfigs& configs)
 			else if(bitcfg.component == 1)
 				m_qbits_input[bitcfg.bit].imag(bitcfg.value);
 		}
-
-		CalculateInputStates();
 	}
+
+	CalculateInputStates();
 }
 // ----------------------------------------------------------------------------
 

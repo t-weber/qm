@@ -26,6 +26,7 @@
 #include "globals.h"
 #include "settings.h"
 #include "about.h"
+#include "rename.h"
 
 
 class QmWnd : public QMainWindow
@@ -60,6 +61,7 @@ public:
 
 	void ShowSettings(bool only_create = false);
 	void ShowAbout();
+	void ShowRenameDlg();
 
 	Resources& GetResources() { return m_res; }
 	const Resources& GetResources() const { return m_res; }
@@ -101,6 +103,7 @@ private:
 
 	std::shared_ptr<Settings> m_settings{};
 	std::shared_ptr<About> m_about{};
+	std::shared_ptr<Rename> m_rename{};
 
 	ComponentsPlugin m_plugins{};
 

@@ -9,6 +9,7 @@
 #define __QM_COMPONENTS_H__
 
 #include "component_interface.h"
+#include <unordered_map>
 
 
 // ----------------------------------------------------------------------------
@@ -28,6 +29,7 @@ public:
 	void SetInputQBits(const t_vec& vec);
 	void SetOperators(const std::vector<t_columnop>& ops);
 	void SetOperators(std::vector<t_columnop>&& ops);
+	void SetQBitName(t_uint bit, const std::string& name);
 
 	// getter
 	virtual t_uint GetNumQBits() const override { return m_num_qbits; }
@@ -36,6 +38,7 @@ public:
 	const std::vector<t_columnop>& GetOperators() const { return m_ops; }
 	const t_vec& GetInputState() const { return m_state_input; }
 	const t_vec& GetOutputState() const { return m_state_output; }
+	std::string GetQBitName(t_uint bit) const;
 
 	static t_uint GetMinNumQBits() { return 1; }
 	static const char* GetStaticIdent() { return "input_states"; }
@@ -64,6 +67,7 @@ public:
 private:
 	t_uint m_num_qbits = 4;
 	t_uint m_width = 8;
+	std::unordered_map<t_uint, std::string> m_qbit_names{};
 	bool m_ok = true;
 
 	// calculated operators for each column of the grid

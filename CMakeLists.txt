@@ -63,6 +63,7 @@ add_executable(qm
 	src/gui/settings.cpp src/gui/settings.h
 	src/gui/globals.cpp src/gui/globals.h
 	src/gui/about.cpp src/gui/about.h
+	src/gui/rename.cpp src/gui/rename.h
 	src/gui/resources.cpp src/gui/resources.h
 	src/gui/recent.h src/gui/types.h src/gui/helpers.h
 	src/lib/math_algos.h src/lib/math_conts.h src/lib/math_concepts.h

@@ -188,10 +188,15 @@ void QmWnd::SetupGUI()
 	QAction *actionDelete = new QAction(iconDelete, "Delete Component", menuEdit);
 	connect(actionDelete, &QAction::triggered, m_view.get(), &QmView::DeleteCurItem);
 
+	QIcon iconRename = QIcon::fromTheme("edit-find-replace");
+	QAction *actionRename = new QAction(iconRename, "Rename Component...", menuEdit);
+	connect(actionRename, &QAction::triggered, this, &QmWnd::ShowRenameDlg);
+
 	menuEdit->addAction(actionCopy);
 	menuEdit->addAction(actionPaste);
-	menuEdit->addSeparator();
 	menuEdit->addAction(actionDelete);
+	menuEdit->addSeparator();
+	menuEdit->addAction(actionRename);
 	// ------------------------------------------------------------------------
 
 
@@ -1045,6 +1050,27 @@ void QmWnd::ShowAbout()
 	}
 
 	show_dialog(m_about.get());
+}
+
+
+/**
+ * show about dialog
+ */
+void QmWnd::ShowRenameDlg()
+{
+	if(!m_rename)
+	{
+		m_rename = std::make_shared<Rename>(this);
+
+		connect(m_view.get(), &QmView::SignalSelectedItem,
+			m_rename.get(), &Rename::SelectedItem);
+
+		auto *selected_comp = m_view->GetCurItem();
+		auto *input_comp = m_scene->GetCorrespondingInputState(selected_comp);
+		m_rename->SelectedItem(selected_comp, input_comp);
+	}
+
+	show_dialog(m_rename.get());
 }
 
 

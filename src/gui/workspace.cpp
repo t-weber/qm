@@ -401,7 +401,8 @@ QmView::QmView(QmScene *scene, QWidget *parent)
 	QIcon iconDelete = QIcon::fromTheme("edit-delete");
 	QAction *actionDelete = new QAction(iconDelete, "Delete Component", m_context.get());
 
-	QAction *actionCalc = new QAction(iconDelete, "Calculate Circuit", m_context.get());
+	QIcon iconCalc = QIcon::fromTheme("accessories-calculator");
+	QAction *actionCalc = new QAction(iconCalc, "Calculate Circuit", m_context.get());
 
 	m_context->addAction(actionCopy);
 	m_context->addAction(actionPaste);

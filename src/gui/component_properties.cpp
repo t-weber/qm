@@ -105,7 +105,8 @@ void ComponentProperties::UpdateResults(
 /**
  * a component has been selected -> show its properties
  */
-void ComponentProperties::SelectedItem(const QuantumComponent *comp, const InputStates *associated_input_comp)
+void ComponentProperties::SelectedItem(
+	const QuantumComponent *comp, const InputStates *associated_input_comp)
 {
 	Clear();
 	if(!comp)
@@ -197,7 +198,8 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 				spinVal->setMaximum(std::get<t_uint>(*cfg.max_value));
 
 			connect(spinVal, static_cast<void (QSpinBox::*)(int)>
-				(&QSpinBox::valueChanged), [this, cfg, comp, associated_input_comp](int val) -> void
+				(&QSpinBox::valueChanged),
+				[this, cfg, comp, associated_input_comp](int val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -237,7 +239,8 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 				spinVal->setMaximum(std::get<t_real>(*cfg.max_value)*scale);
 
 			connect(spinVal, static_cast<void (QDoubleSpinBox::*)(double)>
-			(&QDoubleSpinBox::valueChanged), [this, cfg, scale, comp, associated_input_comp](double val) -> void
+			(&QDoubleSpinBox::valueChanged),
+				[this, cfg, scale, comp, associated_input_comp](double val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -274,7 +277,8 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 			editVal->setText(ostrVal.str().c_str());
 
 			connect(editVal, static_cast<void (QLineEdit::*)(const QString&)>
-			(&QLineEdit::textChanged), [this, cfg, comp, associated_input_comp](const QString& val) -> void
+			(&QLineEdit::textChanged),
+				[this, cfg, comp, associated_input_comp](const QString& val) -> void
 			{
 				ComponentConfigs configs;
 
@@ -318,7 +322,8 @@ void ComponentProperties::SelectedItem(const QuantumComponent *comp, const Input
 		for(t_uint bit=0; bit<input_comp->GetNumQBits(); ++bit)
 		{
 			// description label
-			QString textState = QString{"Qubit |ψ%1> = a⋅|0> + b⋅|1>"}.arg(bit+1);
+			std::string bitname = input_comp->GetQBitName(bit);
+			QString textState = QString{"Qubit %1 = a⋅|0> + b⋅|1>"}.arg(bitname.c_str());
 			QLabel *labelDescr = new QLabel(textState, this);
 			m_layout->addWidget(labelDescr, m_layout->rowCount(), 0, 1, num_cols);
 
