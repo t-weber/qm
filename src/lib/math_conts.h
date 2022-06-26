@@ -5,9 +5,9 @@
  * @license see 'LICENSE' file
  *
  * @see general references for algorithms:
- *	- (DesktopBronstein08): I. N. Bronstein et al., ISBN: 978-3-8171-2017-8 (2008) [in its HTML version "Desktop Bronstein"].
+ * 	- (DesktopBronstein08): I. N. Bronstein et al., ISBN: 978-3-8171-2017-8 (2008) [in its HTML version "Desktop Bronstein"].
  * 	- (Bronstein08): I. N. Bronstein et al., ISBN: 978-3-8171-2017-8 (2008) [in its paperback version].
- *	- (Kuipers02): J. B. Kuipers, ISBN: 0-691-05872-5 (2002).
+ * 	- (Kuipers02): J. B. Kuipers, ISBN: 0-691-05872-5 (2002).
  */
 
 #ifndef __MATH_CONTS_H__
@@ -707,27 +707,7 @@ t_vec operator*(const t_mat& mat, const t_vec& vec)
 requires m::is_basic_mat<t_mat> && m::is_dyn_mat<t_mat>
 	&& m::is_basic_vec<t_vec> && m::is_dyn_vec<t_vec>
 {
-	using t_size = decltype(t_mat{}.size1());
-
-	if constexpr(m::is_dyn_mat<t_mat>)
-		assert((mat.size2() == t_size(vec.size())));
-	else
-		static_assert(mat.size2() == t_size(vec.size()));
-
-
-	t_vec vecRet = m::create<t_vec>(mat.size1());
-
-	for(t_size row=0; row<mat.size1(); ++row)
-	{
-		vecRet[row] = typename t_vec::value_type{/*0*/};
-		for(t_size col=0; col<mat.size2(); ++col)
-		{
-			auto elem = mat(row, col) * vec[col];
-			vecRet[row] += elem;
-		}
-	}
-
-	return vecRet;
+	return m::mult<t_mat, t_vec>(mat, vec);
 }
 
 

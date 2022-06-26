@@ -7,7 +7,7 @@
  * @see references for algorithms:
  * 	- (Arens15): T. Arens et al., ISBN: 978-3-642-44919-2, DOI: 10.1007/978-3-642-44919-2 (2015).
  * 	- (Arfken13): G. B. Arfken et al., ISBN: 978-0-12-384654-9, DOI: 10.1016/C2009-0-30629-7 (2013).
- *	- (DesktopBronstein08): I. N. Bronstein et al., ISBN: 978-3-8171-2017-8 (2008) [in its HTML version "Desktop Bronstein"].
+ * 	- (DesktopBronstein08): I. N. Bronstein et al., ISBN: 978-3-8171-2017-8 (2008) [in its HTML version "Desktop Bronstein"].
  * 	- (Bronstein08): I. N. Bronstein et al., ISBN: 978-3-8171-2017-8 (2008) [in its paperback version].
  * 	- (Merziger06): G. Merziger and T. Wirth, ISBN: 3923923333 (2006).
  * 	- (Scarpino11): M. Scarpino, ISBN: 978-1-6172-9017-6 (2011).
@@ -29,15 +29,35 @@
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <random>
 #include <numeric>
 #include <numbers>
-//#include <iostream>
+#include <cassert>
+#include <iostream>
 
-#define MATH_USE_FLAT_DET 0
+#ifndef MATH_USE_FLAT_DET
+	#define MATH_USE_FLAT_DET 0
+#endif
+
+#if MATH_USE_FLAT_DET != 0
+	#pragma message("Using flat determinant calculation method.")
+#endif
 
 
 // math
 namespace m {
+
+// ----------------------------------------------------------------------------
+// forward declarations
+// ----------------------------------------------------------------------------
+template<class t_vec> requires is_basic_vec<t_vec>
+t_vec cross(const t_vec& vec1, const t_vec& vec2);
+
+template<class t_mat, class t_real = typename t_mat::value_type>
+t_mat givens(std::size_t N, std::size_t i, std::size_t j, t_real angle)
+requires is_mat<t_mat>;
+// ----------------------------------------------------------------------------
+
 
 
 // ----------------------------------------------------------------------------
@@ -241,7 +261,7 @@ requires is_vec<t_vec>
  * create a matrix with given sizes if it is dynamic
  */
 template<class t_mat>
-t_mat create(decltype(t_mat{}.size1()) size1, decltype(t_mat{}.size1()) size2)
+t_mat create(decltype(t_mat{}.size1()) size1, decltype(t_mat{}.size2()) size2)
 requires is_mat<t_mat>
 {
 	t_mat mat;
@@ -265,70 +285,11 @@ requires is_mat<t_mat> && is_basic_vec<t_vec>
 
 	t_vec vec;
 
-	for(t_idx iRow=0; iRow<mat.size1(); ++iRow)
-		for(t_idx iCol=0; iCol<mat.size2(); ++iCol)
-			vec.push_back(T_dst(mat(iRow, iCol)));
+	for(t_idx row_idx=0; row_idx<mat.size1(); ++row_idx)
+		for(t_idx col_idx=0; col_idx<mat.size2(); ++col_idx)
+			vec.push_back(T_dst(mat(row_idx, col_idx)));
 
 	return vec;
-}
-
-
-/**
- * converts matrix containers of different value types
- */
-template<class t_mat_dst, class t_mat_src>
-t_mat_dst convert(const t_mat_src& mat)
-requires is_mat<t_mat_dst> && is_mat<t_mat_src>
-{
-	//using T_src = typename t_mat_src::value_type;
-	using T_dst = typename t_mat_dst::value_type;
-	using t_idx = decltype(mat.size1());
-
-	t_mat_dst matdst = create<t_mat_dst>(mat.size1(), mat.size2());
-
-	for(t_idx iRow=0; iRow<mat.size1(); ++iRow)
-		for(t_idx iCol=0; iCol<mat.size2(); ++iCol)
-			matdst(iRow, iCol) = T_dst(mat(iRow, iCol));
-
-	return matdst;
-}
-
-
-/**
- * converts matrix containers of different value types and possibly sizes
- */
-template<class t_mat_dst, class t_mat_src>
-void convert(t_mat_dst& mat_dst, const t_mat_src& mat_src)
-requires is_mat<t_mat_dst> && is_mat<t_mat_src>
-{
-	using T_dst = typename t_mat_dst::value_type;
-	using t_idx = decltype(mat_src.size1());
-
-	mat_dst = unit<t_mat_dst>(mat_dst.size1(), mat_dst.size2());
-
-	for(t_idx iRow=0; iRow<std::min(mat_src.size1(), mat_dst.size1()); ++iRow)
-		for(t_idx iCol=0; iCol<std::min(mat_src.size2(), mat_dst.size2()); ++iCol)
-			mat_dst(iRow, iCol) = T_dst(mat_src(iRow, iCol));
-}
-
-
-/**
- * converts vector containers of different value types
- */
-template<class t_vec_dst, class t_vec_src>
-t_vec_dst convert(const t_vec_src& vec)
-requires is_vec<t_vec_dst> && is_vec<t_vec_src>
-{
-	//using T_src = typename t_vec_src::value_type;
-	using T_dst = typename t_vec_dst::value_type;
-	using t_idx = decltype(vec.size());
-
-	t_vec_dst vecdst = create<t_vec_dst>(vec.size());
-
-	for(t_idx i=0; i<vec.size(); ++i)
-		vecdst[i] = T_dst(vec[i]);
-
-	return vecdst;
 }
 
 
@@ -403,6 +364,65 @@ requires is_basic_quat<t_quat>
 {
 	static const t_quat quat(1, 0, 0, 0);
 	return quat;
+}
+
+
+/**
+ * converts matrix containers of different value types
+ */
+template<class t_mat_dst, class t_mat_src>
+t_mat_dst convert(const t_mat_src& mat)
+requires is_mat<t_mat_dst> && is_mat<t_mat_src>
+{
+	//using T_src = typename t_mat_src::value_type;
+	using T_dst = typename t_mat_dst::value_type;
+	using t_idx = decltype(mat.size1());
+
+	t_mat_dst matdst = create<t_mat_dst>(mat.size1(), mat.size2());
+
+	for(t_idx row_idx=0; row_idx<mat.size1(); ++row_idx)
+		for(t_idx col_idx=0; col_idx<mat.size2(); ++col_idx)
+			matdst(row_idx, col_idx) = T_dst(mat(row_idx, col_idx));
+
+	return matdst;
+}
+
+
+/**
+ * converts matrix containers of different value types and possibly sizes
+ */
+template<class t_mat_dst, class t_mat_src>
+void convert(t_mat_dst& mat_dst, const t_mat_src& mat_src)
+requires is_mat<t_mat_dst> && is_mat<t_mat_src>
+{
+	using T_dst = typename t_mat_dst::value_type;
+	using t_idx = decltype(mat_src.size1());
+
+	mat_dst = unit<t_mat_dst>(mat_dst.size1(), mat_dst.size2());
+
+	for(t_idx row_idx=0; row_idx<std::min(mat_src.size1(), mat_dst.size1()); ++row_idx)
+		for(t_idx col_idx=0; col_idx<std::min(mat_src.size2(), mat_dst.size2()); ++col_idx)
+			mat_dst(row_idx, col_idx) = T_dst(mat_src(row_idx, col_idx));
+}
+
+
+/**
+ * converts vector containers of different value types
+ */
+template<class t_vec_dst, class t_vec_src>
+t_vec_dst convert(const t_vec_src& vec)
+requires is_vec<t_vec_dst> && is_vec<t_vec_src>
+{
+	//using T_src = typename t_vec_src::value_type;
+	using T_dst = typename t_vec_dst::value_type;
+	using t_idx = decltype(vec.size());
+
+	t_vec_dst vecdst = create<t_vec_dst>(vec.size());
+
+	for(t_idx i=0; i<vec.size(); ++i)
+		vecdst[i] = T_dst(vec[i]);
+
+	return vecdst;
 }
 
 
@@ -538,6 +558,79 @@ requires is_basic_quat<t_quat>
 
 
 /**
+ * random scalar
+ */
+template<class t_scalar>
+t_scalar rand(t_scalar min=0., t_scalar max=1.)
+requires is_scalar<t_scalar>
+{
+	static std::mt19937 rng{std::random_device{}()};
+
+	if constexpr(std::is_integral_v<t_scalar>)
+		return std::uniform_int_distribution<t_scalar>(min, max)(rng);
+	else
+		return std::uniform_real_distribution<t_scalar>(min, max)(rng);
+}
+
+
+/**
+ * random matrix
+ */
+template<class t_mat>
+t_mat rand(std::size_t N1, std::size_t N2)
+requires is_mat<t_mat>
+{
+	using t_real = typename t_mat::value_type;
+	using t_size = decltype(t_mat{}.size1());
+
+	t_mat mat = create<t_mat>(N1, N2);
+
+	for(t_size i=0; i<mat.size1(); ++i)
+		for(t_size j=0; j<mat.size2(); ++j)
+			mat(i,j) = rand<t_real>();
+
+	return mat;
+}
+
+
+/**
+ * random vector
+ */
+template<class t_vec>
+t_vec rand(decltype(t_vec{}.size()) N)
+requires is_basic_vec<t_vec>
+{
+	using t_real = typename t_vec::value_type;
+	using t_size = decltype(t_vec{}.size());
+
+	t_vec vec = create<t_vec>(N);
+
+	for(t_size i=0; i<vec.size(); ++i)
+		vec[i] = rand<t_real>();
+
+	return vec;
+}
+
+
+/**
+ * random quaternion
+ */
+template<class t_quat>
+const t_quat& rand()
+requires is_basic_quat<t_quat>
+{
+	using t_real = typename t_quat::value_type;
+
+	// TODO: normalise
+	return t_quat(
+		rand<t_real>(),
+		rand<t_real>(),
+		rand<t_real>(),
+		rand<t_real>());
+}
+
+
+/**
  * tests for symmetric or hermitian matrix
  */
 template<class t_mat>
@@ -631,18 +724,18 @@ template<class t_mat,
 t_mat create(const t_cont_outer<t_cont<typename t_mat::value_type>>& lst)
 requires is_mat<t_mat>
 {
-	const std::size_t iCols = lst.size();
-	const std::size_t iRows = lst.begin()->size();
+	const std::size_t col_idxs = lst.size();
+	const std::size_t row_idxs = lst.begin()->size();
 
-	t_mat mat = unit<t_mat>(iRows, iCols);
+	t_mat mat = unit<t_mat>(row_idxs, col_idxs);
 
 	auto iterCol = lst.begin();
-	for(std::size_t iCol=0; iCol<iCols; ++iCol)
+	for(std::size_t col_idx=0; col_idx<col_idxs; ++col_idx)
 	{
 		auto iterRow = iterCol->begin();
-		for(std::size_t iRow=0; iRow<iRows; ++iRow)
+		for(std::size_t row_idx=0; row_idx<row_idxs; ++row_idx)
 		{
-			mat(iRow, iCol) = *iterRow;
+			mat(row_idx, col_idx) = *iterRow;
 			std::advance(iterRow, 1);
 		}
 
@@ -656,20 +749,21 @@ requires is_mat<t_mat>
 /**
  * create matrix from column (or row) vectors
  */
-template<class t_mat, class t_vec, template<class...> class t_cont_outer = std::initializer_list>
+template<class t_mat, class t_vec,
+	template<class...> class t_cont_outer = std::initializer_list>
 t_mat create(const t_cont_outer<t_vec>& lst, bool bRow = false)
 requires is_mat<t_mat> && is_basic_vec<t_vec>
 {
-	const std::size_t iCols = lst.size();
-	const std::size_t iRows = lst.begin()->size();
+	const std::size_t col_idxs = lst.size();
+	const std::size_t row_idxs = lst.begin()->size();
 
-	t_mat mat = unit<t_mat>(iRows, iCols);
+	t_mat mat = unit<t_mat>(row_idxs, col_idxs);
 
 	auto iterCol = lst.begin();
-	for(std::size_t iCol=0; iCol<iCols; ++iCol)
+	for(std::size_t col_idx=0; col_idx<col_idxs; ++col_idx)
 	{
-		for(std::size_t iRow=0; iRow<iRows; ++iRow)
-			mat(iRow, iCol) = (*iterCol)[iRow];
+		for(std::size_t row_idx=0; row_idx<row_idxs; ++row_idx)
+			mat(row_idx, col_idx) = (*iterCol)[row_idx];
 		std::advance(iterCol, 1);
 	}
 
@@ -690,11 +784,11 @@ requires is_mat<t_mat>
 	t_mat mat = unit<t_mat>(N, N);
 
 	auto iter = lst.begin();
-	for(std::size_t iRow=0; iRow<N; ++iRow)
+	for(std::size_t row_idx=0; row_idx<N; ++row_idx)
 	{
-		for(std::size_t iCol=0; iCol<N; ++iCol)
+		for(std::size_t col_idx=0; col_idx<N; ++col_idx)
 		{
-			mat(iRow, iCol) = *iter;
+			mat(row_idx, col_idx) = *iter;
 			std::advance(iter, 1);
 		}
 	}
@@ -775,7 +869,11 @@ requires is_basic_vec<t_vec>
 	using t_size = decltype(vec1.size());
 	typename t_vec::value_type val(0);
 
-	for(t_size i=0; i<vec1.size(); ++i)
+	const t_size I = vec1.size();
+	const t_size J = vec2.size();
+	assert(I == J);
+
+	for(t_size i=0; i<I; ++i)
 	{
 		if constexpr(is_complex<typename t_vec::value_type>)
 			val += std::conj(vec1[i]) * vec2[i];
@@ -796,14 +894,18 @@ requires is_basic_vec<t_vec1> && is_basic_vec<t_vec2>
 {
 	using t_size = decltype(vec1.size());
 
-	if(vec1.size()==0 || vec2.size()==0)
+	const t_size I = vec1.size();
+	const t_size J = vec2.size();
+	//assert(I == J);
+
+	if(I==0 || J==0)
 		return typename t_vec1::value_type{};
 
 	// first element
 	auto val = vec1[0]*vec2[0];
 
 	// remaining elements
-	for(t_size i=1; i<std::min(vec1.size(), vec2.size()); ++i)
+	for(t_size i=1; i<std::min(I, J); ++i)
 	{
 		if constexpr(is_complex<typename t_vec1::value_type>)
 		{
@@ -964,14 +1066,82 @@ requires is_mat<t_mat>
 
 
 /**
+ * matrix-matrix product, M_ij = R_ik S_kj
+ */
+template<class t_mat>
+requires m::is_basic_mat<t_mat> && m::is_dyn_mat<t_mat>
+t_mat mult(const t_mat& R, const t_mat& S) noexcept
+{
+	if constexpr(m::is_dyn_mat<t_mat>)
+		assert((R.size2() == S.size1()));
+	else
+		static_assert(R.size2() == S.size1());
+
+	//using t_scalar = std::common_type_t<t_scalar_1, t_scalar_2>;
+	using t_scalar = typename t_mat::value_type;
+	using t_size = decltype(t_mat{}.size1());
+
+	const t_size I = R.size1();
+	const t_size J = S.size2();
+	const t_size K = R.size2();
+
+	t_mat M = create<t_mat>(I, J);
+
+	for(t_size i=0; i<I; ++i)
+	{
+		for(t_size j=0; j<J; ++j)
+		{
+			M(i, j) = t_scalar{0};
+
+			for(t_size k=0; k<K; ++k)
+				M(i, j) += R(i, k) * S(k, j);
+		}
+	}
+
+	return M;
+}
+
+
+/**
+ * matrix-vector product
+ */
+template<class t_mat, class t_vec>
+t_vec mult(const t_mat& mat, const t_vec& vec)
+requires m::is_basic_mat<t_mat> && m::is_dyn_mat<t_mat>
+	&& m::is_basic_vec<t_vec> && m::is_dyn_vec<t_vec>
+{
+	using t_size = decltype(t_mat{}.size1());
+
+	if constexpr(m::is_dyn_mat<t_mat>)
+		assert((mat.size2() == t_size(vec.size())));
+	else
+		static_assert(mat.size2() == t_size(vec.size()));
+
+	t_vec vecRet = m::create<t_vec>(mat.size1());
+
+	for(t_size row=0; row<mat.size1(); ++row)
+	{
+		vecRet[row] = typename t_vec::value_type{/*0*/};
+		for(t_size col=0; col<mat.size2(); ++col)
+		{
+			auto elem = mat(row, col) * vec[col];
+			vecRet[row] += elem;
+		}
+	}
+
+	return vecRet;
+}
+
+
+/**
  * matrix-vector product using only a portion of the matrix
  */
 template<class t_mat, class t_vec>
 t_vec mult(const t_mat& mat, const t_vec& vec,
-	std::size_t outsize = std::numeric_limits<std::size_t>::max(),
+	std::size_t outsize /*= std::numeric_limits<std::size_t>::max()*/,
 	std::size_t row_begin = 0, std::size_t col_begin = 0)
 requires m::is_basic_mat<t_mat> && m::is_dyn_mat<t_mat>
-&& m::is_basic_vec<t_vec> && m::is_dyn_vec<t_vec>
+	&& m::is_basic_vec<t_vec> && m::is_dyn_vec<t_vec>
 {
 	using t_real = typename t_vec::value_type;
 	using t_size = decltype(t_mat{}.size1());
@@ -1123,13 +1293,13 @@ requires is_vec<t_vec>
 {
 	if(is_normalised)
 	{
-		return inner<t_vec>(vec, vecProj) * vecProj;
+		return inner<t_vec>(vecProj, vec) * vecProj;
 	}
 	else
 	{
 		const auto len = norm<t_vec>(vecProj);
 		const t_vec _vecProj = vecProj / len;
-		return inner<t_vec>(vec, _vecProj) * _vecProj;
+		return inner<t_vec>(_vecProj, vec) * _vecProj;
 	}
 }
 
@@ -1146,13 +1316,13 @@ requires is_vec<t_vec>
 {
 	if(is_normalised)
 	{
-		return inner<t_vec>(vec, vecProj);
+		return inner<t_vec>(vecProj, vec);
 	}
 	else
 	{
 		const auto len = norm<t_vec>(vecProj);
 		const t_vec _vecProj = vecProj / len;
-		return inner<t_vec>(vec, _vecProj);
+		return inner<t_vec>(_vecProj, vec);
 	}
 }
 
@@ -1384,8 +1554,8 @@ requires is_vec<t_vec>
  * @see https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
  */
 template<class t_vec,
-	template<class...> class t_cont_in = std::initializer_list,
-	template<class...> class t_cont_out = std::vector>
+	template<class...> class t_cont_out = std::vector,
+	template<class...> class t_cont_in = std::initializer_list>
 t_cont_out<t_vec> orthonorm_sys(const t_cont_in<t_vec>& sys)
 requires is_vec<t_vec>
 {
@@ -1446,26 +1616,26 @@ requires is_mat<t_mat> && is_vec<t_vec>
 /**
  * submatrix removing a column/row from a matrix stored in a vector container
  */
-template<class t_vec>
-t_vec flat_submat(const t_vec& mat,
+template<class t_vec, class t_matvec = t_vec>
+t_vec flat_submat(const t_matvec& mat,
 	std::size_t iNumRows, std::size_t iNumCols,
-	std::size_t iRemRow, std::size_t iRemCol)
+	std::size_t rem_row, std::size_t rem_col)
 requires is_basic_vec<t_vec>
 {
 	using t_size = decltype(mat.size());
 	t_vec vec;
 	vec.reserve(iNumRows);
 
-	for(t_size iRow=0; iRow<iNumRows; ++iRow)
+	for(t_size row_idx=0; row_idx<iNumRows; ++row_idx)
 	{
-		if(iRow == iRemRow)
+		if(row_idx == rem_row)
 			continue;
 
-		for(t_size iCol=0; iCol<iNumCols; ++iCol)
+		for(t_size col_idx=0; col_idx<iNumCols; ++col_idx)
 		{
-			if(iCol == iRemCol)
+			if(col_idx == rem_col)
 				continue;
-			vec.push_back(mat[iRow*iNumCols + iCol]);
+			vec.push_back(mat[row_idx*iNumCols + col_idx]);
 		}
 	}
 
@@ -1477,29 +1647,29 @@ requires is_basic_vec<t_vec>
  * submatrix removing a column/row from a matrix
  */
 template<class t_mat>
-t_mat submat(const t_mat& mat, decltype(mat.size1()) iRemRow, decltype(mat.size2()) iRemCol)
+t_mat submat(const t_mat& mat, decltype(mat.size1()) rem_row, decltype(mat.size2()) rem_col)
 requires is_dyn_mat<t_mat>
 {
 	using size_t = decltype(mat.size1());
 	t_mat matRet = m::create<t_mat>(mat.size1()-1, mat.size2()-1);
 
-	size_t iResRow = 0;
-	for(size_t iRow=0; iRow<mat.size1(); ++iRow)
+	size_t res_row = 0;
+	for(size_t row_idx=0; row_idx<mat.size1(); ++row_idx)
 	{
-		if(iRow == iRemRow)
+		if(row_idx == rem_row)
 			continue;
 
 		size_t iResCol = 0;
-		for(size_t iCol=0; iCol<mat.size2(); ++iCol)
+		for(size_t col_idx=0; col_idx<mat.size2(); ++col_idx)
 		{
-			if(iCol == iRemCol)
+			if(col_idx == rem_col)
 				continue;
 
-			matRet(iResRow, iResCol) = mat(iRow, iCol);
+			matRet(res_row, iResCol) = mat(row_idx, col_idx);
 			++iResCol;
 		}
 
-		++iResRow;
+		++res_row;
 	}
 
 	return matRet;
@@ -1510,54 +1680,54 @@ requires is_dyn_mat<t_mat>
  * determinant from a square matrix stored in a vector container
  * @see (Merziger06), p. 185
  */
-template<class t_vec>
-typename t_vec::value_type flat_det(const t_vec& mat, std::size_t iN)
+template<class t_vec, class t_matvec = t_vec>
+typename t_vec::value_type flat_det(const t_matvec& mat, std::size_t N)
 requires is_basic_vec<t_vec>
 {
 	using t_size = decltype(mat.size());
 	using T = typename t_vec::value_type;
 
 	// special cases
-	if(iN == 0)
+	if(N == 0)
 		return 0;
-	else if(iN == 1)
+	else if(N == 1)
 		return mat[0];
-	else if(iN == 2)
+	else if(N == 2)
 		return mat[0]*mat[3] - mat[1]*mat[2];
 
 
 	T fullDet = T(0);
-	t_size iRow = 0;
+	t_size row_idx = 0;
 
 	// get row with maximum number of zeros
-	t_size iMaxNumZeros = 0;
-	for(t_size iCurRow=0; iCurRow<iN; ++iCurRow)
+	t_size max_num_zeros = 0;
+	for(t_size cur_row=0; cur_row<N; ++cur_row)
 	{
-		t_size iNumZeros = 0;
-		for(t_size iCurCol=0; iCurCol<iN; ++iCurCol)
+		t_size num_zeros = 0;
+		for(t_size cur_col=0; cur_col<N; ++cur_col)
 		{
-			if(equals<T>(mat[iCurRow*iN + iCurCol], T(0)))
-				++iNumZeros;
+			if(equals<T>(mat[cur_row*N + cur_col], T(0)))
+				++num_zeros;
 		}
 
-		if(iNumZeros > iMaxNumZeros)
+		if(num_zeros > max_num_zeros)
 		{
-			iRow = iCurRow;
-			iMaxNumZeros = iNumZeros;
+			row_idx = cur_row;
+			max_num_zeros = num_zeros;
 		}
 	}
 
 
-	// recursively expand determiant along a row
-	for(t_size iCol=0; iCol<iN; ++iCol)
+	// recursively expand determinant along a row
+	for(t_size col_idx=0; col_idx<N; ++col_idx)
 	{
-		const T elem = mat[iRow*iN + iCol];
+		const T elem = mat[row_idx*N + col_idx];
 		if(equals<T>(elem, 0))
 			continue;
 
-		const T sgn = ((iRow+iCol) % 2) == 0 ? T(1) : T(-1);
-		const t_vec subMat = flat_submat<t_vec>(mat, iN, iN, iRow, iCol);
-		const T subDet = flat_det<t_vec>(subMat, iN-1) * sgn;
+		const T sgn = ((row_idx+col_idx) % 2) == 0 ? T(1) : T(-1);
+		const t_vec subMat = flat_submat<t_vec, t_matvec>(mat, N, N, row_idx, col_idx);
+		const T subDet = flat_det<t_vec>(subMat, N-1) * sgn;
 
 		fullDet += elem * subDet;
 	}
@@ -1568,6 +1738,7 @@ requires is_basic_vec<t_vec>
 
 /**
  * determinant
+ * @see (Merziger06), p. 185
  */
 template<class t_mat, class t_vec>
 typename t_mat::value_type det(const t_mat& mat)
@@ -1607,8 +1778,9 @@ requires is_mat<t_mat>
 	//if(detQ < 0.) res = -res;
 
 #else
-	std::vector<T> matFlat = convert<std::vector<T>, t_mat>(mat);
-	res = flat_det<std::vector<T>>(matFlat, mat.size1());
+	//std::vector<T> matFlat = convert<std::vector<T>, t_mat>(mat);
+	const auto& matFlat = matvec_adapter<t_mat>{mat};
+	res = flat_det<t_vec>(matFlat, mat.size1());
 #endif
 
 	return res;
@@ -1657,9 +1829,10 @@ requires is_mat<t_mat> && is_vec<t_vec>
 	const T fullDet = det<t_mat, t_vec>(mat);
 
 #else
-	using t_matvec = std::vector<T>;
-	const t_matvec matFlat = convert<std::vector<T>, t_mat>(mat);
-	const T fullDet = flat_det<t_matvec>(matFlat, N);
+	//using t_matvec = std::vector<T>;
+	//const t_matvec matFlat = convert<t_matvec, t_mat>(mat);
+	const auto& matFlat = matvec_adapter<t_mat>{mat};
+	const T fullDet = flat_det<t_vec>(matFlat, N);
 #endif
 
 	// fail if determinant is zero
@@ -1679,8 +1852,8 @@ requires is_mat<t_mat> && is_vec<t_vec>
 
 #else
 			// alternatively, better for static matrices:
-			const t_matvec subMat = flat_submat<t_matvec>(matFlat, N, N, i, j);
-			const T subDet = flat_det<t_matvec>(subMat, N-1);
+			const t_vec subMat = flat_submat<t_vec>(matFlat, N, N, i, j);
+			const T subDet = flat_det<t_vec>(subMat, N-1);
 #endif
 
 			const T sgn = ((i+j) % 2) == 0 ? T(1) : T(-1);
@@ -1749,20 +1922,33 @@ requires is_basic_vec<t_vec>
 	const t_size N = vecs.size()+1;
 	t_vec vec = zero<t_vec>(N);
 
-	for(t_size iComp=0; iComp<N; ++iComp)
+	// 3-dim case
+	if(N == 3 && vecs.begin()->size() == 3)
 	{
-		std::vector<T> mat = zero<std::vector<T>>(N*N);
-		mat[0*N + iComp] = T(1);
+		const t_vec& vec0 = *vecs.begin();
+		const t_vec& vec1 = *std::next(vecs.begin(), 1);
 
-		t_size iRow = 0;
-		for(const t_vec& vec : vecs)
+		vec = cross<t_vec>(vec0, vec1);
+	}
+
+	// general case
+	else
+	{
+		for(t_size iComp=0; iComp<N; ++iComp)
 		{
-			for(t_size iCol=0; iCol<N; ++iCol)
-				mat[(iRow+1)*N + iCol] = vec[iCol];
-			++iRow;
-		}
+			std::vector<T> mat = zero<std::vector<T>>(N*N);
+			mat[0*N + iComp] = T(1);
 
-		vec[iComp] = flat_det<decltype(mat)>(mat, N);
+			t_size row_idx = 0;
+			for(const t_vec& vec : vecs)
+			{
+				for(t_size col_idx=0; col_idx<N; ++col_idx)
+					mat[(row_idx+1)*N + col_idx] = vec[col_idx];
+				++row_idx;
+			}
+
+			vec[iComp] = flat_det<decltype(mat)>(mat, N);
+		}
 	}
 
 	return vec;
@@ -1782,18 +1968,19 @@ template<class t_vec>
 std::tuple<t_vec, int, typename t_vec::value_type>
 intersect_line_plane(
 	const t_vec& lineOrg, const t_vec& lineDir,
-	const t_vec& planeNorm, typename t_vec::value_type plane_d)
+	const t_vec& planeNorm, typename t_vec::value_type plane_d,
+	typename t_vec::value_type eps = std::numeric_limits<typename t_vec::value_type>::epsilon())
 requires is_vec<t_vec>
 {
 	using T = typename t_vec::value_type;
 
 	// are line and plane parallel?
 	const T dir_n = inner<t_vec>(lineDir, planeNorm);
-	if(equals<T>(dir_n, 0))
+	if(equals<T>(dir_n, 0, eps))
 	{
 		const T org_n = inner<t_vec>(lineOrg, planeNorm);
 		// line on plane?
-		if(equals<T>(org_n, plane_d))
+		if(equals<T>(org_n, plane_d, eps))
 			return std::make_tuple(t_vec(), 2, T(0));
 		// no intersection
 		return std::make_tuple(t_vec(), 0, T(0));
@@ -1804,6 +1991,47 @@ requires is_vec<t_vec>
 
 	const t_vec vecInters = lineOrg + lam*lineDir;
 	return std::make_tuple(vecInters, 1, lam);
+}
+
+
+/**
+ * intersection of plane <x|n> = d and a polygon
+ * @return vertices of plane - polygon edge intersections
+ */
+template<class t_vec, template<class...> class t_cont>
+t_cont<t_vec> intersect_plane_poly(
+	const t_vec& planeNorm, typename t_vec::value_type plane_d,
+	const t_cont<t_vec>& polyVerts,
+	typename t_vec::value_type eps = std::numeric_limits<typename t_vec::value_type>::epsilon())
+requires is_vec<t_vec>
+{
+	t_cont<t_vec> edgeInters;
+
+	// intersect with each polygon edge
+	for(std::size_t i = 0; i < polyVerts.size(); ++i)
+	{
+		std::size_t j = (i+1) % polyVerts.size();
+
+		t_vec lineOrg = polyVerts[i];
+		t_vec lineDir = polyVerts[j] - lineOrg;
+
+		auto [pos, ty, lam] = intersect_line_plane(
+			lineOrg, lineDir, planeNorm, plane_d, eps);
+
+		if(ty == 1 && lam >= 0. && lam < 1.)
+		{
+			// add intersection point
+			edgeInters.emplace_back(std::move(pos));
+		}
+		else if(ty == 2)
+		{
+			// line collinear to plane: add full line
+			edgeInters.push_back(lineOrg);
+			edgeInters.push_back(lineOrg + lineDir);
+		}
+	}
+
+	return edgeInters;
 }
 
 
@@ -2198,8 +2426,8 @@ requires is_vec<t_vec>
 	const T len13 = norm<t_vec>(vec13);
 	const T lenuv12 = norm<t_vec>(uv12);
 	const T lenuv13 = norm<t_vec>(uv13);
-	auto vecBasis = orthonorm_sys<t_vec, std::initializer_list, std::vector>({vec12, vec13});
-	auto uvBasis = orthonorm_sys<t_vec, std::initializer_list, std::vector>({uv12, uv13});
+	auto vecBasis = orthonorm_sys<t_vec, std::vector, std::initializer_list>({vec12, vec13});
+	auto uvBasis = orthonorm_sys<t_vec, std::vector, std::initializer_list>({uv12, uv13});
 	vec12 = vecBasis[0]*len12;
 	vec13 = vecBasis[1]*len13;
 	uv12 = uvBasis[0]*lenuv12;
@@ -2214,7 +2442,7 @@ requires is_vec<t_vec>
 	{
 		const T len = norm<t_vec>(vecProj);
 		const t_vec _vecProj = vecProj / len;
-		T lam = inner<t_vec>(vec, _vecProj);
+		T lam = inner<t_vec>(_vecProj, vec);
 		return lam / len;
 	};
 
@@ -2273,10 +2501,10 @@ requires is_mat<t_mat> && is_vec<t_vec>
 
 /**
  * 3-dim cross product
+ * @see https://en.wikipedia.org/wiki/Cross_product
  */
-template<class t_vec>
+template<class t_vec> requires is_basic_vec<t_vec>
 t_vec cross(const t_vec& vec1, const t_vec& vec2)
-requires is_basic_vec<t_vec>
 {
 	t_vec vec;
 
@@ -2328,24 +2556,33 @@ requires is_vec<t_vec> && is_mat<t_mat>
 {
 	using t_real = typename t_vec::value_type;
 
-	const t_real c = std::cos(angle);
-	const t_real s = std::sin(angle);
-
 	t_real len = 1;
 	if(!is_normalised)
 		len = norm<t_vec>(axis);
 
 	// ----------------------------------------------------
 	// special cases: rotations around [100], [010], [001]
-	if(equals(axis, create<t_vec>({len,0,0})))
-		return create<t_mat>({{1,0,0}, {0,c,s}, {0,-s,c}});
-	else if(equals(axis, create<t_vec>({0,len,0})))
-		return create<t_mat>({{c,0,-s}, {0,1,0}, {s,0,c}});
-	else if(equals(axis, create<t_vec>({0,0,len})))
-		return create<t_mat>({{c,s,0}, {-s,c,0}, {0,0,1}});
+	if(equals(axis, create<t_vec>({len, 0, 0})))
+	{
+		return givens<t_mat, t_real>(axis.size(), 1, 2, angle);
+		//return create<t_mat>({{1,0,0}, {0,c,s}, {0,-s,c}});
+	}
+	else if(equals(axis, create<t_vec>({0, len, 0})))
+	{
+		return givens<t_mat, t_real>(axis.size(), 2, 0, angle);
+		//return create<t_mat>({{c,0,-s}, {0,1,0}, {s,0,c}});
+	}
+	else if(equals(axis, create<t_vec>({0, 0, len})))
+	{
+		return givens<t_mat, t_real>(axis.size(), 0, 1, angle);
+		//return create<t_mat>({{c,s,0}, {-s,c,0}, {0,0,1}});
+	}
 
 	// ----------------------------------------------------
 	// general case
+	const t_real c = std::cos(angle);
+	const t_real s = std::sin(angle);
+
 	// project along rotation axis using |v><v|
 	t_mat matProj1 = projector<t_mat, t_vec>(axis/len, 1);
 
@@ -2367,11 +2604,14 @@ requires is_vec<t_vec> && is_mat<t_mat>
 
 /**
  * rotation axis and angle to rotate vector vec1 into vec2
+ * @see O. I. Zhelezov, American Journal of Computational and Applied Mathematics 7(2), pp. 51-57 (2017), doi: 10.5923/j.ajcam.20170702.04
  */
 template<class t_vec, class t_real = typename t_vec::value_type>
 std::tuple<t_vec, t_real> rotation_axis(const t_vec& vec1, const t_vec& vec2)
 requires is_vec<t_vec>
 {
+	assert(vec1.size() == vec2.size());
+
 	// rotation axis
 	t_vec axis = cross<t_vec>({ vec1, vec2 });
 	const t_real lenaxis = norm<t_vec>(axis);
@@ -2389,11 +2629,14 @@ requires is_vec<t_vec>
 
 /**
  * matrix to rotate vector vec1 into vec2
+ * @see O. I. Zhelezov, American Journal of Computational and Applied Mathematics 7(2), pp. 51-57 (2017), doi: 10.5923/j.ajcam.20170702.04
  */
 template<class t_mat, class t_vec, class t_real = typename t_vec::value_type>
-t_mat rotation(const t_vec& vec1, const t_vec& vec2, t_real eps = std::numeric_limits<t_real>::epsilon())
+t_mat rotation(const t_vec& vec1, const t_vec& vec2,
+	t_real eps = std::numeric_limits<t_real>::epsilon())
 requires is_vec<t_vec> && is_mat<t_mat>
 {
+	assert(vec1.size() == vec2.size());
 	using t_size = decltype(vec1.size());
 
 	// rotation axis
@@ -2414,6 +2657,91 @@ requires is_vec<t_vec> && is_mat<t_mat>
 
 	t_mat mat = rotation<t_mat, t_vec>(axis, angle, true);
 	return mat;
+}
+
+
+/**
+ * givens rotation matrix
+ * @see https://en.wikipedia.org/wiki/Givens_rotation
+ */
+template<class t_mat, class t_real /*= typename t_mat::value_type*/>
+t_mat givens(std::size_t N, std::size_t i, std::size_t j, t_real angle)
+requires is_mat<t_mat>
+{
+	t_real sign = 1;
+
+	if(j < i)
+	{
+		sign = -1;
+		std::swap(i, j);
+	}
+
+	t_mat mat = unit<t_mat>(N, N);
+
+	const t_real s = std::sin(angle);
+	const t_real c = std::cos(angle);
+
+	mat(i, j) = -sign*s;
+	mat(j, i) = +sign*s;
+	mat(i, i) = mat(j,j) = c;
+
+	return mat;
+}
+
+
+/**
+ * matrix to rotate n-dim vector vec1 into vec2
+ * @see O. I. Zhelezov, American Journal of Computational and Applied Mathematics 7(2), pp. 51-57 (2017), doi: 10.5923/j.ajcam.20170702.04
+ */
+template<class t_mat, class t_vec, class t_real = typename t_vec::value_type>
+t_mat rotation_nd(const t_vec& vec1, const t_vec& vec2)
+requires is_vec<t_vec> && is_mat<t_mat>
+{
+	assert(vec1.size() == vec2.size());
+	using t_size = decltype(vec1.size());
+	const t_size dim = vec1.size();
+
+	// rotation angle
+	const t_real cos_angle = inner<t_vec>(vec1, vec2) / (norm<t_vec>(vec1) * norm<t_vec>(vec2));
+	const t_real angle = std::acos(cos_angle);
+	t_mat rot_01 = givens<t_mat, t_real>(dim, 0, 1, angle);
+
+	std::vector<t_vec> vecBasis = orthonorm_sys<t_vec, std::vector>({vec1, vec2});
+
+	t_mat matBasis, matBasis_inv;
+
+	if(dim == 2)
+	{
+		matBasis = create<t_mat, t_vec>({vecBasis[0], vecBasis[1]}, true);
+	}
+	else if(dim == 3)
+	{
+		t_vec vec = cross<t_vec>({ vecBasis[0], vecBasis[1] });
+		matBasis = create<t_mat, t_vec>({vecBasis[0], vecBasis[1], vec}, true);
+	}
+	else
+	{
+		// extend matBasis with linearly independent vectors until it has the full n-dim rank
+		for(t_size i=0; i<dim; ++i)
+		{
+			t_vec vecExt = rand<t_vec>(dim);
+			vecBasis.emplace_back(std::move(vecExt));
+
+			// TODO: check that the random vectors give full rank (i.e. det != 0)
+		}
+
+		vecBasis = orthonorm_sys<t_vec, std::vector>(vecBasis);
+		vecBasis.erase(std::prev(vecBasis.end(), 2), vecBasis.end());
+
+		matBasis = create<t_mat, t_vec>(vecBasis, true);
+	}
+
+	bool inv_ok = false;
+	std::tie(matBasis_inv, inv_ok) = inv<t_mat, t_vec>(matBasis);
+	//std::cout << std::boolalpha << inv_ok << std::endl;
+	//matBasis_inv = trans<t_mat>(matBasis);
+
+	return matBasis_inv * rot_01 * matBasis;
 }
 
 
@@ -3603,6 +3931,41 @@ requires is_vec<t_vec> && is_mat<t_mat>
 
 
 /**
+ * mirror matrix in homogeneous coordinates
+ */
+template<class t_mat, class t_vec>
+t_mat hom_mirror(const t_vec& axis, bool is_normalised=1)
+requires is_vec<t_vec> && is_mat<t_mat>
+{
+	t_mat mat = ortho_mirror_op<t_mat, t_vec>(axis, is_normalised);
+
+	t_mat mat_hom = unit<t_mat>(4,4);
+	m::convert<t_mat, t_mat>(mat_hom, mat);
+
+	// in case the matrix is statically sized and was already larger than 4x4
+	mat_hom(3, 3) = 1.;
+	return mat_hom;
+}
+
+
+/**
+ * mirror matrix in homogeneous coordinates with translation
+ */
+template<class t_mat, class t_vec>
+t_mat hom_mirror(const t_vec& axis, const t_vec& pos, bool is_normalised=1)
+requires is_vec<t_vec> && is_mat<t_mat>
+{
+	t_mat mirr = hom_mirror<t_mat, t_vec>(axis, is_normalised);
+
+	t_mat offs = hom_translation<t_mat, t_vec>(pos);
+	t_mat offs_inv = hom_translation<t_mat, t_vec>(-pos);
+	//t_mat offs_t = trans<t_mat>(offs);
+
+	return offs * mirr * offs_inv;
+}
+
+
+/**
  * "look at" matrix in homogeneous coordinates
  * @see (Sellers 2014), pp. 78-79
  * @see https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluLookAt.xml
@@ -3803,7 +4166,7 @@ requires is_mat<t_mat>
 	const t_real rr = std::sqrt(t_real{1} + t_real{2}*ca*cb*cc - (ca*ca + cb*cb + cc*cc));
 
 	return t_real{2}*pi<t_real> * create<t_mat>({
-		t_real{1}/a,				t_real{0},						t_real{0},
+		t_real{1}/a,			t_real{0},				t_real{0},
 		t_real{-1}/a * cc/sc,		t_real{1}/b * t_real{1}/sc,		t_real{0},
 		(cc*ca - cb)/(a*sc*rr), 	(cb*cc-ca)/(b*sc*rr),			sc/(c*rr)
 	});
@@ -3818,11 +4181,15 @@ template<class t_mat, class t_vec, class t_real = typename t_mat::value_type>
 t_mat A_matrix(t_real a, t_real b, t_real c, t_real _aa, t_real _bb, t_real _cc)
 requires is_mat<t_mat>
 {
+	// |vb> derived by rotating |va>
 	t_vec va = create<t_vec>({a, 0, 0});
 	t_vec vb = rotation<t_mat, t_vec>(create<t_vec>({0,0,1}), _cc, 1)*va * b/a;
 	t_vec vc = create<t_vec>(va.size());
 
-	// derived using dot products <va|vc>=cos(_bb), and <vb|vc>=cos(_aa)
+	// |vc> derived using dot products:
+	//   component (1) from <va|vc> = a*c*cos(_bb),
+	//   component (2) from <vb|vc> = b*c*cos(_aa),
+	//   component (3) from <vc|vc> = c*c
 	vc[0] = std::cos(_bb)*c;
 	vc[1] = (std::cos(_aa) * b*c - vb[0]*vc[0]) / vb[1];
 	vc[2] = t_real{0};
@@ -3833,79 +4200,6 @@ requires is_mat<t_mat>
 		va[1], vb[1], vc[1],
 		va[2], vb[2], vc[2],
 	});
-}
-
-
-/**
- * general structure factor calculation
- * e.g. type T as vector (complex number) for magnetic (nuclear) structure factor
- * Ms_or_bs:
-	- nuclear scattering lengths for nuclear neutron scattering or
-	- atomic form factors for x-ray scattering
-	- magnetisation (* magnetic form factor) for magnetic neutron scattering
- * Rs: atomic positions
- * Q: scattering vector G for nuclear scattering or G+k for magnetic scattering with propagation vector k
- * fs: optional magnetic form factors
- *
- * @see https://doi.org/10.1016/B978-044451050-1/50002-1
- * @see (Shirane02), p. 25, equ. 2.26 for nuclear structure factor
- * @see (Shirane02), p. 40, equ. 2.81 for magnetic structure factor
- */
-template<class t_vec, class T = t_vec, template<class...> class t_cont = std::vector,
-	class t_cplx = std::complex<double>>
-T structure_factor(const t_cont<T>& Ms_or_bs, const t_cont<t_vec>& Rs, const t_vec& Q, const t_vec* fs=nullptr)
-requires is_basic_vec<t_vec>
-{
-	using t_real = typename t_cplx::value_type;
-	constexpr t_cplx cI(0,1);
-	constexpr t_real twopi = pi<t_real> * t_real(2);
-	constexpr t_real expsign = -1;
-
-	T F;
-	if constexpr(is_vec<T>)
-		F = zero<T>(Rs.begin()->size());	// always 3 dims...
-	else if constexpr(is_complex<T>)
-		F = T(0);
-
-	auto iterM_or_b = Ms_or_bs.begin();
-	auto iterR = Rs.begin();
-	typename t_vec::const_iterator iterf;
-	if(fs) iterf = fs->begin();
-
-	while(iterM_or_b != Ms_or_bs.end() && iterR != Rs.end())
-	{
-		// if form factors are given, use them, otherwise set to 1
-		t_real f = t_real(1);
-		if(fs)
-		{
-			auto fval = *iterf;
-			if constexpr(is_complex<decltype(fval)>)
-				f = fval.real();
-			else
-				f = fval;
-		}
-
-		// structure factor
-		F += (*iterM_or_b) * (f * std::exp(expsign * cI * twopi * inner<t_vec>(Q, *iterR)));
-
-		// next M or b if available (otherwise keep current)
-		auto iterM_or_b_next = std::next(iterM_or_b, 1);
-		if(iterM_or_b_next != Ms_or_bs.end())
-			iterM_or_b = iterM_or_b_next;
-
-		if(fs)
-		{
-			// next form factor if available (otherwise keep current)
-			auto iterf_next = std::next(iterf, 1);
-			if(iterf_next != fs->end())
-				iterf = iterf_next;
-		}
-
-		// next atomic position
-		std::advance(iterR, 1);
-	}
-
-	return F;
 }
 
 
@@ -3954,14 +4248,6 @@ requires is_basic_mat<t_mat>
 	return mat2;
 }
 
-// ----------------------------------------------------------------------------
-
-
-
-
-// ----------------------------------------------------------------------------
-// polarisation
-// ----------------------------------------------------------------------------
 
 /**
  * bloch density operator (physically: polarisation density matrix if r = P, c = 0.5)
@@ -4002,109 +4288,6 @@ requires is_vec<t_vec> && is_mat<t_mat>
 		bloch[i] = trace<t_mat>(state_density * sigma[i]);
 
 	return bloch;
-}
-
-
-/**
- * Blume-Maleev equation
- * @returns scattering intensity and final polarisation vector
- *
- * @see https://doi.org/10.1016/B978-044451050-1/50006-9 - pp. 225-226
- * @see lecture notes by P. J. Brown, 2006
- */
-template<class t_vec, typename t_cplx = typename t_vec::value_type>
-std::tuple<t_cplx, t_vec> blume_maleev(const t_vec& P_i, const t_vec& Mperp, const t_cplx& N)
-requires is_vec<t_vec>
-{
-	const t_vec MperpConj = conj(Mperp);
-	const t_cplx NConj = std::conj(N);
-	constexpr t_cplx imag(0, 1);
-
-	// ------------------------------------------------------------------------
-	// intensity
-	// nuclear
-	t_cplx I = N*NConj;
-
-	// nuclear-magnetic
-	I += NConj*inner<t_vec>(P_i, Mperp);
-	I += N*inner<t_vec>(Mperp, P_i);
-
-	// magnetic, non-chiral
-	I += inner<t_vec>(Mperp, Mperp);
-
-	// magnetic, chiral
-	I += -imag * inner<t_vec>(P_i, cross<t_vec>({ Mperp, MperpConj }));
-	// ------------------------------------------------------------------------
-
-	// ------------------------------------------------------------------------
-	// polarisation vector
-	// nuclear
-	t_vec P_f = P_i * N*NConj;
-
-	// nuclear-magnetic
-	P_f += NConj * Mperp;
-	P_f += N * MperpConj;
-	P_f += imag * N * cross<t_vec>({ P_i, MperpConj });
-	P_f += -imag * NConj * cross<t_vec>({ P_i, Mperp });
-
-	// magnetic, non-chiral
-	P_f += Mperp * inner<t_vec>(Mperp, P_i);
-	P_f += MperpConj * inner<t_vec>(P_i, Mperp);
-	P_f += -P_i * inner<t_vec>(Mperp, Mperp);
-
-	// magnetic, chiral
-	P_f += imag * cross<t_vec>({ Mperp, MperpConj });
-	// ------------------------------------------------------------------------
-
-	return std::make_tuple(I, P_f/I);
-}
-
-
-/**
- * Blume-Maleev equation
- * calculated indirectly with density matrix
- *
- * V   = N*1 + <Mperp|sigma>
- * I   = 0.5 * tr( V^H V rho )
- * P_f = 0.5 * tr( V^H sigma V rho ) / I
- *
- * @returns scattering intensity and final polarisation vector
- *
- * @see lecture notes by P. J. Brown, 2006
- * @see https://doi.org/10.1016/B978-044451050-1/50006-9 - pp. 225-226
- */
-template<class t_mat, class t_vec, typename t_cplx = typename t_vec::value_type>
-std::tuple<t_cplx, t_vec> blume_maleev_indir(const t_vec& P_i, const t_vec& Mperp, const t_cplx& N)
-requires is_mat<t_mat> && is_vec<t_vec>
-{
-	// spin-1/2
-	constexpr t_cplx c = 0.5;
-
-	// vector of pauli matrices
-	const auto sigma = su2_matrices<std::vector<t_mat>>(false);
-
-	// density matrix
-	const auto density = bloch_density_op<t_vec, t_mat>(P_i, c);
-
-	// potential
-	const auto V_mag = proj_su2<t_vec, t_mat>(Mperp, true);
-	const auto V_nuc = N * unit<t_mat>(2);
-	const auto V = V_nuc + V_mag;
-	const auto VConj = herm(V);
-
-	// scattering intensity
-	t_cplx I = c * trace(VConj*V * density/c);
-
-	// ------------------------------------------------------------------------
-	// scattered polarisation vector
-	const auto m0 = (VConj * sigma[0]) * V * density/c;
-	const auto m1 = (VConj * sigma[1]) * V * density/c;
-	const auto m2 = (VConj * sigma[2]) * V * density/c;
-
-	t_vec P_f = create<t_vec>({ c*trace(m0), c*trace(m1), c*trace(m2) });
-	// ------------------------------------------------------------------------
-
-	return std::make_tuple(I, P_f/I);
 }
 
 // ----------------------------------------------------------------------------

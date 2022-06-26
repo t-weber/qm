@@ -340,6 +340,7 @@ void QmScene::drawBackground(QPainter* painter, const QRectF& rect)
 
 	QPen pen(colour_line);
 	pen.setWidthF(0.5);
+	pen.setCosmetic(true);  // don't scale lines
 	painter->setPen(pen);
 
 	// horizontal guide lines

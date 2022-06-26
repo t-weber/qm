@@ -27,6 +27,9 @@ public:
 
 	void SetStates(t_uint num_qbits, const t_vec& vecIn, const t_vec& vecOut);
 
+	bool GetLineWrap() const;
+	void SetLineWrap(bool b);
+
 
 protected:
 	virtual void accept() override;

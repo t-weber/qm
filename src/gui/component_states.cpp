@@ -15,6 +15,7 @@
 #include <QtWidgets/QDialogButtonBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QSpacerItem>
 
 #include <sstream>
@@ -27,18 +28,20 @@ ComponentStates::ComponentStates(QWidget *parent)
 	setSizeGripEnabled(true);
 
 
-	// grid layout
-	QGridLayout *grid = new QGridLayout(this);
-	grid->setSpacing(4);
-	grid->setContentsMargins(8, 8, 8, 8);
-
-
+	// text edit box
 	m_edit = std::make_shared<QTextEdit>(this);
 	m_edit->setReadOnly(true);
-	grid->addWidget(m_edit.get(), grid->rowCount(), 0, 1, 1);
+	SetLineWrap(true);
 
 	//QSpacerItem *spacer_end = new QSpacerItem(1, 1, QSizePolicy::Fixed, QSizePolicy::Expanding);
 	//grid->addItem(spacer_end, grid->rowCount(), 0, 1, 2);
+
+
+	// options checkboxes
+	QCheckBox *checkWrap = new QCheckBox("Wrap Text", this);
+	checkWrap->setChecked(GetLineWrap());
+	connect(checkWrap, &QCheckBox::toggled,
+		this, &ComponentStates::SetLineWrap);
 
 
 	// button box
@@ -57,7 +60,15 @@ ComponentStates::ComponentStates(QWidget *parent)
 			this->reject();
 	});
 
-	grid->addWidget(buttonbox, grid->rowCount(), 0, 1, 1);
+
+	// grid layout
+	QGridLayout *grid = new QGridLayout(this);
+	grid->setSpacing(4);
+	grid->setContentsMargins(8, 8, 8, 8);
+
+	grid->addWidget(m_edit.get(), grid->rowCount(), 0, 1, 2);
+	grid->addWidget(checkWrap, grid->rowCount(), 0, 1, 1);
+	grid->addWidget(buttonbox, grid->rowCount()-1, 1, 1, 1);
 
 
 	// restore settings
@@ -127,6 +138,21 @@ void ComponentStates::SetStates(t_uint num_qbits, const t_vec& vecIn, const t_ve
 
 
 	m_edit->setPlainText(ostr.str().c_str());
+}
+
+
+bool ComponentStates::GetLineWrap() const
+{
+	return m_edit->lineWrapMode() != QTextEdit::NoWrap;
+}
+
+
+void ComponentStates::SetLineWrap(bool wrap)
+{
+	if(wrap)
+		m_edit->setLineWrapMode(QTextEdit::WidgetWidth);
+	else
+		m_edit->setLineWrapMode(QTextEdit::NoWrap);
 }
 
 

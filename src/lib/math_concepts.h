@@ -179,7 +179,37 @@ concept /*bool*/ is_iterable = requires(const T& a)
 // ----------------------------------------------------------------------------
 // adapters
 // ----------------------------------------------------------------------------
-template<typename size_t, size_t N, typename T, template<size_t, size_t, class...> class t_mat_base>
+/**
+ * vector-like access adapter to a matrix
+ */
+template<class t_mat> requires is_basic_mat<t_mat>
+class matvec_adapter
+{
+public:
+	using value_type = typename t_mat::value_type;
+	using size_type = decltype(t_mat{}.size1());
+
+public:
+	matvec_adapter(const t_mat &mat) : m_mat{mat} {}
+	~matvec_adapter() = default;
+
+	size_type size() const { return m_mat.size1() * m_mat.size2(); }
+
+	const value_type& operator[](size_type i) const
+	{
+		size_type row = i/m_mat.size2();
+		size_type col = i%m_mat.size2();
+
+		return m_mat(row, col);
+	}
+
+private:
+	const t_mat& m_mat;
+};
+
+
+template<typename size_t, size_t N, typename T,
+	template<size_t, size_t, class...> class t_mat_base>
 class qvec_adapter : public t_mat_base<1, N, T>
 {
 public:
@@ -214,7 +244,8 @@ private:
 };
 
 
-template<typename size_t, size_t ROWS, size_t COLS, typename T, template<size_t, size_t, class...> class t_mat_base>
+template<typename size_t, size_t ROWS, size_t COLS, typename T,
+	template<size_t, size_t, class...> class t_mat_base>
 class qmat_adapter : public t_mat_base<COLS, ROWS, T>
 {
 public:

@@ -27,6 +27,9 @@ public:
 
 	void SetOperator(const t_mat& op);
 
+	bool GetLineWrap() const;
+	void SetLineWrap(bool b);
+
 
 protected:
 	virtual void accept() override;
